@@ -3,6 +3,7 @@ import { FirestoreController } from './firestore.controller';
 import { FirestoreService } from './firestore.service';
 import { CanActivate } from '@nestjs/common';
 import { FirebaseAuthGuard } from '../firebase-auth.guard';
+import { FirebaseAuthService } from '../firebase-auth.service';
 
 class MockAuthGuard implements CanActivate {
   canActivate() {
@@ -21,7 +22,7 @@ describe('FirestoreController', () => {
         FirestoreService,
         { provide: FirebaseAuthGuard, useClass: MockAuthGuard },
         {
-          provide: require('../firebase-auth.service').FirebaseAuthService,
+          provide: FirebaseAuthService,
           useValue: { verifyToken: jest.fn().mockResolvedValue({ uid: 'test' }) },
         },
       ],

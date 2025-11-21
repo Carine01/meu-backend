@@ -1,6 +1,6 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
-import { Logger, ValidationPipe } from '@nestjs/common';
+import { ValidationPipe } from '@nestjs/common';
 import { Logger as PinoLogger } from 'nestjs-pino';
 import helmet from 'helmet';
 
@@ -38,7 +38,7 @@ async function bootstrap() {
   // Graceful shutdown
   const logger = app.get(PinoLogger);
   app.enableShutdownHooks();
-  
+
   process.on('SIGTERM', async () => {
     logger.log('SIGTERM recebido, encerrando aplicação...');
     await app.close();
@@ -46,7 +46,7 @@ async function bootstrap() {
 
   const port = process.env.PORT || 3000;
   await app.listen(port, '0.0.0.0');
-  
+
   logger.log(`🚀 Application is running on: http://0.0.0.0:${port}`);
   logger.log(`🔒 Security: Helmet, CORS, ValidationPipe ativados`);
 }

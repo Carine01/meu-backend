@@ -22,37 +22,37 @@ import { FirebaseAuthGuard } from './firebase-auth.guard';
       validationSchema,
       envFilePath: '.env',
     }),
-    
+
     // Rate Limiting - Proteção contra DDoS e abuse
-    ThrottlerModule.forRoot([{
-      ttl: 60000, // 60 segundos
-      limit: 100,  // 100 requests por IP (ajustável)
-    }]),
-    
+    ThrottlerModule.forRoot([
+      {
+        ttl: 60000, // 60 segundos
+        limit: 100, // 100 requests por IP (ajustável)
+      },
+    ]),
+
     LoggerModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
       useFactory: async (config: ConfigService) => ({
         pinoHttp: {
           transport:
-            config.get('NODE_ENV') !== 'production'
-              ? { target: 'pino-pretty' }
-              : undefined,
-          
+            config.get('NODE_ENV') !== 'production' ? { target: 'pino-pretty' } : undefined,
+
           level: config.get('LOG_LEVEL') || 'info',
-          
+
           base: {
             service: 'stalkspot-backend',
             version: '1.0.0',
           },
-          
+
           autoLogging: {
             ignore: (req) => req.url === '/health',
           },
         },
       }),
     }),
-    
+
     // Outros módulos do seu aplicativo
     LeadsModule,
     HttpModule,
@@ -61,8 +61,8 @@ import { FirebaseAuthGuard } from './firebase-auth.guard';
   ],
   controllers: [HealthController, TestController, AuthTestController, FirestoreController],
   providers: [
-    FirebaseAuthService, 
-    FirebaseAuthGuard, 
+    FirebaseAuthService,
+    FirebaseAuthGuard,
     FirestoreService,
     // Rate Limiting global
     {
