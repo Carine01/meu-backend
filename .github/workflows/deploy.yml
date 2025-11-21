@@ -82,5 +82,13 @@ jobs:
             --cpu 1 \
             --timeout 300 \
             --max-instances 10 \
+            --min-instances 0 \
+            --no-traffic \
+            --tag latest \
             --set-env-vars "NODE_ENV=production" \
             --set-secrets FIREBASE_SERVICE_ACCOUNT_JSON=firebase-sa-key:latest
+          
+          # Migra 100% do tráfego para nova revisão
+          gcloud run services update-traffic $SERVICE_NAME \
+            --region $REGION \
+            --to-latest
