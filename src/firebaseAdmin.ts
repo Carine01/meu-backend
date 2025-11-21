@@ -22,7 +22,16 @@ function initAdmin() {
   try {
     // Opção 1: JSON direto na variável de ambiente (RECOMENDADO para produção)
     if (process.env.FIREBASE_SERVICE_ACCOUNT_JSON) {
-      const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_JSON);
+      // Decodificar se estiver em base64
+      let jsonString = process.env.FIREBASE_SERVICE_ACCOUNT_JSON;
+      try {
+        // Tenta decodificar base64
+        jsonString = Buffer.from(jsonString, 'base64').toString('utf-8');
+      } catch {
+        // Se falhar, já está em texto puro
+      }
+      
+      const serviceAccount = JSON.parse(jsonString);
       admin.initializeApp({
         credential: admin.credential.cert(serviceAccount),
         projectId: serviceAccount.project_id,
