@@ -13,3 +13,10 @@ Obrigado por considerar contribuir!
 - Escreva commits claros e descritivos
 - Sempre adicione testes para novas funcionalidades
 - Siga o padrão de código do projeto
+
+## Pull Requests Automatizados
+
+⚠️ **Importante**: Este repositório está configurado para **ignorar branches que começam com `copilot/`** nos workflows de CI/CD. Se você estiver usando GitHub Copilot ou outras ferramentas de automação, revise manualmente todas as mudanças antes de criar um PR.
+
+Para contribuições, use nomes de branch descritivos como `feature/nome` ou `fix/nome` ao invés de branches geradas automaticamente.
+
