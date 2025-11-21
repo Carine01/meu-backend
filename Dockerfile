@@ -50,14 +50,13 @@ USER nodejs
 
 # Variáveis de ambiente
 ENV NODE_ENV=production
-ENV PORT=8080
 
-# Expor porta
+# Expor porta (Cloud Run injeta PORT automaticamente)
 EXPOSE 8080
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=3s --start-period=40s --retries=3 \
-  CMD node -e "require('http').get('http://localhost:8080/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"
+  CMD node -e "require('http').get('http://localhost:' + (process.env.PORT || 8080) + '/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"
 
 # Executar com dumb-init para gerenciamento correto de sinais
 CMD ["dumb-init", "node", "dist/main.js"]
