@@ -2,6 +2,8 @@ import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { LoggerModule } from 'nestjs-pino';
 import { HttpModule } from '@nestjs/axios';
+import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
+import { APP_GUARD } from '@nestjs/core';
 import { LeadsModule } from './leads/leads.module';
 import { TestController } from './test/test.controller';
 import { AuthTestController } from './auth-test.controller';
@@ -20,6 +22,12 @@ import { FirebaseAuthGuard } from './firebase-auth.guard';
       validationSchema,
       envFilePath: '.env',
     }),
+    
+    // Rate Limiting - Proteção contra DDoS e abuse
+    ThrottlerModule.forRoot([{
+      ttl: 60000, // 60 segundos
+      limit: 100,  // 100 requests por IP (ajustável)
+    }]),
     
     LoggerModule.forRootAsync({
       imports: [ConfigModule],
@@ -52,6 +60,15 @@ import { FirebaseAuthGuard } from './firebase-auth.guard';
     // ...
   ],
   controllers: [HealthController, TestController, AuthTestController, FirestoreController],
-  providers: [FirebaseAuthService, FirebaseAuthGuard, FirestoreService],
+  providers: [
+    FirebaseAuthService, 
+    FirebaseAuthGuard, 
+    FirestoreService,
+    // Rate Limiting global
+    {
+      provide: APP_GUARD,
+      useClass: ThrottlerGuard,
+    },
+  ],
 })
 export class AppModule {}
