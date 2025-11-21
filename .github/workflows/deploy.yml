@@ -7,7 +7,7 @@ on:
   workflow_dispatch: # Permite deploy manual via GitHub UI
 
 env:
-  PROJECT_ID: lucresia-74987923-59ce3
+  PROJECT_ID: elevare-iara
   SERVICE_NAME: elevare-backend
   REGION: us-central1
 
