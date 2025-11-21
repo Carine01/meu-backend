@@ -26,7 +26,15 @@ jobs:
           cache: 'npm'
       
       - name: Install dependencies
-        run: npm ci
+        run: |
+          set -e
+          echo "Trying npm ci (fast, reproducible)..."
+          if npm ci --no-audit --prefer-offline --progress=false; then
+            echo "npm ci succeeded"
+          else
+            echo "npm ci failed - falling back to npm install"
+            npm install --no-audit --progress=false
+          fi
       
       - name: Run tests
         run: npm run test
