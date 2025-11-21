@@ -6,6 +6,10 @@ on:
       - main
   workflow_dispatch: # Permite deploy manual via GitHub UI
 
+permissions:
+  contents: read
+  id-token: write # Necessário para autenticação com Google Cloud
+
 env:
   PROJECT_ID: elevare-iara
   SERVICE_NAME: elevare-backend
@@ -14,6 +18,9 @@ env:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
     
     steps:
       - name: Checkout code
