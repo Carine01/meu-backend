@@ -9,6 +9,8 @@ on:
 jobs:
   build-and-test:
     runs-on: ubuntu-latest
+    # Ignora PRs auto-gerados pelo GitHub Copilot
+    if: ${{ !startsWith(github.head_ref, 'copilot/') }}
     steps:
       - uses: actions/checkout@v4
       - name: Use Node.js 18.x
