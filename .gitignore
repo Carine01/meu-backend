@@ -3,10 +3,9 @@ dist/
 .env
 .env.local
 *.log
-firebase-config.jsnode_modules/
-dist/
-.env
+
 # Firebase service account (do not commit)
+firebase-service-account.json
 *.serviceAccount.json
 service-account.json
 *.firebase-admin.json
