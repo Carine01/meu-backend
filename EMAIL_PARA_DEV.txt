@@ -1,0 +1,34 @@
+Assunto: Entrega do Backend Elevare Atendimento — Instruções e Checklist
+
+Olá,
+
+Segue em anexo o pacote backend_deliverable.zip contendo todo o backend do projeto Elevare Atendimento (Stalkspot), pronto para integração com Firebase e Firestore.
+
+Checklist para configuração e validação:
+
+1. Descompacte o arquivo backend_deliverable.zip.
+2. Instale as dependências:
+   cd backend
+   npm install
+3. Configure as variáveis de ambiente:
+   - Copie .env.example para .env e preencha os valores reais.
+   - Adicione o Service Account JSON do Firebase (NÃO versionar):
+     - Opção A: coloque o arquivo e defina GOOGLE_APPLICATION_CREDENTIALS com o caminho.
+     - Opção B: cole o conteúdo do JSON na variável FIREBASE_SERVICE_ACCOUNT_JSON no .env.
+4. Build e start:
+   npm run build
+   npm start
+   # ou para desenvolvimento:
+   npm run start:dev
+5. Teste os endpoints:
+   - Health: curl http://localhost:3000/health
+   - Auth: curl -H "Authorization: Bearer <ID_TOKEN>" http://localhost:3000/auth-test
+   - Firestore CRUD: use endpoints /firestore (ver README_DEV.md)
+6. (Opcional) Configure External Secrets Operator no Kubernetes usando o exemplo em k8s/externalsecret_example.yaml.
+
+Documentação detalhada está em README_DEV.md e DELIVER_TO_DEV.md.
+
+Dúvidas ou problemas, só avisar!
+
+Atenciosamente,
+[Seu Nome]
