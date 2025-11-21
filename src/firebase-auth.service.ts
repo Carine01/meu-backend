@@ -7,7 +7,8 @@ export class FirebaseAuthService {
     try {
       const decoded = await admin.auth().verifyIdToken(idToken);
       return decoded;
-    } catch {
+    } catch (_error) {
+      // Error is intentionally not logged to avoid leaking sensitive token information
       throw new UnauthorizedException('Token Firebase inválido ou expirado');
     }
   }

@@ -97,4 +97,12 @@ if (require.main === module) {
   validateEnvironment();
 }
 
+/**
+ * Valida que todas as variáveis de ambiente necessárias estão configuradas
+ * @returns {void} - Sai do processo com código 1 se houver erros
+ * @example
+ * // Usar no código
+ * const { validateEnvironment } = require('./scripts/validate-env');
+ * validateEnvironment();
+ */
 module.exports = { validateEnvironment };
