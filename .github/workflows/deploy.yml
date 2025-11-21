@@ -56,7 +56,12 @@ jobs:
         env:
           FIREBASE_CREDENTIALS: ${{ secrets.GCP_SA_KEY }}
         run: |
-          # Escape the JSON for passing as environment variable
+          # Validate and escape the JSON for passing as environment variable
+          if ! echo "$FIREBASE_CREDENTIALS" | jq empty > /dev/null 2>&1; then
+            echo "Error: FIREBASE_CREDENTIALS is not valid JSON"
+            exit 1
+          fi
+          
           FIREBASE_JSON=$(echo "$FIREBASE_CREDENTIALS" | jq -c .)
           
           gcloud run deploy $SERVICE_NAME \
