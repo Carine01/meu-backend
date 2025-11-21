@@ -59,12 +59,6 @@ jobs:
           docker push $REGION-docker.pkg.dev/$PROJECT_ID/$SERVICE_NAME/$SERVICE_NAME:$GITHUB_SHA
           docker push $REGION-docker.pkg.dev/$PROJECT_ID/$SERVICE_NAME/$SERVICE_NAME:latest
       
-      - name: Remove conflicting env var
-        run: |
-          gcloud run services update $SERVICE_NAME \
-            --region $REGION \
-            --remove-env-vars=FIREBASE_SERVICE_ACCOUNT_JSON || true
-      
       - name: Create env file with Firebase credentials
         run: |
           echo '${{ secrets.GCP_SA_KEY }}' > /tmp/firebase-credentials.json
@@ -82,5 +76,5 @@ jobs:
             --cpu 1 \
             --timeout 300 \
             --max-instances 10 \
-            --set-env-vars NODE_ENV=production \
-            --set-env-vars FIREBASE_SERVICE_ACCOUNT_JSON="${FIREBASE_SERVICE_ACCOUNT_JSON}"
+            --clear-env-vars \
+            --set-env-vars "NODE_ENV=production,FIREBASE_SERVICE_ACCOUNT_JSON=${FIREBASE_SERVICE_ACCOUNT_JSON}"
