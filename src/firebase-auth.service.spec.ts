@@ -18,5 +18,5 @@ describe('FirebaseAuthService', () => {
 
   it('should throw UnauthorizedException for invalid token', async () => {
     await expect(service.verifyToken('token_invalido')).rejects.toThrow();
-  });
+  }, 30000); // Timeout de 30 segundos para teste de autenticação Firebase
 });

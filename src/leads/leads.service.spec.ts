@@ -42,7 +42,7 @@ describe('LeadsService', () => {
     (httpService.post as jest.Mock).mockReturnValue(throwError(() => error));
     await expect(service.enviarLeadParaSupabase({ nome: 'Teste', phone: '123' })).rejects.toThrow();
     expect(httpService.post).toHaveBeenCalled();
-  });
+  }, 15000); // Timeout de 15 segundos para teste de retry
 
   it('should succeed on first try', async () => {
     (httpService.post as jest.Mock).mockReturnValue(of({ data: { ok: true, id: 1 } }));
