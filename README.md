@@ -29,6 +29,11 @@ Veja o arquivo `.env.example` para todas as variáveis necessárias (Firebase, U
 - [NestJS](https://docs.nestjs.com/)
 - [Firebase](https://firebase.google.com/docs)
 
+## Guias e Tutoriais
+- [Como atualizar o secret GCP_SA_KEY](COMO_ATUALIZAR_GCP_SA_KEY.md) - Passo a passo para atualizar credenciais do GitHub Actions
+- [Checklist de Deploy](CHECKLIST_DEPLOY.md) - Lista de verificação para deploy
+- [Guia Completo de Deploy](GUIA_DEPLOY_COMPLETO.md) - Documentação detalhada do processo de deploy
+
 ---
 
 > Projeto criado por Carine01
