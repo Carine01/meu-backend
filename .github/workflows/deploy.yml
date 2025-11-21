@@ -59,10 +59,16 @@ jobs:
           docker push $REGION-docker.pkg.dev/$PROJECT_ID/$SERVICE_NAME/$SERVICE_NAME:$GITHUB_SHA
           docker push $REGION-docker.pkg.dev/$PROJECT_ID/$SERVICE_NAME/$SERVICE_NAME:latest
       
-      - name: Create env file with Firebase credentials
+      - name: Setup Firebase Secret in Secret Manager
         run: |
-          echo '${{ secrets.GCP_SA_KEY }}' > /tmp/firebase-credentials.json
-          echo "FIREBASE_SERVICE_ACCOUNT_JSON=$(cat /tmp/firebase-credentials.json | base64 -w 0)" >> $GITHUB_ENV
+          # Cria/atualiza o secret no GCP Secret Manager
+          echo '${{ secrets.GCP_SA_KEY }}' | gcloud secrets create firebase-sa-key \
+            --data-file=- \
+            --replication-policy="automatic" \
+            --project=$PROJECT_ID 2>/dev/null || \
+          echo '${{ secrets.GCP_SA_KEY }}' | gcloud secrets versions add firebase-sa-key \
+            --data-file=- \
+            --project=$PROJECT_ID
       
       - name: Deploy to Cloud Run
         run: |
@@ -76,5 +82,5 @@ jobs:
             --cpu 1 \
             --timeout 300 \
             --max-instances 10 \
-            --clear-env-vars \
-            --set-env-vars "NODE_ENV=production,FIREBASE_SERVICE_ACCOUNT_JSON=${FIREBASE_SERVICE_ACCOUNT_JSON}"
+            --set-env-vars NODE_ENV=production \
+            --set-secrets FIREBASE_SERVICE_ACCOUNT_JSON=firebase-sa-key:latest
