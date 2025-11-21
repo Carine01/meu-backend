@@ -32,6 +32,8 @@ jobs:
         run: npm run test
       
       - name: Authenticate to Google Cloud
+        # Este step usa o secret GCP_SA_KEY que deve conter o JSON completo da Service Account
+        # Para atualizar este secret, consulte: COMO_ATUALIZAR_GCP_SA_KEY.md
         uses: google-github-actions/auth@v2
         with:
           credentials_json: ${{ secrets.GCP_SA_KEY }}
