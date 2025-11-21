@@ -8,13 +8,18 @@ Backend NestJS com integração Firebase.
    npm install
    ```
 2. Copie `.env.example` para `.env` e preencha as variáveis (Firebase e backend).
-3. Inicie o servidor:
+3. **Configure as credenciais do Firebase** - veja [SETUP_SERVICE_ACCOUNT.md](SETUP_SERVICE_ACCOUNT.md)
+4. Inicie o servidor:
    ```bash
    npm run start:dev
    ```
 
 ## Como fazer deploy
 Veja o arquivo `CHECKLIST_DEPLOY.md` para um passo a passo completo de deploy em produção.
+
+## Configuração de Segurança
+**IMPORTANTE**: Para configurar as credenciais da Google Cloud Service Account de forma segura, consulte:
+- [SETUP_SERVICE_ACCOUNT.md](SETUP_SERVICE_ACCOUNT.md) - Guia completo de configuração
 
 ## Variáveis de ambiente
 Veja o arquivo `.env.example` para todas as variáveis necessárias (Firebase, URLs, segredos, etc.).
@@ -28,6 +33,7 @@ Veja o arquivo `.env.example` para todas as variáveis necessárias (Firebase, U
 ## Documentação
 - [NestJS](https://docs.nestjs.com/)
 - [Firebase](https://firebase.google.com/docs)
+- [Configuração da Service Account](SETUP_SERVICE_ACCOUNT.md)
 
 ---
 
