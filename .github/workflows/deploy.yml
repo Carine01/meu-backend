@@ -59,6 +59,12 @@ jobs:
           docker push $REGION-docker.pkg.dev/$PROJECT_ID/$SERVICE_NAME/$SERVICE_NAME:$GITHUB_SHA
           docker push $REGION-docker.pkg.dev/$PROJECT_ID/$SERVICE_NAME/$SERVICE_NAME:latest
       
+      - name: Delete existing service (force clean deploy)
+        run: |
+          gcloud run services delete $SERVICE_NAME \
+            --region $REGION \
+            --quiet || true
+      
       - name: Setup Firebase Secret in Secret Manager
         run: |
           # Cria/atualiza o secret no GCP Secret Manager
@@ -82,13 +88,5 @@ jobs:
             --cpu 1 \
             --timeout 300 \
             --max-instances 10 \
-            --min-instances 0 \
-            --no-traffic \
-            --tag latest \
             --set-env-vars "NODE_ENV=production" \
-            --set-secrets FIREBASE_SERVICE_ACCOUNT_JSON=firebase-sa-key:latest
-          
-          # Migra 100% do tráfego para nova revisão
-          gcloud run services update-traffic $SERVICE_NAME \
-            --region $REGION \
-            --to-latest
+            --set-secrets "FIREBASE_SERVICE_ACCOUNT_JSON=firebase-sa-key:latest"
