@@ -1,13 +1,39 @@
+# Dependencies
 node_modules/
+
+# Build output
 dist/
+
+# Environment files
 .env
 .env.local
+.env.*.local
+
+# Logs
 *.log
-firebase-config.jsnode_modules/
-dist/
-.env
+logs/
+
 # Firebase service account (do not commit)
 *.serviceAccount.json
 service-account.json
 *.firebase-admin.json
 *.credentials.json
+firebase-config.js
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Test coverage
+coverage/
+
+# Temporary files
+tmp/
+temp/

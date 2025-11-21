@@ -6,10 +6,7 @@ import { LeadsController } from './leads.controller';
 import { IARA_CONFIG_TOKEN, IaraConfig } from './iara-config.interface';
 
 @Module({
-  imports: [
-    HttpModule,
-    ConfigModule, 
-  ],
+  imports: [HttpModule, ConfigModule],
   controllers: [LeadsController],
   providers: [
     LeadsService,
