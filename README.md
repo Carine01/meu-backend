@@ -81,11 +81,14 @@ npm run test:watch
 
 Veja [CONTRIBUTING.md](CONTRIBUTING.md) para detalhes sobre como contribuir com o projeto.
 
+Por favor, siga nosso [Código de Conduta](CODE_OF_CONDUCT.md) em todas as suas interações.
+
 ## 📚 Documentação
 
 - [NestJS](https://docs.nestjs.com/)
 - [Firebase](https://firebase.google.com/docs)
 - [Documentação completa do backend](DOCUMENTACAO_BACKEND_PRODUCAO.md)
+- [CHANGELOG](CHANGELOG.md) - Histórico de mudanças
 
 ## 📄 Licença
 

@@ -7,12 +7,15 @@
     "build": "tsc",
     "start": "node dist/main.js",
     "start:dev": "tsc && nodemon dist/main.js",
+    "prestart": "node scripts/validate-env.js",
+    "prestart:dev": "node scripts/validate-env.js",
     "test": "jest --config jest.config.js",
     "test:cov": "jest --config jest.config.js --coverage",
     "lint": "eslint \"{src,test}/**/*.ts\"",
     "lint:fix": "eslint \"{src,test}/**/*.ts\" --fix",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
     "format:check": "prettier --check \"src/**/*.ts\" \"test/**/*.ts\"",
+    "validate:env": "node scripts/validate-env.js",
     "prepare": "husky"
   },
   "dependencies": {
