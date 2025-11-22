@@ -2,6 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, Raw, MoreThan } from 'typeorm';
 import { Bloqueio } from './entities/bloqueio.entity';
+import { validateClinicId } from '../../lib/tenant';
 
 @Injectable()
 export class BloqueiosService {
@@ -22,6 +23,15 @@ export class BloqueiosService {
     @InjectRepository(Bloqueio)
     private readonly bloqueioRepo: Repository<Bloqueio>,
   ) {}
+
+  /**
+   * Lista bloqueios para uma clínica específica
+   */
+  async listForClinic(clinicId: string): Promise<Bloqueio[]> {
+    validateClinicId(clinicId);
+    this.logger.log(`📋 Listando bloqueios para clínica: ${clinicId}`);
+    return this.bloqueioRepo.find({ where: { clinicId }});
+  }
 
   /**
    * Bloquear horário de almoço (12h-14h) nos próximos 30 dias

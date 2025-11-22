@@ -5,6 +5,7 @@ import { Repository } from 'typeorm';
 import * as bcrypt from 'bcrypt';
 import { Usuario } from './entities/usuario.entity';
 import { LoginDto, RegisterDto } from './dto/auth.dto';
+import { validateClinicId } from '../../lib/tenant';
 
 @Injectable()
 export class AuthService {
@@ -16,7 +17,7 @@ export class AuthService {
     private jwtService: JwtService,
   ) {}
 
-  async login(loginDto: LoginDto): Promise<{ access_token: string; user: any }> {
+  async login(loginDto: LoginDto, clinicId?: string): Promise<{ access_token: string; user: any }> {
     const usuario = await this.usuarioRepo.findOne({ 
       where: { email: loginDto.email, ativo: true } 
     });
@@ -30,14 +31,17 @@ export class AuthService {
       throw new UnauthorizedException('Credenciais inválidas');
     }
 
+    // Usar clinicId do usuário ou o fornecido
+    const finalClinicId = clinicId || usuario.clinicId;
+
     const payload = { 
       sub: usuario.id, 
       email: usuario.email,
-      clinicId: usuario.clinicId,
+      clinicId: finalClinicId,
       roles: usuario.roles,
     };
 
-    this.logger.log(`✅ Login: ${usuario.email} (Clinic: ${usuario.clinicId})`);
+    this.logger.log(`✅ Login: ${usuario.email} (Clinic: ${finalClinicId})`);
 
     return {
       access_token: this.jwtService.sign(payload),
@@ -45,7 +49,7 @@ export class AuthService {
         id: usuario.id,
         email: usuario.email,
         nome: usuario.nome,
-        clinicId: usuario.clinicId,
+        clinicId: finalClinicId,
         roles: usuario.roles,
       },
     };
