@@ -146,7 +146,7 @@ export class WhatsAppController {
     
     return {
       messageId: result.messageId,
-      status: result.status.toString(),
+      status: result.status,
       timestamp: result.timestamp,
       providerMessageId: result.messageId,
     };

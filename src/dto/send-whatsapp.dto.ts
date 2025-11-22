@@ -13,6 +13,7 @@ export class SendWhatsAppDto {
     pattern: '^\\+55\\d{10,11}$',
   })
   @IsString({ message: 'Telefone deve ser texto' })
+  // Note: Currently hardcoded for Brazil (+55). For international support, update regex
   @Matches(/^\+55\d{10,11}$/, { 
     message: 'Telefone deve estar no formato E.164: +5511999999999' 
   })

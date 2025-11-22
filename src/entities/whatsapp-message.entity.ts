@@ -52,6 +52,8 @@ export class WhatsAppMessage {
   updatedAt!: Date;
 
   constructor() {
+    // ID format: WA<timestamp>_<random> for uniqueness and sortability
+    // Matches existing codebase pattern (e.g., IND${Date.now()} in indicacao.entity.ts)
     this.id = `WA${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     this.status = 'pending';
     this.provider = 'baileys';
