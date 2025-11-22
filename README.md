@@ -4,7 +4,9 @@ Backend NestJS com integração Firebase.
 
 ## 📊 Relatório de Progresso dos Agentes
 
-**Novo!** Veja o [Relatório Consolidado dos Agentes](RELATORIO_AGENTES.md) para entender tudo que já foi realizado automaticamente no projeto (70-85% concluído).
+**Novo!** Veja o [Guia de Comandos para Agentes](AGENT_INSTRUCTIONS.md) ⚡ para comandos executáveis copy-paste.
+
+**Documentação detalhada:** [Decisões de Arquitetura](docs/decisions/2025-11-22-architecture-decisions.md) para contexto histórico.
 
 ## Como rodar localmente
 1. Instale as dependências:
@@ -32,10 +34,10 @@ Veja o arquivo `.env.example` para todas as variáveis necessárias (Firebase, U
 ## Documentação
 
 ### Documentação do Projeto
-- **[RELATORIO_AGENTES.md](RELATORIO_AGENTES.md)** - Relatório consolidado de tudo que os agentes já fizeram
+- **[AGENT_INSTRUCTIONS.md](AGENT_INSTRUCTIONS.md)** ⚡ - Comandos executáveis para agentes (copiar-colar)
 - **[AGENTES_GITHUB.md](AGENTES_GITHUB.md)** 🤖 - 8 Agentes de automação CI/CD (TypeScript Guardian, Security Audit, etc.)
-- **[RELATORIO_STATUS_PROGRAMADOR.md](RELATORIO_STATUS_PROGRAMADOR.md)** - Status atual para programadores (85% pronto)
 - **[COMANDOS_PROGRAMADOR.md](COMANDOS_PROGRAMADOR.md)** - Comandos prontos para executar
+- **[Decisões de Arquitetura](docs/decisions/)** - Documentação detalhada e histórico
 - **[GUIA_DEPLOY_COMPLETO.md](GUIA_DEPLOY_COMPLETO.md)** - Guia completo de deploy
 - **[CHECKLIST_DEPLOY.md](CHECKLIST_DEPLOY.md)** - Checklist pré-deploy
 - **[SECURITY.md](SECURITY.md)** - Política de segurança

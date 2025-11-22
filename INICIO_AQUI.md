@@ -12,15 +12,16 @@ Dependendo do que você precisa, comece por:
 
 | Se você quer... | Leia este documento |
 |----------------|---------------------|
-| **Entender tudo que já foi feito** | [RELATORIO_AGENTES.md](RELATORIO_AGENTES.md) ⭐ **COMECE AQUI** |
-| **Ver comandos prontos para executar** | [COMANDOS_PROGRAMADOR.md](COMANDOS_PROGRAMADOR.md) |
+| **Comandos copy-paste executáveis** | [AGENT_INSTRUCTIONS.md](AGENT_INSTRUCTIONS.md) ⚡ **AGENTES COMECEM AQUI** |
 | **Ativar automação CI/CD completa** | [AGENTES_GITHUB.md](AGENTES_GITHUB.md) 🤖 **8 AGENTS** |
+| **Ver comandos prontos para executar** | [COMANDOS_PROGRAMADOR.md](COMANDOS_PROGRAMADOR.md) |
 | **Status atual detalhado** | [RELATORIO_STATUS_PROGRAMADOR.md](RELATORIO_STATUS_PROGRAMADOR.md) |
 | **Guia completo de deploy** | [GUIA_DEPLOY_COMPLETO.md](GUIA_DEPLOY_COMPLETO.md) |
 | **Checklist antes de deploy** | [CHECKLIST_DEPLOY.md](CHECKLIST_DEPLOY.md) |
 | **Como contribuir** | [CONTRIBUTING.md](CONTRIBUTING.md) |
 | **Política de segurança** | [SECURITY.md](SECURITY.md) |
 | **Visão geral do projeto** | [README.md](README.md) |
+| **Decisões de arquitetura (histórico)** | [docs/decisions/](docs/decisions/) |
 
 ---
 
