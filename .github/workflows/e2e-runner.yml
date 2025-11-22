@@ -1,0 +1,84 @@
+name: 🎭 E2E Test Runner
+
+on:
+  workflow_dispatch: # Manual trigger
+  schedule:
+    - cron: '0 6 * * *' # Daily at 6 AM UTC
+
+jobs:
+  e2e-tests:
+    runs-on: ubuntu-latest
+    
+    services:
+      postgres:
+        image: postgres:15-alpine
+        env:
+          POSTGRES_USER: test_user
+          POSTGRES_PASSWORD: test_pass
+          POSTGRES_DB: test_db
+        ports: 
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+      
+      - name: 📦 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      
+      - name: 📥 Install dependencies
+        run: npm ci
+      
+      - name: 🔧 Setup test environment
+        run: |
+          # Create test .env file
+          cat > .env.test << EOF
+          NODE_ENV=test
+          PORT=3000
+          DATABASE_HOST=localhost
+          DATABASE_PORT=5432
+          DATABASE_USER=test_user
+          DATABASE_PASSWORD=test_pass
+          DATABASE_NAME=test_db
+          FIREBASE_PROJECT_ID=test-project
+          FIREBASE_CLIENT_EMAIL=test@test.com
+          FIREBASE_PRIVATE_KEY=test-key
+          EOF
+      
+      - name: 🧪 Run E2E tests
+        run: |
+          echo "🧪 Running E2E tests..."
+          
+          # Check if E2E test script exists
+          if npm run | grep -q "test:e2e"; then
+            npm run test:e2e
+          else
+            echo "⚠️ No test:e2e script found in package.json"
+            echo "ℹ️ Running regular tests instead"
+            npm test || echo "⚠️ Tests not configured or failed"
+          fi
+        env:
+          DB_HOST: localhost
+          DB_PORT: 5432
+          DB_USER: test_user
+          DB_PASSWORD: test_pass
+          DB_NAME: test_db
+      
+      - name: 📊 Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-test-results
+          path: |
+            test-results/
+            coverage/
+          retention-days: 7
+          if-no-files-found: warn

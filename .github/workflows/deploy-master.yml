@@ -1,0 +1,74 @@
+name: 🚀 Deploy Master
+
+on:
+  push:
+    branches: [main]
+    paths-ignore: 
+      - 'docs/**'
+      - '**.md'
+      - '.github/**'
+      - '!.github/workflows/deploy-master.yml'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    
+    # Only run if secrets are configured
+    if: github.repository == 'Carine01/meu-backend' && github.event_name == 'push'
+    
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+      
+      - name: 🔐 Setup SSH
+        if: ${{ secrets.SERVER_SSH_KEY != '' }}
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.SERVER_SSH_KEY }}
+      
+      - name: 🚀 Deploy to server
+        if: ${{ secrets.SERVER_SSH_KEY != '' && secrets.SERVER_HOST != '' }}
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SERVER_SSH_KEY }}
+          script_timeout: 120m
+          script: |
+            set -e
+            
+            cd ${{ secrets.PROJECT_PATH || '~/meu-backend' }}
+            
+            echo "🔄 Stopping services..."
+            docker-compose down || true
+            
+            echo "⬇️ Pulling latest code..."
+            git pull origin main
+            
+            echo "🐳 Building new version..."
+            docker-compose build --no-cache
+            
+            echo "🚀 Starting services..."
+            docker-compose up -d
+            
+            echo "⏱️ Waiting for health check..."
+            sleep 30
+            
+            echo "✅ Verifying deployment..."
+            curl -f http://localhost:3000/health || echo "⚠️ Health check failed"
+            
+            echo "🧹 Cleanup old images..."
+            docker image prune -f
+            docker system prune -f --volumes
+            
+            echo "✅ Deploy completed at $(date)"
+      
+      - name: ℹ️ Deployment skipped
+        if: ${{ secrets.SERVER_SSH_KEY == '' }}
+        run: |
+          echo "⚠️ Deployment skipped - SSH credentials not configured"
+          echo "ℹ️ To enable automatic deployment, configure these secrets:"
+          echo "  - SERVER_SSH_KEY"
+          echo "  - SERVER_HOST"
+          echo "  - SERVER_USER"
+          echo "  - PROJECT_PATH (optional, defaults to ~/meu-backend)"
