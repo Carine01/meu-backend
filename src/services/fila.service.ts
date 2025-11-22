@@ -56,9 +56,12 @@ export class FilaService implements OnModuleInit, OnModuleDestroy {
     try {
       const { state, saveCreds } = await useMultiFileAuthState(this.authPath);
       
+      // Only print QR in development/non-production environments
+      const printQR = this.configService.get<string>('NODE_ENV') !== 'production';
+      
       this.socket = makeWASocket({
         auth: state,
-        printQRInTerminal: true,
+        printQRInTerminal: printQR,
         logger: {
           level: 'silent',
           error: () => {},
@@ -118,8 +121,15 @@ export class FilaService implements OnModuleInit, OnModuleDestroy {
           throw new Error('WhatsApp not connected. Please check authentication.');
         }
 
-        // Normalize phone number (remove + and format for Baileys)
-        const jid = to.replace(/\D/g, '') + '@s.whatsapp.net';
+        // Normalize phone number (remove all non-digits and format for Baileys)
+        const normalized = to.replace(/\D/g, '');
+        
+        // Validate normalized number (should be 10-15 digits)
+        if (normalized.length < 10 || normalized.length > 15) {
+          throw new Error(`Invalid phone number format: ${to}`);
+        }
+        
+        const jid = normalized + '@s.whatsapp.net';
 
         await this.socket.sendMessage(jid, { text: message });
         
