@@ -19,6 +19,9 @@ jobs:
           echo "🔍 Searching for vulnerable database queries..."
           
           # Search for find() or findOne() without where clause in modules
+          # Note: This is a basic check that may have false positives
+          # It looks for methods without 'where' on the same line
+          # Review flagged methods manually to confirm if they need clinicId filtering
           VULNERABLE=$(grep -r "\.find()\|\.findOne()" src/modules/ 2>/dev/null | grep -v "where" | wc -l || echo "0")
           
           if [ "$VULNERABLE" -gt 0 ]; then

@@ -16,7 +16,15 @@ jobs:
       - name: 📊 Check WhatsApp status
         id: check_status
         run: |
-          API_URL="${{ secrets.API_URL || 'https://sua-api.com' }}"
+          # Check if API_URL is configured
+          if [ -z "${{ secrets.API_URL }}" ]; then
+            echo "⚠️ API_URL secret not configured"
+            echo "ℹ️ Skipping WhatsApp status check"
+            echo "📝 Configure API_URL secret to enable monitoring"
+            exit 0
+          fi
+          
+          API_URL="${{ secrets.API_URL }}"
           
           echo "🔍 Checking WhatsApp status at $API_URL/whatsapp/status"
           
@@ -59,8 +67,8 @@ jobs:
       - name: ℹ️ Configuration info
         if: always() && secrets.API_URL == ''
         run: |
-          echo "⚠️ WhatsApp monitoring is using default URL"
-          echo "ℹ️ To monitor your production API, configure these secrets:"
-          echo "  - API_URL (required): Your API base URL"
+          echo "ℹ️ WhatsApp monitoring requires configuration"
+          echo "📝 To enable monitoring, configure these secrets in repository settings:"
+          echo "  - API_URL (required): Your API base URL (e.g., https://api.example.com)"
           echo "  - DISCORD_WEBHOOK (optional): For Discord alerts"
           echo "  - SLACK_WEBHOOK (optional): For Slack alerts"
