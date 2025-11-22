@@ -12,6 +12,16 @@ import * as fs from 'fs';
 import * as path from 'path';
 
 /**
+ * Tipo de retorno para envio de mensagem WhatsApp
+ */
+export interface WhatsAppSendResult {
+  success: boolean;
+  messageId?: string;
+  timestamp?: number;
+  error?: string;
+}
+
+/**
  * FilaService - Wrapper para Baileys com enfileiramento e persistência
  * 
  * Funcionalidades:
@@ -64,9 +74,13 @@ export class FilaService implements OnModuleInit, OnModuleDestroy {
     try {
       const { state, saveCreds } = await useMultiFileAuthState(this.authPath);
 
+      // WARNING: QR code in terminal exposes auth info in logs
+      // Only enable in development or use secure auth flow in production
+      const isDevelopment = process.env.NODE_ENV !== 'production';
+      
       this.socket = makeWASocket({
         auth: state,
-        printQRInTerminal: true, // Para primeira conexão
+        printQRInTerminal: isDevelopment, // Only print QR in development
         logger: {
           level: 'error', // Reduzir logs verbosos do Baileys
           debug: () => {},
@@ -131,9 +145,12 @@ export class FilaService implements OnModuleInit, OnModuleDestroy {
   /**
    * Enfileira e envia mensagem WhatsApp
    */
-  async sendMessage(to: string, message: string): Promise<any> {
+  async sendMessage(to: string, message: string): Promise<WhatsAppSendResult> {
     if (!this.isConnected || !this.socket) {
-      throw new Error('WhatsApp não está conectado. Aguarde a conexão ou escaneie o QR Code.');
+      return {
+        success: false,
+        error: 'WhatsApp não está conectado. Aguarde a conexão ou escaneie o QR Code.'
+      };
     }
 
     const result = await this.queue.add(async () => {
@@ -146,14 +163,21 @@ export class FilaService implements OnModuleInit, OnModuleDestroy {
         const sendResult = await this.socket!.sendMessage(jid, { text: message });
         
         this.logger.log(`Mensagem enviada com sucesso para ${jid}`);
-        return sendResult || null;
+        return {
+          success: true,
+          messageId: sendResult?.key?.id,
+          timestamp: Date.now()
+        };
       } catch (error: any) {
         this.logger.error(`Erro ao enviar mensagem para ${to}: ${error?.message || 'Unknown error'}`, error?.stack);
-        throw error;
+        return {
+          success: false,
+          error: error?.message || 'Unknown error'
+        };
       }
     });
 
-    return result || null;
+    return result as WhatsAppSendResult;
   }
 
   /**

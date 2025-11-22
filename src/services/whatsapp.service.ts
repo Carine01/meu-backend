@@ -2,6 +2,7 @@ import { Injectable, Logger, HttpException, HttpStatus } from '@nestjs/common';
 import { FilaService } from './fila.service';
 import { SendWhatsAppDto } from '../dto/send-whatsapp.dto';
 import { WhatsAppMessage } from '../entities/whatsapp-message.entity';
+import { v4 as uuidv4 } from 'uuid';
 
 /**
  * WhatsAppService - Lógica de negócio para envio de mensagens WhatsApp
@@ -15,7 +16,9 @@ import { WhatsAppMessage } from '../entities/whatsapp-message.entity';
 @Injectable()
 export class WhatsAppService {
   private readonly logger = new Logger(WhatsAppService.name);
-  private messageStore: WhatsAppMessage[] = []; // Simulação de DB (substituir por DB real)
+  // WARNING: In-memory storage - will lose data on restart
+  // TODO: Implement proper DB repository with TypeORM for production use
+  private messageStore: WhatsAppMessage[] = [];
 
   constructor(private readonly filaService: FilaService) {}
 
@@ -129,9 +132,9 @@ export class WhatsAppService {
   }
 
   /**
-   * Gera ID único para mensagem (substituir por UUID em produção)
+   * Gera ID único para mensagem usando UUID v4
    */
   private generateId(): string {
-    return `msg-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    return uuidv4();
   }
 }
