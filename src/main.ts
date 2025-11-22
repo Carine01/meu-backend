@@ -2,6 +2,9 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { Logger, ValidationPipe } from '@nestjs/common';
 import { Logger as PinoLogger } from 'nestjs-pino';
+import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
+import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
 import helmet from 'helmet';
 
 async function bootstrap() {
@@ -11,6 +14,12 @@ async function bootstrap() {
 
   // Logger estruturado
   app.useLogger(app.get(PinoLogger));
+
+  // GLOBAL: Exception filter para respostas de erro padronizadas
+  app.useGlobalFilters(new AllExceptionsFilter());
+
+  // GLOBAL: Logging interceptor para monitoramento de requisições
+  app.useGlobalInterceptors(new LoggingInterceptor());
 
   // SEGURANÇA: Helmet - protege contra vulnerabilidades conhecidas
   app.use(helmet());
@@ -35,6 +44,20 @@ async function bootstrap() {
     }),
   );
 
+  // API Documentation (Swagger)
+  const config = new DocumentBuilder()
+    .setTitle('Elevare Atendimento API')
+    .setDescription('API Backend para sistema de atendimento e gestão de leads')
+    .setVersion('1.0')
+    .addTag('leads', 'Gestão de leads e contatos')
+    .addTag('health', 'Verificação de saúde da aplicação')
+    .addTag('firestore', 'Operações no Firestore')
+    .addBearerAuth()
+    .build();
+  
+  const document = SwaggerModule.createDocument(app, config);
+  SwaggerModule.setup('api/docs', app, document);
+
   // Graceful shutdown
   const logger = app.get(PinoLogger);
   app.enableShutdownHooks();
@@ -48,6 +71,7 @@ async function bootstrap() {
   await app.listen(port, '0.0.0.0');
   
   logger.log(`🚀 Application is running on: http://0.0.0.0:${port}`);
+  logger.log(`📚 API Documentation: http://0.0.0.0:${port}/api/docs`);
   logger.log(`🔒 Security: Helmet, CORS, ValidationPipe ativados`);
 }
 
