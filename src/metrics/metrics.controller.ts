@@ -4,7 +4,7 @@ import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 @ApiTags('metrics')
 @Controller('metrics')
 export class MetricsController {
-  private startTime = Date.now();
+  private readonly startTime = Date.now();
 
   @Get()
   @ApiOperation({ 

@@ -12,6 +12,7 @@ import { Request, Response } from 'express';
 @Injectable()
 export class LoggingInterceptor implements NestInterceptor {
   private readonly logger = new Logger('HTTP');
+  private readonly sensitiveFields = ['password', 'token', 'secret', 'apiKey', 'authorization', 'accessToken', 'refreshToken'];
 
   intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
     const ctx = context.switchToHttp();
@@ -52,12 +53,24 @@ export class LoggingInterceptor implements NestInterceptor {
   }
 
   private sanitizeBody(body: any): any {
-    const sensitiveFields = ['password', 'token', 'secret', 'apiKey', 'authorization'];
-    const sanitized = { ...body };
+    if (!body || typeof body !== 'object') {
+      return body;
+    }
 
-    for (const field of sensitiveFields) {
-      if (sanitized[field]) {
-        sanitized[field] = '***REDACTED***';
+    // Handle arrays
+    if (Array.isArray(body)) {
+      return body.map(item => this.sanitizeBody(item));
+    }
+
+    // Handle objects (recursively)
+    const sanitized: any = {};
+    for (const [key, value] of Object.entries(body)) {
+      if (this.sensitiveFields.includes(key.toLowerCase())) {
+        sanitized[key] = '***REDACTED***';
+      } else if (typeof value === 'object' && value !== null) {
+        sanitized[key] = this.sanitizeBody(value);
+      } else {
+        sanitized[key] = value;
       }
     }
 
