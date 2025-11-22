@@ -93,7 +93,7 @@ export class WhatsAppService {
    * Envia mensagem com retry automático
    */
   async sendWithRetry(to: string, message: string, maxRetries = 3): Promise<SendMessageResult> {
-    let lastError: Error;
+    let lastError: Error | undefined;
 
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
       try {

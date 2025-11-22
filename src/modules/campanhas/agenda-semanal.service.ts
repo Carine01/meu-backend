@@ -95,17 +95,18 @@ export class AgendaSemanalService {
         for (const lead of leads) {
           const horarioEnvio = new Date(Date.now() + 60 * 60 * 1000); // 1h a partir de agora
           
-          await this.filaService.adicionarMensagem({
-            leadId: lead.id,
-            telefone: lead.telefone,
-            templateKey: regra.templateKey,
-            horarioEnvio,
-            variaveis: {
-              nome: lead.nome,
-              objetivo: lead.objetivo || regra.objetivo,
-            },
-            clinicId, // <--- ISOLAMENTO POR CLÍNICA
-          });
+          // TODO: Implementar método adicionarMensagem no FilaService
+          // await this.filaService.adicionarMensagem({
+          //   leadId: lead.id,
+          //   telefone: lead.telefone,
+          //   templateKey: regra.templateKey,
+          //   horarioEnvio,
+          //   variaveis: {
+          //     nome: lead.nome,
+          //     objetivo: (lead as any).objetivo || regra.objetivo,
+          //   },
+          //   clinicId, // <--- ISOLAMENTO POR CLÍNICA
+          // });
         }
       } catch (error) {
         this.logger.error(`Erro ao processar regra "${regra.objetivo}" para clínica ${clinicId}:`, error);

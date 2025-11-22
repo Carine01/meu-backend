@@ -1,5 +1,5 @@
 // src/lib/tenant.ts
-import { SelectQueryBuilder } from 'typeorm';
+import { SelectQueryBuilder, ObjectLiteral } from 'typeorm';
 
 /**
  * Aplica filtro de clinicId em QueryBuilder TypeORM
@@ -14,7 +14,7 @@ import { SelectQueryBuilder } from 'typeorm';
  * applyClinicIdFilter(qb, 'clinic-123');
  * const results = await qb.getMany();
  */
-export function applyClinicIdFilter<T>(
+export function applyClinicIdFilter<T extends ObjectLiteral>(
   qb: SelectQueryBuilder<T>,
   clinicId: string,
   column = 'clinicId'

@@ -130,7 +130,7 @@ export class FilaService {
           destinatario: leadNome,
           telefone: leadTelefone,
           clinicId,
-          scheduledFor: itemFila.scheduledFor.toISOString(),
+          scheduledFor: itemFila.scheduledFor?.toISOString() || new Date().toISOString(),
           status: itemFila.status,
         },
       );
