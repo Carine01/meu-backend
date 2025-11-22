@@ -3,6 +3,7 @@ import { AppModule } from './app.module';
 import { Logger, ValidationPipe } from '@nestjs/common';
 import { Logger as PinoLogger } from 'nestjs-pino';
 import helmet from 'helmet';
+import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, {
@@ -35,6 +36,19 @@ async function bootstrap() {
     }),
   );
 
+  // Swagger/OpenAPI Documentation
+  const config = new DocumentBuilder()
+    .setTitle('Elevare Atendimento API')
+    .setDescription('API backend para gestão de leads e atendimento')
+    .setVersion('1.0')
+    .addTag('leads', 'Endpoints de gestão de leads')
+    .addTag('health', 'Endpoints de health check')
+    .addTag('metrics', 'Endpoints de métricas e estatísticas')
+    .addBearerAuth()
+    .build();
+  const document = SwaggerModule.createDocument(app, config);
+  SwaggerModule.setup('api/docs', app, document);
+
   // Graceful shutdown
   const logger = app.get(PinoLogger);
   app.enableShutdownHooks();
@@ -48,6 +62,7 @@ async function bootstrap() {
   await app.listen(port, '0.0.0.0');
   
   logger.log(`🚀 Application is running on: http://0.0.0.0:${port}`);
+  logger.log(`📚 API Documentation available at: http://0.0.0.0:${port}/api/docs`);
   logger.log(`🔒 Security: Helmet, CORS, ValidationPipe ativados`);
 }
 

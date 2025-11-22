@@ -3,8 +3,9 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { LoggerModule } from 'nestjs-pino';
 import { HttpModule } from '@nestjs/axios';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
-import { APP_GUARD } from '@nestjs/core';
+import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { LeadsModule } from './leads/leads.module';
+import { MetricsModule } from './metrics/metrics.module';
 import { TestController } from './test/test.controller';
 import { AuthTestController } from './auth-test.controller';
 import { FirestoreController } from './firestore/firestore.controller';
@@ -13,6 +14,7 @@ import { validationSchema } from './config/config.schema';
 import { HealthController } from './health/health.controller';
 import { FirebaseAuthService } from './firebase-auth.service';
 import { FirebaseAuthGuard } from './firebase-auth.guard';
+import { RequestIdInterceptor } from './common/interceptors/request-id.interceptor';
 // Importe seus outros módulos aqui (LeadsModule, FlowModule, etc.)
 
 @Module({
@@ -55,6 +57,7 @@ import { FirebaseAuthGuard } from './firebase-auth.guard';
     
     // Outros módulos do seu aplicativo
     LeadsModule,
+    MetricsModule,
     HttpModule,
     // FlowModule,
     // ...
@@ -68,6 +71,11 @@ import { FirebaseAuthGuard } from './firebase-auth.guard';
     {
       provide: APP_GUARD,
       useClass: ThrottlerGuard,
+    },
+    // Request ID tracking global
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: RequestIdInterceptor,
     },
   ],
 })
