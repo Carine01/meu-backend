@@ -8,6 +8,9 @@ on:
 jobs:
   e2e-tests:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      actions: write  # For uploading artifacts
     
     services:
       postgres:

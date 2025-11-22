@@ -12,6 +12,8 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     
     # Only run if secrets are configured
     if: github.repository == 'Carine01/meu-backend' && github.event_name == 'push'

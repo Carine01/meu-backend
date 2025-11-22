@@ -8,6 +8,8 @@ on:
 jobs:
   monitor:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     
     # Only run if API URL is configured
     if: github.repository == 'Carine01/meu-backend'
