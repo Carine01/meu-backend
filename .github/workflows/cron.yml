@@ -1,0 +1,55 @@
+name: Scheduled Tasks
+
+on:
+  schedule:
+    # Run every day at 3 AM UTC
+    - cron: '0 3 * * *'
+  workflow_dispatch: # Permite execução manual
+
+jobs:
+  scheduled-tasks:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+      
+      - name: Cache node modules
+        uses: actions/cache@v4
+        with:
+          path: ~/.npm
+          key: npm-${{ runner.os }}-${{ hashFiles('**/package-lock.json') }}
+      
+      - name: Install dependencies
+        run: |
+          if npm ci --no-audit --prefer-offline --progress=false; then
+            echo "npm ci succeeded"
+          else
+            echo "npm ci failed - falling back to npm install"
+            npm install --no-audit --progress=false
+          fi
+      
+      - name: Run scheduled maintenance tasks
+        run: |
+          echo "Running scheduled maintenance tasks..."
+          # Add your scheduled task commands here
+          # Example: npm run cleanup-old-data
+          # Example: npm run send-daily-reports
+          echo "Scheduled tasks completed"
+      
+      - name: Upload logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cron-logs-${{ github.run_number }}
+          path: |
+            logs/
+            *.log
+          retention-days: 30
+          if-no-files-found: ignore
