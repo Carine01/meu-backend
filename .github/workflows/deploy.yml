@@ -46,10 +46,12 @@ jobs:
       
       - name: Set up Cloud SDK
         uses: google-github-actions/setup-gcloud@v2
+        with:
+          project_id: ${{ env.PROJECT_ID }}
       
       - name: Configure Docker to use gcloud as credential helper
         run: |
-          gcloud auth configure-docker $REGION-docker.pkg.dev
+          gcloud auth configure-docker ${REGION}-docker.pkg.dev
       
       - name: Build Docker image
         run: |
@@ -76,13 +78,13 @@ jobs:
       - name: Setup Firebase Secret in Secret Manager
         run: |
           # Cria/atualiza o secret no GCP Secret Manager
-          echo '${{ secrets.GCP_SA_KEY }}' | gcloud secrets create firebase-sa-key \
-            --data-file=- \
-            --replication-policy="automatic" \
-            --project=$PROJECT_ID 2>/dev/null || \
-          echo '${{ secrets.GCP_SA_KEY }}' | gcloud secrets versions add firebase-sa-key \
-            --data-file=- \
-            --project=$PROJECT_ID
+          if ! gcloud secrets describe firebase-sa-key --project=$PROJECT_ID >/dev/null 2>&1; then
+            echo "Creating secret"
+            echo "${{ secrets.GCP_SA_KEY }}" | gcloud secrets create firebase-sa-key --data-file=- --replication-policy="automatic" --project=$PROJECT_ID
+          else
+            echo "Adding new secret version"
+            echo "${{ secrets.GCP_SA_KEY }}" | gcloud secrets versions add firebase-sa-key --data-file=- --project=$PROJECT_ID
+          fi
       
       - name: Deploy to Cloud Run
         run: |
@@ -97,4 +99,5 @@ jobs:
             --timeout 300 \
             --max-instances 10 \
             --set-env-vars "NODE_ENV=production" \
-            --set-secrets "FIREBASE_SERVICE_ACCOUNT_JSON=firebase-sa-key:latest"
+            --set-secrets "FIREBASE_SERVICE_ACCOUNT_JSON=firebase-sa-key:latest" \
+            --project $PROJECT_ID

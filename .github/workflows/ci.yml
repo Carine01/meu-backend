@@ -2,7 +2,7 @@ name: CI
 
 on:
   push:
-    branches: [main]
+    branches: [main, develop, 'feat/*']
   pull_request:
     branches: [main]
 
@@ -15,7 +15,23 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 18
+          cache: 'npm'
+      - name: Cache node modules
+        uses: actions/cache@v4
+        with:
+          path: ~/.npm
+          key: npm-${{ runner.os }}-${{ hashFiles('**/package-lock.json') }}
+      - name: Node and npm versions
+        run: node -v && npm -v
       - name: Install dependencies
-        run: npm install
+        run: |
+          if npm ci --no-audit --prefer-offline --progress=false; then
+            echo "npm ci succeeded"
+          else
+            echo "npm ci failed - falling back to npm install"
+            npm install --no-audit --progress=false
+          fi
       - name: Run tests
+        env:
+          CI: true
         run: npm run test
