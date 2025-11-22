@@ -10,8 +10,20 @@ Este backend agora inclui funcionalidades profissionais de nível enterprise:
 - ✅ **Validação Automática** - DTOs com validação robusta
 - 🛡️ **Respostas Padronizadas** - Erros consistentes e informativos
 - 📝 **Logging Avançado** - Rastreamento completo de requisições
+- 🤖 **CI/CD Automático** - Deploy, testes e monitoramento automatizados
 
 📖 **Leia mais**: [NOVAS_FUNCIONALIDADES.md](./NOVAS_FUNCIONALIDADES.md)
+
+## 🤖 Automação GitHub Actions
+
+Este projeto possui 3 workflows automatizados:
+
+1. **🚀 Deploy Automático** - Deploy no servidor via SSH quando fizer push na `main`
+2. **✅ Testes e Build** - Impede merge de PRs se testes falharem
+3. **🩺 Monitoramento WhatsApp** - Verifica conexão a cada 30 minutos e envia alertas
+
+📘 **Configuração**: [GITHUB_ACTIONS_SETUP.md](./GITHUB_ACTIONS_SETUP.md)  
+🔐 **Secrets**: [SECRETS_REFERENCE.md](./SECRETS_REFERENCE.md)
 
 ## Como rodar localmente
 1. Instale as dependências:

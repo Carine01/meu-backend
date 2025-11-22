@@ -1,0 +1,25 @@
+# Nome do arquivo: .github/workflows/health-check.yml
+name: 🩺 Monitoramento WhatsApp
+
+on:
+  schedule:
+    - cron: '*/30 * * * *'  # A cada 30 minutos
+  workflow_dispatch:  # Botão manual
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: 📱 Verificar conexão WhatsApp
+        run: |
+          STATUS=$(curl -s https://suaapi.com/whatsapp/status | jq -r '.connected')
+          if [ "$STATUS" != "true" ]; then
+            echo "::error::WhatsApp desconectado!"
+            # Me avise no Telegram/Discord
+            curl -X POST "${{ secrets.ALERT_WEBHOOK }}" \
+              -H "Content-Type: application/json" \
+              -d '{"text":"🚨 WhatsApp desconectado!"}'
+            exit 1
+          fi
+          echo "✅ WhatsApp conectado com sucesso"
