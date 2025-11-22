@@ -1,12 +1,21 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { HttpModule } from '@nestjs/axios';
 import { WhatsAppService } from './whatsapp.service';
 import { WhatsAppController } from './whatsapp.controller';
 import { BaileysProvider } from './baileys.provider';
 import { WhatsAppOfficialProvider } from './whatsapp-official.provider';
+import { WhatsAppMessage } from '../../entities/whatsapp-message.entity';
+import { FilaModule } from '../fila/fila.module';
 
 @Module({
-  imports: [ConfigModule],
+  imports: [
+    ConfigModule,
+    TypeOrmModule.forFeature([WhatsAppMessage]),
+    HttpModule,
+    FilaModule,
+  ],
   controllers: [WhatsAppController],
   providers: [
     WhatsAppService,
