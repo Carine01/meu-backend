@@ -8,6 +8,7 @@ export class PaymentsService {
   constructor(@InjectRepository(Order) private repo: Repository<Order>) {}
 
   async listOrdersForClinic(clinicId: string) {
+    if (!clinicId) throw new Error('clinicId é obrigatório');
     return this.repo.find({ where: { clinicId }, order: { createdAt: 'DESC' }});
   }
 }

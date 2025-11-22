@@ -12,6 +12,7 @@ export class EventosService {
   ) {}
 
   async listByClinic(clinicId: string) {
+    if (!clinicId) throw new Error('clinicId é obrigatório');
     const qb = this.repo.createQueryBuilder('e').orderBy('e.createdAt', 'DESC');
     applyClinicIdFilter(qb as SelectQueryBuilder<Evento>, clinicId);
     return qb.getMany();

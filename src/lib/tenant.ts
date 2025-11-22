@@ -19,6 +19,9 @@ export function applyClinicIdFilter<T extends ObjectLiteral>(
   clinicId: string,
   column = 'clinicId'
 ): SelectQueryBuilder<T> {
+  if (!clinicId || clinicId.trim() === '') {
+    throw new Error('clinicId é obrigatório e não pode ser vazio');
+  }
   const alias = qb.expressionMap.mainAlias!.name;
   return qb.andWhere(`${alias}.${column} = :clinicId`, { clinicId });
 }

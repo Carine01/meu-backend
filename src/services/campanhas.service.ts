@@ -11,6 +11,7 @@ export class CampanhasService {
   ) {}
 
   async findActiveForClinic(clinicId: string) {
+    if (!clinicId) throw new Error('clinicId é obrigatório');
     return this.repo.find({ where: { active: true, clinicId }, order: { createdAt: 'DESC' }});
   }
 }

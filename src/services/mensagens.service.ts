@@ -13,6 +13,7 @@ export class MensagensService {
 
   // retorna mensagens apenas do clinicId informado
   async findAllForClinic(clinicId: string) {
+    if (!clinicId) throw new Error('clinicId é obrigatório');
     const qb = this.repo.createQueryBuilder('m').orderBy('m.createdAt', 'DESC');
     applyClinicIdFilter(qb as SelectQueryBuilder<Mensagem>, clinicId);
     return qb.getMany();
