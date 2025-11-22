@@ -3,14 +3,7 @@ import { HttpService } from '@nestjs/axios';
 import { firstValueFrom, catchError, retryWhen, scan, mergeMap, tap, throwError, timer } from 'rxjs';
 import { AxiosError } from 'axios';
 import { IARA_CONFIG_TOKEN, IaraConfig } from '../leads/iara-config.interface'; // Caminho ajustado
-
-// DTOs (Data Transfer Objects) para tipagem
-interface LeadDto {
-  nome: string;
-  phone: string;
-  clinicId?: string;
-  origem?: string;
-}
+import { CreateLeadDto } from './dto/create-lead.dto';
 
 interface IaraResponse {
   ok: boolean;
@@ -58,7 +51,7 @@ export class LeadsService {
     );
   }
 
-  async enviarLeadParaSupabase(lead: LeadDto): Promise<IaraResponse> {
+  async enviarLeadParaSupabase(lead: CreateLeadDto): Promise<IaraResponse> {
     const { edgeUrl, secret, defaultClinic, defaultOrigem } = this.iaraConfig;
 
     const payload = {
@@ -119,7 +112,7 @@ export class LeadsService {
     return [];
   }
 
-  create(leadDto: LeadDto) {
+  create(leadDto: CreateLeadDto) {
     this.logger.log(`Criando lead (simulado): ${leadDto.nome}`);
     return { id: 1, ...leadDto };
   }
