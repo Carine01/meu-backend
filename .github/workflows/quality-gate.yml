@@ -1,0 +1,122 @@
+name: 🚧 Quality Gate
+
+on:
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Fetch all history for comparison
+      
+      - name: 📏 Check PR size
+        run: |
+          echo "📊 Analyzing PR size..."
+          
+          # Get base branch
+          BASE_BRANCH="${{ github.base_ref }}"
+          
+          # Fetch base branch
+          git fetch origin "$BASE_BRANCH"
+          
+          # Count changed files
+          FILES_CHANGED=$(git diff --name-only "origin/$BASE_BRANCH"...HEAD | wc -l)
+          
+          echo "Files changed: $FILES_CHANGED"
+          
+          if [ "$FILES_CHANGED" -gt 15 ]; then
+            echo "❌ PR too large! Maximum: 15 files, found: $FILES_CHANGED"
+            echo "💡 Consider splitting this PR into smaller, focused changes"
+            exit 1
+          fi
+          
+          echo "✅ PR size acceptable"
+      
+      - name: 📝 Check commit messages
+        run: |
+          echo "📝 Checking commit message format..."
+          
+          BASE_BRANCH="${{ github.base_ref }}"
+          
+          # Get commit messages in this PR
+          COMMITS=$(git log "origin/$BASE_BRANCH"..HEAD --pretty=format:"%s")
+          
+          echo "Commits in this PR:"
+          echo "$COMMITS"
+          
+          # Check if commits follow conventional commit format
+          VALID_COMMITS=$(echo "$COMMITS" | grep -E "^(feat|fix|docs|style|refactor|test|chore|ci|perf|build)(\(.+\))?: .+" | wc -l)
+          TOTAL_COMMITS=$(echo "$COMMITS" | wc -l)
+          
+          echo "Valid commits: $VALID_COMMITS / $TOTAL_COMMITS"
+          
+          if [ "$VALID_COMMITS" -lt "$TOTAL_COMMITS" ]; then
+            echo "⚠️ Warning: Some commits don't follow conventional commit format"
+            echo "💡 Use prefixes: feat:, fix:, docs:, test:, ci:, refactor:, etc."
+            echo ""
+            echo "Invalid commits:"
+            echo "$COMMITS" | grep -v -E "^(feat|fix|docs|style|refactor|test|chore|ci|perf|build)(\(.+\))?: .+" || true
+          else
+            echo "✅ All commits follow conventional format"
+          fi
+      
+      - name: ⚠️ Check for console.log
+        run: |
+          echo "🔍 Checking for console.log statements..."
+          
+          # Search for console.log in src/ directory (excluding test files)
+          LOGS=$(grep -r "console\.log" src/ --exclude="*.spec.ts" --exclude="*.test.ts" 2>/dev/null || true)
+          
+          if [ ! -z "$LOGS" ]; then
+            echo "❌ Found console.log statements!"
+            echo "$LOGS"
+            echo ""
+            echo "💡 Please remove console.log or replace with proper logging (Logger service)"
+            exit 1
+          fi
+          
+          echo "✅ No console.log found"
+      
+      - name: 🔍 Check for TODO comments
+        run: |
+          echo "🔍 Checking for TODO comments..."
+          
+          BASE_BRANCH="${{ github.base_ref }}"
+          
+          # Get files changed in this PR
+          CHANGED_FILES=$(git diff --name-only "origin/$BASE_BRANCH"...HEAD)
+          
+          # Check for TODOs in changed files
+          TODOS=0
+          for file in $CHANGED_FILES; do
+            if [ -f "$file" ]; then
+              FILE_TODOS=$(grep -c "TODO\|FIXME\|XXX" "$file" 2>/dev/null || echo "0")
+              TODOS=$((TODOS + FILE_TODOS))
+            fi
+          done
+          
+          if [ "$TODOS" -gt 0 ]; then
+            echo "⚠️ Found $TODOS TODO/FIXME/XXX comments in changed files"
+            echo "💡 Consider addressing these before merging or create issues for them"
+            for file in $CHANGED_FILES; do
+              if [ -f "$file" ]; then
+                grep -n "TODO\|FIXME\|XXX" "$file" 2>/dev/null || true
+              fi
+            done
+          else
+            echo "✅ No TODO comments in changed files"
+          fi
+      
+      - name: 📊 Quality Gate Summary
+        if: success()
+        run: |
+          echo "✅ All quality checks passed!"
+          echo "📊 Quality Gate Summary:"
+          echo "  ✓ PR size is reasonable"
+          echo "  ✓ No console.log statements"
+          echo "  ✓ Commit messages reviewed"

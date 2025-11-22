@@ -1,0 +1,66 @@
+name: 📱 WhatsApp Monitor
+
+on:
+  schedule:
+    - cron: '*/10 * * * *'  # Every 10 minutes
+  workflow_dispatch: # Manual trigger
+
+jobs:
+  monitor:
+    runs-on: ubuntu-latest
+    
+    # Only run if API URL is configured
+    if: github.repository == 'Carine01/meu-backend'
+    
+    steps:
+      - name: 📊 Check WhatsApp status
+        id: check_status
+        run: |
+          API_URL="${{ secrets.API_URL || 'https://sua-api.com' }}"
+          
+          echo "🔍 Checking WhatsApp status at $API_URL/whatsapp/status"
+          
+          # Try to get status (with timeout)
+          RESPONSE=$(curl -s --max-time 10 "$API_URL/whatsapp/status" || echo '{"connected":false}')
+          
+          echo "Response: $RESPONSE"
+          
+          # Extract connected status
+          CONNECTED=$(echo "$RESPONSE" | jq -r '.connected // false' 2>/dev/null || echo "false")
+          
+          echo "connected=$CONNECTED" >> $GITHUB_OUTPUT
+          
+          if [ "$CONNECTED" != "true" ]; then
+            echo "🚨 WhatsApp is disconnected!"
+            exit 1
+          fi
+          
+          echo "✅ WhatsApp is connected"
+      
+      - name: 🔔 Send Discord alert
+        if: failure() && secrets.DISCORD_WEBHOOK != ''
+        run: |
+          curl -X POST "${{ secrets.DISCORD_WEBHOOK }}" \
+            -H "Content-Type: application/json" \
+            -d "{\"content\":\"@here 🚨 WhatsApp desconectado! Verificação necessária.\",\"username\":\"WhatsApp Monitor\"}"
+      
+      - name: 📊 Send Slack alert
+        if: failure() && secrets.SLACK_WEBHOOK != ''
+        run: |
+          curl -X POST "${{ secrets.SLACK_WEBHOOK }}" \
+            -H "Content-Type: application/json" \
+            -d "{\"text\":\"🚨 WhatsApp Monitor Alert: Connection lost! Please check the service.\"}"
+      
+      - name: ℹ️ Monitor status
+        if: success()
+        run: |
+          echo "✅ WhatsApp connection is healthy"
+          
+      - name: ℹ️ Configuration info
+        if: always() && secrets.API_URL == ''
+        run: |
+          echo "⚠️ WhatsApp monitoring is using default URL"
+          echo "ℹ️ To monitor your production API, configure these secrets:"
+          echo "  - API_URL (required): Your API base URL"
+          echo "  - DISCORD_WEBHOOK (optional): For Discord alerts"
+          echo "  - SLACK_WEBHOOK (optional): For Slack alerts"

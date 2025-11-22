@@ -1,0 +1,68 @@
+name: 🔒 Security Audit
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  security-check:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+      
+      - name: 🔍 Check for queries without clinicId filter
+        run: |
+          echo "🔍 Searching for vulnerable database queries..."
+          
+          # Search for find() or findOne() without where clause in modules
+          VULNERABLE=$(grep -r "\.find()\|\.findOne()" src/modules/ 2>/dev/null | grep -v "where" | wc -l || echo "0")
+          
+          if [ "$VULNERABLE" -gt 0 ]; then
+            echo "🚨 $VULNERABLE potentially vulnerable methods found!"
+            echo "Methods without where clause (may be missing clinicId filter):"
+            grep -r "\.find()\|\.findOne()" src/modules/ 2>/dev/null | grep -v "where" || true
+            exit 1
+          fi
+          
+          echo "✅ No obvious query vulnerabilities detected"
+      
+      - name: 🔐 Check for unprotected endpoints
+        run: |
+          echo "🔍 Checking for endpoints without guards..."
+          
+          # Look for HTTP decorators (@Get, @Post, @Delete, @Put, @Patch) that may lack @UseGuards
+          # This is a basic check - it counts decorator occurrences
+          DECORATORS=$(grep -r "@Get(\|@Post(\|@Delete(\|@Put(\|@Patch(" src/modules/ 2>/dev/null | wc -l || echo "0")
+          GUARDS=$(grep -r "@UseGuards(" src/modules/ 2>/dev/null | wc -l || echo "0")
+          
+          echo "📊 Found $DECORATORS HTTP endpoints"
+          echo "📊 Found $GUARDS @UseGuards decorators"
+          
+          # Warning if there are endpoints but few guards (not a hard failure)
+          if [ "$DECORATORS" -gt 0 ] && [ "$GUARDS" -eq 0 ]; then
+            echo "⚠️ Warning: Found HTTP endpoints but no @UseGuards decorators"
+            echo "⚠️ Please ensure all endpoints have proper authentication"
+          fi
+          
+          echo "✅ Security check completed"
+      
+      - name: 🔍 Check for hardcoded secrets
+        run: |
+          echo "🔍 Checking for potential hardcoded secrets..."
+          
+          # Check for common secret patterns (excluding test files)
+          SECRETS=$(grep -r -i "password.*=.*['\"].\{8,\}['\"]" src/ 2>/dev/null | grep -v test | grep -v spec | wc -l || echo "0")
+          API_KEYS=$(grep -r "api[_-]key.*=.*['\"].\{10,\}['\"]" src/ 2>/dev/null | grep -v test | grep -v spec | wc -l || echo "0")
+          
+          if [ "$SECRETS" -gt 0 ] || [ "$API_KEYS" -gt 0 ]; then
+            echo "🚨 Potential hardcoded secrets detected!"
+            echo "Secrets found: $SECRETS"
+            echo "API keys found: $API_KEYS"
+            exit 1
+          fi
+          
+          echo "✅ No hardcoded secrets detected"

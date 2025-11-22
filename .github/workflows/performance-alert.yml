@@ -1,0 +1,99 @@
+name: ⚡ Performance Alert
+
+on:
+  workflow_dispatch: # Manual trigger
+  schedule:
+    - cron: '0 */6 * * *'  # Every 6 hours
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  perf-check:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+      
+      - name: 🔍 Analyze TypeORM queries
+        run: |
+          echo "🔍 Analyzing database queries for performance issues..."
+          
+          # Check for queries without proper filtering
+          echo "1️⃣ Checking for queries without limits..."
+          UNLIMITED_QUERIES=$(grep -r "\.find(\|\.findMany(" src/ --include="*.ts" | grep -v "take:\|skip:\|limit:" | wc -l)
+          
+          if [ "$UNLIMITED_QUERIES" -gt 5 ]; then
+            echo "⚠️ Found $UNLIMITED_QUERIES queries without pagination/limits"
+            echo "💡 Consider adding 'take' or 'skip' parameters to prevent loading too much data"
+            echo ""
+            echo "Queries without limits:"
+            grep -r "\.find(\|\.findMany(" src/ --include="*.ts" | grep -v "take:\|skip:\|limit:" | head -10
+          fi
+          
+          echo ""
+          echo "2️⃣ Checking for N+1 query patterns..."
+          # Look for loops with database queries inside
+          LOOP_QUERIES=$(grep -A 5 "for.*of\|forEach" src/ --include="*.ts" | grep -c "\.find\|\.findOne\|\.save\|\.update" || echo "0")
+          
+          if [ "$LOOP_QUERIES" -gt 0 ]; then
+            echo "⚠️ Potential N+1 query patterns detected: $LOOP_QUERIES"
+            echo "💡 Consider using batch operations or eager loading with relations"
+          fi
+          
+          echo ""
+          echo "3️⃣ Checking for missing eager/lazy loading configuration..."
+          FIND_WITHOUT_RELATIONS=$(grep -r "\.findOne(\|\.find(" src/modules/ --include="*.ts" | grep -v "relations:" | wc -l)
+          
+          if [ "$FIND_WITHOUT_RELATIONS" -gt 10 ]; then
+            echo "ℹ️ Found $FIND_WITHOUT_RELATIONS queries without explicit relations"
+            echo "💡 Consider explicitly specifying relations to avoid unexpected queries"
+          fi
+          
+          echo ""
+          echo "✅ Performance analysis complete"
+      
+      - name: 🔍 Check for slow patterns
+        run: |
+          echo "🔍 Checking for known slow patterns..."
+          
+          # Check for synchronous operations that could be async
+          SYNC_OPS=$(grep -r "readFileSync\|writeFileSync" src/ --include="*.ts" | wc -l)
+          
+          if [ "$SYNC_OPS" -gt 0 ]; then
+            echo "⚠️ Found $SYNC_OPS synchronous file operations"
+            echo "💡 Consider using async alternatives (readFile, writeFile)"
+            grep -r "readFileSync\|writeFileSync" src/ --include="*.ts"
+          fi
+          
+          # Check for missing indexes hints (comments suggesting indexes)
+          echo ""
+          echo "ℹ️ Checking for index hints in entity files..."
+          ENTITY_FILES=$(find src/ -name "*.entity.ts" -o -name "*.model.ts" | wc -l)
+          INDEX_DECORATORS=$(grep -r "@Index(" src/ --include="*.entity.ts" --include="*.model.ts" | wc -l)
+          
+          echo "📊 Found $ENTITY_FILES entity files"
+          echo "📊 Found $INDEX_DECORATORS @Index decorators"
+          
+          if [ "$ENTITY_FILES" -gt 0 ] && [ "$INDEX_DECORATORS" -eq 0 ]; then
+            echo "⚠️ No database indexes defined"
+            echo "💡 Consider adding @Index() decorators to frequently queried fields"
+          fi
+          
+          echo ""
+          echo "✅ Pattern check complete"
+      
+      - name: 📊 Performance Summary
+        if: always()
+        run: |
+          echo "📊 Performance Analysis Summary"
+          echo "================================"
+          echo ""
+          echo "✅ Analysis completed successfully"
+          echo ""
+          echo "💡 Tips for better performance:"
+          echo "  - Use pagination (take/skip) for large datasets"
+          echo "  - Avoid N+1 queries with eager loading or batch operations"
+          echo "  - Add indexes to frequently queried fields"
+          echo "  - Use async operations for I/O tasks"
+          echo "  - Monitor query execution times in production"
