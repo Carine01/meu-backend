@@ -68,6 +68,9 @@ export class LeadsService {
       timestamp: new Date().toISOString(),
     };
 
+    // Log multitenancy
+    this.logger.log(`[clinicId: ${payload.clinicId}] Processando lead: ${lead.nome}`);
+
     // Remove propriedades vazias/nulas
     Object.keys(payload).forEach((k) => {
       const key = k as keyof typeof payload;
@@ -114,13 +117,27 @@ export class LeadsService {
     }
   }
 
-  findAll() {
-    this.logger.log('Buscando todos os leads (simulado)');
+  findAll(clinicId?: string) {
+    const logMsg = clinicId 
+      ? `[clinicId: ${clinicId}] Buscando leads` 
+      : 'Buscando todos os leads (simulado)';
+    this.logger.log(logMsg);
     return [];
   }
 
   create(leadDto: LeadDto) {
-    this.logger.log(`Criando lead (simulado): ${leadDto.nome}`);
+    const clinicId = leadDto.clinicId || 'default';
+    this.logger.log(`[clinicId: ${clinicId}] Criando lead: ${leadDto.nome}`);
     return { id: 1, ...leadDto };
+  }
+
+  /**
+   * Busca leads por clinicId (scaffolding para multitenancy)
+   * Em produção, conectar com banco de dados real
+   */
+  async findByClinicId(clinicId: string): Promise<any[]> {
+    this.logger.log(`[clinicId: ${clinicId}] Filtrando leads por clínica`);
+    // TODO: Implementar query ao banco de dados com filtro WHERE clinicId = ?
+    return [];
   }
 }
