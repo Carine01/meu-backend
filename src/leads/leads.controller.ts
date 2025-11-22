@@ -1,12 +1,6 @@
 import { Controller, Post, Body, HttpException, HttpStatus } from '@nestjs/common';
 import { LeadsService } from './leads.service';
-
-interface CreateLeadDto {
-  nome: string;
-  phone: string;
-  clinicId?: string;
-  origem?: string;
-}
+import { CreateLeadDto } from './dto/create-lead.dto';
 
 @Controller('leads')
 export class LeadsController {
