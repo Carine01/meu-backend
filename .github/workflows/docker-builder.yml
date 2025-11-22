@@ -13,6 +13,10 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    
+    permissions:
+      contents: read
+      packages: write  # Required for pushing to GHCR
 
     steps:
       - name: Checkout Repo

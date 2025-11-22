@@ -10,6 +10,10 @@ jobs:
   scheduled-tasks:
     runs-on: ubuntu-latest
     
+    permissions:
+      contents: read
+      actions: write  # For uploading artifacts
+    
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
