@@ -1,4 +1,4 @@
-import { IsString, IsNotEmpty, IsOptional, IsPhoneNumber } from 'class-validator';
+import { IsString, IsNotEmpty, IsOptional } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class CreateLeadDto {
@@ -11,7 +11,7 @@ export class CreateLeadDto {
   nome!: string;
 
   @ApiProperty({
-    description: 'Telefone do lead (formato brasileiro)',
+    description: 'Telefone do lead',
     example: '+5511999999999',
   })
   @IsString()

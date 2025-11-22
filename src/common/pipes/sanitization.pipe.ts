@@ -18,12 +18,24 @@ export class SanitizationPipe implements PipeTransform {
     // Remove potential XSS patterns
     let sanitized = str.trim();
     
-    // Remove HTML tags
-    sanitized = sanitized.replace(/<[^>]*>/g, '');
+    // Remove HTML tags - use more robust approach
+    // Repeatedly remove tags until none are left
+    let prevLength;
+    do {
+      prevLength = sanitized.length;
+      sanitized = sanitized.replace(/<[^>]*>/g, '');
+    } while (sanitized.length < prevLength);
     
-    // Remove script-like patterns
+    // Remove dangerous protocols - check for all variants
     sanitized = sanitized.replace(/javascript:/gi, '');
-    sanitized = sanitized.replace(/on\w+\s*=/gi, '');
+    sanitized = sanitized.replace(/data:/gi, '');
+    sanitized = sanitized.replace(/vbscript:/gi, '');
+    
+    // Remove event handlers - use multiple passes for complete removal
+    do {
+      prevLength = sanitized.length;
+      sanitized = sanitized.replace(/\bon\w+\s*=/gi, '');
+    } while (sanitized.length < prevLength);
     
     // Normalize whitespace
     sanitized = sanitized.replace(/\s+/g, ' ');
@@ -38,7 +50,7 @@ export class SanitizationPipe implements PipeTransform {
     
     const sanitized: any = {};
     for (const key in obj) {
-      if (obj.hasOwnProperty(key)) {
+      if (Object.prototype.hasOwnProperty.call(obj, key)) {
         sanitized[key] = this.transform(obj[key], {} as ArgumentMetadata);
       }
     }

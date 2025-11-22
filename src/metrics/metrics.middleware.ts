@@ -12,15 +12,11 @@ export class MetricsMiddleware implements NestMiddleware {
       return next();
     }
 
-    const metricsService = this.metricsService;
-    const originalSend = res.send;
-    
-    res.send = function (this: Response, data: any) {
-      // Record the request when response is sent
+    // Use response finish event instead of modifying res.send
+    res.on('finish', () => {
       const success = res.statusCode >= 200 && res.statusCode < 400;
-      metricsService.recordRequest(success);
-      return originalSend.call(this, data);
-    };
+      this.metricsService.recordRequest(success);
+    });
 
     next();
   }

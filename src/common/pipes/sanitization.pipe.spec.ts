@@ -23,6 +23,18 @@ describe('SanitizationPipe', () => {
     expect(result).toBe('alert("XSS")');
   });
 
+  it('should remove data: protocol', () => {
+    const input = 'data:text/html,<script>alert("XSS")</script>';
+    const result = pipe.transform(input, {} as any);
+    expect(result).toBe('text/html,alert("XSS")');
+  });
+
+  it('should remove vbscript: protocol', () => {
+    const input = 'vbscript:msgbox("XSS")';
+    const result = pipe.transform(input, {} as any);
+    expect(result).toBe('msgbox("XSS")');
+  });
+
   it('should remove event handlers', () => {
     const input = 'onclick=malicious()';
     const result = pipe.transform(input, {} as any);
@@ -46,9 +58,9 @@ describe('SanitizationPipe', () => {
   });
 
   it('should sanitize arrays', () => {
-    const input = ['<b>test</b>', '  data  ', 'javascript:void(0)'];
+    const input = ['<b>test</b>', '  data  ', 'javascript:void(0)', 'data:text/html'];
     const result = pipe.transform(input, {} as any);
-    expect(result).toEqual(['test', 'data', 'void(0)']);
+    expect(result).toEqual(['test', 'data', 'void(0)', 'text/html']);
   });
 
   it('should handle non-string, non-object values', () => {
