@@ -28,12 +28,18 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Set image name (lowercase)
+        run: |
+          # Ensure repository owner/name are lowercase to satisfy docker tag rules
+          REPO_LOWER=$(echo "$GITHUB_REPOSITORY" | tr '[:upper:]' '[:lower:]')
+          echo "IMAGE_NAME=ghcr.io/${REPO_LOWER}/elevare-backend:latest" >> $GITHUB_ENV
+
       - name: Build Image
         uses: docker/build-push-action@v5
         with:
           context: .
           push: true
-          tags: ghcr.io/${{ github.repository }}/elevare-backend:latest
+          tags: ${{ env.IMAGE_NAME }}
 
       - name: Show Image Info
-        run: docker image inspect ghcr.io/${{ github.repository }}/elevare-backend:latest
+        run: docker image inspect ${{ env.IMAGE_NAME }}
