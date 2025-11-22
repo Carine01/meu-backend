@@ -32,12 +32,11 @@ import { FirebaseAuthGuard } from './firebase-auth.guard';
     LoggerModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
-      useFactory: async (config: ConfigService) => ({
-        pinoHttp: {
-          transport:
-            config.get('NODE_ENV') !== 'production'
-              ? { target: 'pino-pretty' }
-              : undefined,
+      useFactory: async (config: ConfigService) => {
+        const usePretty = config.get('NODE_ENV') !== 'production' && !process.env.CI;
+        return {
+          pinoHttp: {
+            transport: usePretty ? { target: 'pino-pretty' } : undefined,
           
           level: config.get('LOG_LEVEL') || 'info',
           
@@ -50,7 +49,8 @@ import { FirebaseAuthGuard } from './firebase-auth.guard';
             ignore: (req) => req.url === '/health',
           },
         },
-      }),
+      };
+      },
     }),
     
     // Outros módulos do seu aplicativo
