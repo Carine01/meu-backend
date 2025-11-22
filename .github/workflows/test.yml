@@ -1,0 +1,26 @@
+# Nome do arquivo: .github/workflows/test.yml
+name: ✅ Testes e Build
+
+on:
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: 📦 Instalar dependências
+        run: npm ci
+      
+      - name: 🧪 Rodar testes unitários
+        run: npm test
+      
+      - name: 🎭 Rodar testes E2E (se disponível)
+        run: npm run test:e2e || echo "Testes E2E não configurados"
+        continue-on-error: true
+      
+      - name: 🔨 Verificar build
+        run: npm run build

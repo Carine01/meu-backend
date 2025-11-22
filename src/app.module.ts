@@ -11,6 +11,7 @@ import { FirestoreController } from './firestore/firestore.controller';
 import { FirestoreService } from './firestore/firestore.service';
 import { validationSchema } from './config/config.schema';
 import { HealthController } from './health/health.controller';
+import { MetricsController } from './metrics/metrics.controller';
 import { FirebaseAuthService } from './firebase-auth.service';
 import { FirebaseAuthGuard } from './firebase-auth.guard';
 // Importe seus outros módulos aqui (LeadsModule, FlowModule, etc.)
@@ -59,7 +60,7 @@ import { FirebaseAuthGuard } from './firebase-auth.guard';
     // FlowModule,
     // ...
   ],
-  controllers: [HealthController, TestController, AuthTestController, FirestoreController],
+  controllers: [HealthController, MetricsController, TestController, AuthTestController, FirestoreController],
   providers: [
     FirebaseAuthService, 
     FirebaseAuthGuard, 
