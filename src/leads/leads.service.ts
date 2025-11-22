@@ -109,9 +109,50 @@ export class LeadsService {
       this.logger.log(`Lead enviado com sucesso para Supabase/IARA: ${JSON.stringify(response.data)}`);
       return { ok: true, id: response.data.id };
 
-    } catch (error) {
+    } catch (error: any) {
       throw error;
     }
+  }
+
+  /**
+   * Retorna origem do lead ou null se não existir
+   * Evita erros de "Cannot read property 'origem' of undefined"
+   */
+  getOrigem(lead: any): string | null {
+    if (!lead || typeof lead !== 'object') {
+      return null;
+    }
+    return lead.origem || null;
+  }
+
+  /**
+   * Valida se lead tem dados mínimos necessários
+   * @param lead Lead para validar
+   * @returns true se lead é válido
+   */
+  isValidLead(lead: any): boolean {
+    return (
+      lead &&
+      typeof lead === 'object' &&
+      typeof lead.nome === 'string' &&
+      lead.nome.trim().length >= 3 &&
+      typeof lead.phone === 'string' &&
+      lead.phone.replace(/\D/g, '').length >= 10
+    );
+  }
+
+  /**
+   * Sanitiza dados do lead removendo espaços e aplicando valores padrão
+   * @param lead Lead para sanitizar
+   * @returns Lead sanitizado
+   */
+  sanitizeLead(lead: LeadDto): LeadDto {
+    return {
+      nome: lead.nome?.trim() || '',
+      phone: lead.phone?.trim().replace(/\D/g, '') || '',
+      clinicId: lead.clinicId?.trim() || this.iaraConfig.defaultClinic,
+      origem: lead.origem?.trim() || this.iaraConfig.defaultOrigem,
+    };
   }
 
   findAll() {
@@ -124,3 +165,4 @@ export class LeadsService {
     return { id: 1, ...leadDto };
   }
 }
+

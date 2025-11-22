@@ -3,6 +3,7 @@ import { AppModule } from './app.module';
 import { Logger, ValidationPipe } from '@nestjs/common';
 import { Logger as PinoLogger } from 'nestjs-pino';
 import helmet from 'helmet';
+import { CorrelationInterceptor } from './shared/logger';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, {
@@ -11,6 +12,9 @@ async function bootstrap() {
 
   // Logger estruturado
   app.useLogger(app.get(PinoLogger));
+
+  // Correlation ID para rastreamento de requisições
+  app.useGlobalInterceptors(new CorrelationInterceptor());
 
   // SEGURANÇA: Helmet - protege contra vulnerabilidades conhecidas
   app.use(helmet());
@@ -55,3 +59,4 @@ bootstrap().catch((error) => {
   console.error('❌ Erro fatal na inicialização:', error);
   process.exit(1);
 });
+

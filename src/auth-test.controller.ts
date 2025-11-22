@@ -10,3 +10,4 @@ export class AuthTestController {
     return { firebaseUser: req.user };
   }
 }
+

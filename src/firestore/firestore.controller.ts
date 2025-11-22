@@ -32,3 +32,4 @@ export class FirestoreController {
     return this.fs.remove(collection, id);
   }
 }
+

@@ -16,3 +16,4 @@ export class FirebaseAuthGuard implements CanActivate {
     return true;
   }
 }
+

@@ -5,5 +5,22 @@ module.exports = {
   rootDir: 'src',
   testRegex: '.*\\.spec\\.ts$',
   coverageDirectory: '../coverage',
-  collectCoverageFrom: ['**/*.(t|j)s'],
+  collectCoverageFrom: [
+    '**/*.(t|j)s',
+    '!**/*.spec.ts',
+    '!**/*.d.ts',
+    '!**/index.ts',
+    '!main.ts',
+    '!**/*.interface.ts',
+    '!**/migrations/**',
+    '!**/scripts/**',
+  ],
+  coverageThreshold: {
+    global: {
+      branches: 75,
+      functions: 80,
+      lines: 82,
+      statements: 82,
+    },
+  },
 };

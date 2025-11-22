@@ -1,0 +1,42 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+  external_labels:
+    cluster: 'elevare-iara'
+    environment: 'production'
+
+# Alertmanager configuration (opcional)
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets: []
+          # - 'alertmanager:9093'
+
+# Rules files (carregar regras de alertas)
+rule_files:
+  # - 'prometheus_alerts.yaml'
+
+# Scrape configurations
+scrape_configs:
+  # Backend NestJS - Prometheus metrics
+  - job_name: 'backend'
+    static_configs:
+      - targets: ['backend:3000']
+    metrics_path: '/bi/metrics'
+    scrape_interval: 30s
+    scrape_timeout: 10s
+
+  # Prometheus self-monitoring
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+
+  # PostgreSQL metrics (se Postgres exporter estiver configurado)
+  # - job_name: 'postgres'
+  #   static_configs:
+  #     - targets: ['postgres-exporter:9187']
+
+  # Node exporter (métricas de sistema, se configurado)
+  # - job_name: 'node'
+  #   static_configs:
+  #     - targets: ['node-exporter:9100']

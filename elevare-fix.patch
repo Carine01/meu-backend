@@ -1,0 +1,379 @@
+*** Begin Patch
+*** Add File: relatorio-final.ps1
++Set-StrictMode -Version Latest
++[Console]::OutputEncoding = [System.Text.Encoding]::UTF8
++
++Function ExitOnError($code, $msg) {
++    Write-Host "ERROR: $msg" -ForegroundColor Red
++    Exit $code
++}
++
++Try {
++    $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Definition
++    Set-Location $scriptDir
++} Catch {
++    ExitOnError 1 "Não foi possível determinar o diretório do script."
++}
++
++# Carregar env se existir
++$envFile = Join-Path $scriptDir ".env.local.ps1"
++If (Test-Path $envFile) {
++    Write-Host "Carregando variáveis de ambiente de $envFile"
++    . $envFile
++}
++
++Write-Host "1) Instalando dependências..."
++npm ci --silent
++if ($LASTEXITCODE -ne 0) { ExitOnError 11 "npm ci falhou (código $LASTEXITCODE)" }
++
++Write-Host "2) Rodando build TypeScript..."
++npm run build --silent
++if ($LASTEXITCODE -ne 0) { ExitOnError 12 "build falhou (código $LASTEXITCODE)" }
++
++Write-Host "3) Executando lint..."
++if (Get-Command "npm" -ErrorAction SilentlyContinue) {
++    npm run lint --silent
++    if ($LASTEXITCODE -ne 0) { Write-Host "Aviso: lint retornou não zero" -ForegroundColor Yellow }
++}
++
++Write-Host "4) Executando testes CI..."
++npm run test:ci --silent
++if ($LASTEXITCODE -ne 0) { ExitOnError 13 "test:ci falhou (código $LASTEXITCODE)" }
++
++Write-Host "Relatório final concluído com sucesso." -ForegroundColor Green
++Exit 0
++
+*** End Patch
+*** Begin Patch
+*** Add File: src/services/indicacoes.service.spec.ts
++import { Test, TestingModule } from '@nestjs/testing';
++import { IndicacoesService } from './indicacoes.service';
++import { getRepositoryToken } from '@nestjs/typeorm';
++import { Indicacao } from '@/entities/indicacao.entity';
++import { Repository } from 'typeorm';
++
++type MockRepository<T = any> = Partial<Record<keyof Repository<T>, jest.Mock>>;
++
++const createMockRepository = <T = any>(): MockRepository<T> => ({
++  find: jest.fn(),
++  findOne: jest.fn(),
++  save: jest.fn(),
++  delete: jest.fn(),
++});
++
++describe('IndicacoesService', () => {
++  let service: IndicacoesService;
++  let repo: MockRepository;
++
++  beforeEach(async () => {
++    const module: TestingModule = await Test.createTestingModule({
++      providers: [
++        IndicacoesService,
++        {
++          provide: getRepositoryToken(Indicacao),
++          useValue: createMockRepository(),
++        },
++      ],
++    }).compile();
++
++    service = module.get<IndicacoesService>(IndicacoesService);
++    repo = module.get<MockRepository>(getRepositoryToken(Indicacao));
++  });
++
++  it('should be defined', () => {
++    expect(service).toBeDefined();
++  });
++
++  it('deve retornar lista de indicações', async () => {
++    const fake = [{ id: 1, nome: 'A' }];
++    repo.find!.mockResolvedValue(fake);
++    const result = await service.findAll();
++    expect(result).toEqual(fake);
++    expect(repo.find).toHaveBeenCalled();
++  });
++
++  it('deve criar indicacao', async () => {
++    const dto = { nome: 'Novo' };
++    const saved = { id: 2, ...dto };
++    repo.save!.mockResolvedValue(saved);
++    const res = await service.create(dto);
++    expect(res).toEqual(saved);
++    expect(repo.save).toHaveBeenCalledWith(dto);
++  });
++});
++
+*** End Patch
+*** Begin Patch
+*** Add File: src/lib/logger.ts
++import pino from 'pino';
++
++const isProd = process.env.NODE_ENV === 'production';
++
++const baseLogger = pino({
++  level: process.env.LOG_LEVEL || (isProd ? 'info' : 'debug'),
++  transport: !isProd
++    ? {
++        target: 'pino-pretty',
++        options: { ignore: 'pid,hostname', translateTime: 'SYS:yyyy-mm-dd HH:MM:ss.l o' },
++      }
++    : undefined,
++  timestamp: pino.stdTimeFunctions.isoTime,
++});
++
++export function getLogger(serviceName: string, correlationId?: string) {
++  const bindings: Record<string, any> = { service: serviceName };
++  if (correlationId) bindings.correlationId = correlationId;
++  return baseLogger.child(bindings);
++}
++
+*** End Patch
+*** Begin Patch
+*** Add File: src/middleware/correlation.middleware.ts
++import { Request, Response, NextFunction } from 'express';
++import { v4 as uuidv4 } from 'uuid';
++import { getLogger } from '@/lib/logger';
++
++export function correlationMiddleware(req: Request & { logger?: any; correlationId?: string }, res: Response, next: NextFunction) {
++  const id = (req.headers['x-request-id'] as string) || uuidv4();
++  req.correlationId = id;
++  req.logger = getLogger('http', id);
++  res.setHeader('x-request-id', id);
++  next();
++}
++
+*** End Patch
+*** Begin Patch
+*** Add File: src/services/cron.service.ts
++import cron from 'node-cron';
++import pRetry from 'p-retry';
++import { getLogger } from '@/lib/logger';
++
++type TaskFn = () => Promise<void>;
++
++interface CronTask {
++  name: string;
++  schedule: string;
++  task: TaskFn;
++  retry?: { retries: number; factor?: number };
++}
++
++const tasks: CronTask[] = [];
++const baseLogger = getLogger('cron');
++
++export function registerCronTask(t: CronTask) {
++  tasks.push(t);
++  baseLogger.info({ task: t.name, schedule: t.schedule }, 'cron task registered');
++}
++
++export function startCron() {
++  tasks.forEach((t) => {
++    cron.schedule(
++      t.schedule,
++      async () => {
++        const correlationId = `cron-${t.name}-${Date.now()}`;
++        const logger = getLogger('cron', correlationId);
++        logger.info({ name: t.name }, 'cron triggered');
++
++        const runner = async () => {
++          try {
++            await t.task();
++            logger.info({ name: t.name }, 'cron success');
++          } catch (err) {
++            logger.error({ err: (err as Error).message || err, name: t.name }, 'cron task error');
++            throw err;
++          }
++        };
++
++        try {
++          await pRetry(runner, {
++            onFailedAttempt: (error) => {
++              logger.warn({ attempts: error.attemptNumber, retriesLeft: error.retriesLeft }, 'retrying cron task');
++            },
++            retries: t.retry?.retries ?? 2,
++            factor: t.retry?.factor ?? 2,
++          });
++        } catch (finalErr) {
++          logger.error({ err: (finalErr as Error).message || finalErr }, 'cron failed after retries');
++          // opcional: integração com Sentry/Alert
++        }
++      },
++      { timezone: process.env.TZ || 'America/Sao_Paulo' }
++    );
++    baseLogger.debug({ task: t.name }, 'cron scheduled');
++  });
++}
++
+*** End Patch
+*** Begin Patch
+*** Add File: src/services/mensagens.service.spec.ts
++import { Test, TestingModule } from '@nestjs/testing';
++import { MensagensService } from './mensagens.service';
++import { getRepositoryToken } from '@nestjs/typeorm';
++import { Mensagem } from '@/entities/mensagem.entity';
++
++const mockRepo = () => ({ find: jest.fn(), save: jest.fn() });
++
++describe('MensagensService', () => {
++  let service: MensagensService;
++  let repo;
++
++  beforeEach(async () => {
++    const module: TestingModule = await Test.createTestingModule({
++      providers: [
++        MensagensService,
++        { provide: getRepositoryToken(Mensagem), useValue: mockRepo() },
++      ],
++    }).compile();
++    service = module.get(MensagensService);
++    repo = module.get(getRepositoryToken(Mensagem));
++  });
++
++  it('deve enviar mensagem (mock)', async () => {
++    repo.save.mockResolvedValue({ id: 1, texto: 'ok' });
++    const res = await service.send({ texto: 'ok' });
++    expect(res).toHaveProperty('id');
++  });
++});
++
+*** End Patch
+*** Begin Patch
+*** Add File: src/services/campanhas.service.spec.ts
++import { Test, TestingModule } from '@nestjs/testing';
++import { CampanhasService } from './campanhas.service';
++import { getRepositoryToken } from '@nestjs/typeorm';
++import { Campanha } from '@/entities/campanha.entity';
++
++const repo = () => ({ findOne: jest.fn(), save: jest.fn() });
++
++describe('CampanhasService', () => {
++  let service: CampanhasService;
++  let r;
++
++  beforeEach(async () => {
++    const module: TestingModule = await Test.createTestingModule({
++      providers: [
++        CampanhasService,
++        { provide: getRepositoryToken(Campanha), useValue: repo() },
++      ],
++    }).compile();
++    service = module.get(CampanhasService);
++    r = module.get(getRepositoryToken(Campanha));
++  });
++
++  it('cria campanha', async () => {
++    r.save.mockResolvedValue({ id: 1 });
++    const res = await service.create({ titulo: 'X' });
++    expect(res).toEqual({ id: 1 });
++  });
++});
++
+*** End Patch
+*** Begin Patch
+*** Add File: src/services/eventos.service.spec.ts
++import { Test, TestingModule } from '@nestjs/testing';
++import { EventosService } from './eventos.service';
++import { getRepositoryToken } from '@nestjs/typeorm';
++import { Evento } from '@/entities/evento.entity';
++
++const mock = () => ({ find: jest.fn(), save: jest.fn() });
++
++describe('EventosService', () => {
++  let service: EventosService;
++  let repo;
++
++  beforeEach(async () => {
++    const module = await Test.createTestingModule({
++      providers: [
++        EventosService,
++        { provide: getRepositoryToken(Evento), useValue: mock() },
++      ],
++    }).compile();
++    service = module.get(EventosService);
++    repo = module.get(getRepositoryToken(Evento));
++  });
++
++  it('lista eventos', async () => {
++    repo.find.mockResolvedValue([{ id: 1 }]);
++    expect(await service.findAll()).toEqual([{ id: 1 }]);
++  });
++});
++
+*** End Patch
+*** Begin Patch
+*** Add File: src/services/auth.service.spec.ts
++import { Test } from '@nestjs/testing';
++import { AuthService } from './auth.service';
++import { UsersService } from './users.service';
++
++const userMock = { findOneByEmail: jest.fn() };
++
++describe('AuthService', () => {
++  let auth: AuthService;
++  beforeEach(async () => {
++    const module = await Test.createTestingModule({
++      providers: [
++        AuthService,
++        { provide: UsersService, useValue: userMock },
++      ],
++    }).compile();
++    auth = module.get(AuthService);
++  });
++
++  it('validar credenciais', async () => {
++    userMock.findOneByEmail.mockResolvedValue({ id: 1, password: 'hash' });
++    jest.spyOn(auth as any, 'comparePassword').mockResolvedValue(true);
++    const res = await auth.validateUser('a@b', 'secret');
++    expect(res).toBeDefined();
++  });
++});
++
+*** End Patch
+*** Begin Patch
+*** Add File: src/services/bi.service.spec.ts
++import { Test } from '@nestjs/testing';
++import { BiService } from './bi.service';
++
++describe('BiService', () => {
++  let service: BiService;
++  beforeEach(async () => {
++    const module = await Test.createTestingModule({
++      providers: [BiService],
++    }).compile();
++    service = module.get(BiService);
++  });
++
++  it('gera metrics', async () => {
++    const res = await service.summary();
++    expect(res).toHaveProperty('total');
++  });
++});
++
+*** End Patch
+*** Begin Patch
+*** Add File: src/services/bloqueios.service.spec.ts
++import { Test } from '@nestjs/testing';
++import { BloqueiosService } from './bloqueios.service';
++import { getRepositoryToken } from '@nestjs/typeorm';
++import { Bloqueio } from '@/entities/bloqueio.entity';
++
++const r = () => ({ save: jest.fn(), find: jest.fn() });
++
++describe('BloqueiosService', () => {
++  let service: BloqueiosService;
++  beforeEach(async () => {
++    const module = await Test.createTestingModule({
++      providers: [
++        BloqueiosService,
++        { provide: getRepositoryToken(Bloqueio), useValue: r() },
++      ],
++    }).compile();
++    service = module.get(BloqueiosService);
++  });
++
++  it('cria bloqueio', async () => {
++    const res = await service.create({ motivo: 'spam' });
++    expect(res).toBeDefined();
++  });
++});
++
+*** End Patch
