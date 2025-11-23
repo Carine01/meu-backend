@@ -23,5 +23,16 @@ jobs:
 
     - name: Apagar branches já mergidas
       run: |
+        git config user.name "github-actions[bot]"
+        git config user.email "github-actions[bot]@users.noreply.github.com"
         git fetch --prune
-        git branch -r --merged | grep -v "main" | grep -v "HEAD" | sed 's/origin\///' | xargs -r -n 1 git push origin --delete || true
+        # Lista branches remotas mescladas, excluindo main e HEAD
+        MERGED_BRANCHES=$(git branch -r --merged | grep -v "main" | grep -v "HEAD" | sed 's/origin\///' | xargs)
+        if [ -n "$MERGED_BRANCHES" ]; then
+          for branch in $MERGED_BRANCHES; do
+            echo "Deletando branch: $branch"
+            git push origin --delete "$branch" || echo "Falha ao deletar $branch"
+          done
+        else
+          echo "Nenhuma branch mesclada para deletar"
+        fi
