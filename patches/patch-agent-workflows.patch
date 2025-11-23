@@ -1,0 +1,10 @@
+*** Begin Patch
+*** Update File: .github/workflows/ci.yml
+@@
+-      - name: Run tests
+-        run: npm run test
++      - name: Run tests
++        run: npm run test
++      - name: Run build
++        run: npm run build
+*** End Patch
