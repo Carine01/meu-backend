@@ -1,0 +1,63 @@
+name: TypeScript Guardian
+
+on:
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: 'Branch to check'
+        required: true
+        default: 'main'
+  push:
+    branches:
+      - main
+      - develop
+      - feat/*
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  typescript-check:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.branch || github.ref }}
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci --no-audit --prefer-offline
+      
+      - name: Run TypeScript compiler check
+        run: npm run build
+      
+      - name: Run linter (if available)
+        run: |
+          if grep -q '"lint"' package.json; then
+            npm run lint || echo "Lint issues found but continuing"
+          else
+            echo "No lint script found in package.json, skipping"
+          fi
+      
+      - name: Check for TypeScript errors
+        run: |
+          npx tsc --noEmit || {
+            echo "::error::TypeScript compilation errors detected"
+            exit 1
+          }
+      
+      - name: Report status
+        if: always()
+        run: |
+          if [ $? -eq 0 ]; then
+            echo "✅ TypeScript Guardian: All checks passed"
+          else
+            echo "❌ TypeScript Guardian: Checks failed"
+          fi

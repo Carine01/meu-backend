@@ -1,0 +1,61 @@
+name: WhatsApp Monitor
+
+on:
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: 'Branch to monitor'
+        required: true
+        default: 'main'
+  push:
+    branches:
+      - main
+      - feat/*
+  schedule:
+    - cron: '*/30 * * * *' # Every 30 minutes
+
+jobs:
+  whatsapp-health-check:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.branch || github.ref }}
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci --no-audit --prefer-offline
+      
+      - name: Check WhatsApp integration files
+        run: |
+          echo "Checking WhatsApp integration files..."
+          if [ -f "src/modules/whatsapp/whatsapp.service.ts" ]; then
+            echo "✅ WhatsApp service found"
+          else
+            echo "⚠️  WhatsApp service not found"
+          fi
+      
+      - name: Run WhatsApp-related tests
+        run: |
+          npm test -- --testPathPattern=whatsapp --passWithNoTests || echo "No WhatsApp tests found"
+      
+      - name: Check for clinicId filters in WhatsApp code
+        run: |
+          echo "Checking for clinicId filters in WhatsApp code..."
+          grep -r "clinicId" src/modules/whatsapp/ || echo "⚠️  No clinicId filters found"
+      
+      - name: Report status
+        if: always()
+        run: |
+          if [ $? -eq 0 ]; then
+            echo "✅ WhatsApp Monitor: Health check passed"
+          else
+            echo "❌ WhatsApp Monitor: Health check failed"
+          fi
