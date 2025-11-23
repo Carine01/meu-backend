@@ -1,7 +1,11 @@
-## Checklist para Pull Requests
+## Descrição
+<!-- O que foi feito? -->
 
+## Checklist
+- [ ] Tests adicionados
+- [ ] Docs atualizados
+- [ ] Build passou
 - [ ] O código foi testado localmente
 - [ ] Os testes automatizados passaram
 - [ ] O código segue o padrão do projeto
-- [ ] Documentação atualizada (se necessário)
 - [ ] Não inclui dados sensíveis ou segredos

@@ -1,0 +1,6 @@
+# donos por área
+# IMPORTANTE: Substitua os placeholders abaixo pelos usernames reais do GitHub
+# ou referências de times (e.g., @org/team-name)
+/src/modules/whatsapp/ @seu-dev-whatsapp
+/src/modules/agendamentos/ @seu-dev-agendamentos
+/docs/ @seu-time-docs
