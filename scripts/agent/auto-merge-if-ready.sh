@@ -43,7 +43,7 @@ fi
 echo "✅ PR has $APPROVALS approval(s)"
 
 # Check if all status checks passed
-CHECKS_STATE=$(gh pr view "$PR_NUMBER" --json statusCheckRollup --jq '.statusCheckRollup[] | select(.status != "COMPLETED" or .conclusion != "SUCCESS")' 2>/dev/null)
+CHECKS_STATE=$(gh pr view "$PR_NUMBER" --json statusCheckRollup --jq '.statusCheckRollup[] | select((.status // "unknown") != "COMPLETED" or (.conclusion // "unknown") != "SUCCESS")' 2>/dev/null)
 
 if [ -n "$CHECKS_STATE" ]; then
   echo "❌ Not all checks have passed"

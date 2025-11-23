@@ -23,7 +23,7 @@ if [ ! -f "typedoc.json" ]; then
   echo "Creating typedoc.json configuration..."
   cat > typedoc.json << 'EOF'
 {
-  "entryPoints": ["src/main.ts"],
+  "entryPoints": ["src"],
   "entryPointStrategy": "expand",
   "out": "docs",
   "exclude": [

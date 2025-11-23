@@ -49,10 +49,11 @@ jobs:
         run: |
           echo "🧪 Running smoke tests..."
           
-          # Start container for testing
+          # Start container for testing (localhost only for security)
           docker run -d --name test-container \
-            -p 3000:3000 \
+            -p 127.0.0.1:3000:3000 \
             -e NODE_ENV=test \
+            --user node \
             ${{ env.IMAGE_NAME }}
           
           # Wait for container to be ready
@@ -64,7 +65,7 @@ jobs:
             echo "✅ Container is running"
             
             # Test health endpoint if available
-            if curl -f http://localhost:3000/health 2>/dev/null; then
+            if curl -f --max-time 10 http://localhost:3000/health 2>/dev/null; then
               echo "✅ Health endpoint responding"
             else
               echo "⚠️  Health endpoint not available"

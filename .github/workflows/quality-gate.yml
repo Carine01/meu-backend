@@ -28,7 +28,8 @@ jobs:
         id: console-check
         run: |
           echo "🔍 Checking for console.log statements..."
-          CONSOLE_LOGS=$(git diff origin/main...HEAD -- '*.ts' '*.js' | grep -E '^\+.*console\.(log|debug|info|warn|error)' | grep -v '//' || true)
+          # Exclude both line comments (//) and block comments (/* */)
+          CONSOLE_LOGS=$(git diff origin/main...HEAD -- '*.ts' '*.js' | grep -E '^\+.*console\.(log|debug|info|warn|error)' | grep -v '//' | grep -v '/\*' | grep -v '\*/' || true)
           
           if [ -n "$CONSOLE_LOGS" ]; then
             echo "found=true" >> $GITHUB_OUTPUT

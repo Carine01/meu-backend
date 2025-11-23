@@ -22,7 +22,7 @@ jobs:
         run: |
           if [ -n "${{ secrets.WHATSAPP_HEALTH_URL }}" ]; then
             echo "🔍 Checking WhatsApp health..."
-            RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" "${{ secrets.WHATSAPP_HEALTH_URL }}" || echo "000")
+            RESPONSE=$(curl --max-time 30 -s -o /dev/null -w "%{http_code}" "${{ secrets.WHATSAPP_HEALTH_URL }}" || echo "000")
             
             if [ "$RESPONSE" = "200" ]; then
               echo "status=healthy" >> $GITHUB_OUTPUT
