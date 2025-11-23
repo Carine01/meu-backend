@@ -421,11 +421,13 @@ elevare_leads_por_stage{stage="frio"} ${metrics.percentualFrio}
    * Retorna análise de funil de conversão
    * Útil para identificar gargalos no processo
    */
-  async getAnaliseFunil(): Promise<{
+  async getAnaliseFunil(clinicId?: string): Promise<{
     etapas: Array<{ etapa: string; quantidade: number; percentual: number }>;
     taxaConversaoGeral: number;
   }> {
-    const metrics = await this.getDashboardMetrics();
+    const metrics = clinicId 
+      ? await this.getReportForClinic(clinicId) 
+      : await this.getDashboardMetrics();
 
     const etapas = [
       {
@@ -457,9 +459,17 @@ elevare_leads_por_stage{stage="frio"} ${metrics.percentualFrio}
    * Retorna top etiquetas mais comuns
    * Útil para campanhas segmentadas
    */
-  async getTopEtiquetas(limit: number = 10): Promise<Array<{ etiqueta: string; count: number }>> {
+  async getTopEtiquetas(limit: number = 10, clinicId?: string): Promise<Array<{ etiqueta: string; count: number }>> {
     try {
-      const leadsSnapshot = await this.firestore.collection('leads').get();
+      let query = this.firestore.collection('leads');
+      
+      // Apply clinicId filter if provided
+      if (clinicId) {
+        validateClinicId(clinicId);
+        query = query.where('clinicId', '==', clinicId) as any;
+      }
+      
+      const leadsSnapshot = await query.get();
 
       const etiquetasMap: Record<string, number> = {};
 
@@ -490,13 +500,23 @@ elevare_leads_por_stage{stage="frio"} ${metrics.percentualFrio}
    * Retorna estatísticas de performance por origem
    * Qual canal traz leads com melhor conversão?
    */
-  async getPerformancePorOrigem(): Promise<
+  async getPerformancePorOrigem(clinicId?: string): Promise<
     Array<{ origem: string; leads: number; agendamentos: number; taxaConversao: number }>
   > {
     try {
+      let leadsQuery = this.firestore.collection('leads');
+      let agendamentosQuery = this.firestore.collection('agendamentos');
+      
+      // Apply clinicId filter if provided
+      if (clinicId) {
+        validateClinicId(clinicId);
+        leadsQuery = leadsQuery.where('clinicId', '==', clinicId) as any;
+        agendamentosQuery = agendamentosQuery.where('clinicId', '==', clinicId) as any;
+      }
+      
       const [leadsSnapshot, agendamentosSnapshot] = await Promise.all([
-        this.firestore.collection('leads').get(),
-        this.firestore.collection('agendamentos').get(),
+        leadsQuery.get(),
+        agendamentosQuery.get(),
       ]);
 
       const origemStats: Record<string, { leads: number; agendamentos: Set<string> }> = {};

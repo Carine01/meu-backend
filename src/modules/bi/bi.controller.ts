@@ -1,4 +1,4 @@
-import { Controller, Get, Header, UseGuards, Query } from '@nestjs/common';
+import { Controller, Get, Header, UseGuards, Query, Req } from '@nestjs/common';
 import { BiService } from './bi.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 
@@ -20,6 +20,7 @@ export class BiController {
   /**
    * Dashboard completo com métricas 30d/7d/hoje
    * Requer autenticação JWT
+   * Filtra por clinicId do usuário autenticado
    * 
    * @example
    * GET /bi/dashboard
@@ -35,8 +36,9 @@ export class BiController {
    * }
    */
   @Get('dashboard')
-  async getDashboard() {
-    return this.biService.getDashboardMetrics();
+  async getDashboard(@Req() req: any) {
+    const clinicId = req.user?.clinicId || 'ELEVARE_MAIN';
+    return this.biService.getReportForClinic(clinicId);
   }
 
   /**
@@ -70,6 +72,7 @@ export class BiController {
   /**
    * Análise de funil de conversão
    * Identifica gargalos no processo
+   * Filtra por clinicId do usuário autenticado
    * 
    * @example
    * GET /bi/funil
@@ -85,13 +88,15 @@ export class BiController {
    * }
    */
   @Get('funil')
-  async getFunil() {
-    return this.biService.getAnaliseFunil();
+  async getFunil(@Req() req: any) {
+    const clinicId = req.user?.clinicId || 'ELEVARE_MAIN';
+    return this.biService.getAnaliseFunil(clinicId);
   }
 
   /**
    * Top etiquetas mais comuns
    * Útil para segmentação de campanhas
+   * Filtra por clinicId do usuário autenticado
    * 
    * @param limit - Quantidade de etiquetas (padrão: 10)
    * 
@@ -107,13 +112,15 @@ export class BiController {
    * ]
    */
   @Get('etiquetas')
-  async getTopEtiquetas(@Query('limit') limit?: string) {
+  async getTopEtiquetas(@Query('limit') limit?: string, @Req() req: any) {
     const limitNum = limit ? parseInt(limit, 10) : 10;
-    return this.biService.getTopEtiquetas(limitNum);
+    const clinicId = req.user?.clinicId || 'ELEVARE_MAIN';
+    return this.biService.getTopEtiquetas(limitNum, clinicId);
   }
 
   /**
    * Performance por origem (qual canal converte melhor?)
+   * Filtra por clinicId do usuário autenticado
    * 
    * @example
    * GET /bi/origens
@@ -127,8 +134,9 @@ export class BiController {
    * ]
    */
   @Get('origens')
-  async getPerformancePorOrigem() {
-    return this.biService.getPerformancePorOrigem();
+  async getPerformancePorOrigem(@Req() req: any) {
+    const clinicId = req.user?.clinicId || 'ELEVARE_MAIN';
+    return this.biService.getPerformancePorOrigem(clinicId);
   }
 }
 

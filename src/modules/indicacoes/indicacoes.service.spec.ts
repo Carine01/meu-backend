@@ -74,7 +74,7 @@ describe('IndicacoesService', () => {
         historicoIndicacoes: ['ind123'],
       });
 
-      const result = await service.registrarIndicacao('lead123', {
+      const result = await service.registrarIndicacao('lead123', 'elevare-01', {
         nome: 'Maria Silva',
         telefone: '+5511999999999',
       });
@@ -116,7 +116,7 @@ describe('IndicacoesService', () => {
       
       recompensaRepo.save.mockResolvedValue(recompensaAtualizada);
 
-      const result = await service.registrarIndicacao('lead456', {
+      const result = await service.registrarIndicacao('lead456', 'elevare-01', {
         nome: 'João Silva',
         telefone: '+5511888888888',
       });
@@ -146,7 +146,7 @@ describe('IndicacoesService', () => {
       recompensaRepo.create.mockReturnValue(novaRecompensa);
       recompensaRepo.save.mockResolvedValue(novaRecompensa);
 
-      const result = await service.registrarIndicacao('lead789', {
+      const result = await service.registrarIndicacao('lead789', 'elevare-01', {
         nome: 'Pedro Santos',
         telefone: '+5511777777777',
       });
@@ -171,11 +171,11 @@ describe('IndicacoesService', () => {
 
       recompensaRepo.findOne.mockResolvedValue(mockRecompensa);
 
-      const result = await service.getRecompensa('lead123');
+      const result = await service.getRecompensa('lead123', 'elevare-01');
 
       expect(result).toEqual(mockRecompensa);
       expect(recompensaRepo.findOne).toHaveBeenCalledWith({
-        where: { leadId: 'lead123' },
+        where: { leadId: 'lead123', clinicId: 'elevare-01' },
       });
     });
   });
