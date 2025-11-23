@@ -28,7 +28,7 @@ echo ""
 
 # Check if there are changes to pull
 echo "🔄 Checking for remote changes..."
-git fetch --dry-run 2>&1 || echo "Note: Fetch may fail due to authentication in some environments"
+git fetch --dry-run 2>&1 || echo "Note: Fetch may fail in CI/CD environments or when credentials aren't configured"
 echo ""
 
 # Show last 5 commits

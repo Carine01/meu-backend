@@ -75,7 +75,7 @@ Isso significa que `git pull` irá:
 - ✅ Criar commit de merge quando houver divergências
 - ❌ NÃO fazer rebase automático
 
-Esta é a configuração recomendada no arquivo `PASSO_A_PASSO_GIT.md`.
+Esta é a configuração padrão do Git e é adequada para a maioria dos workflows de desenvolvimento.
 
 ---
 
@@ -133,7 +133,9 @@ fatal: Authentication failed for 'https://github.com/...'
 **Solução:**
 ```bash
 # Use Personal Access Token (PAT) em vez de senha
-# Crie um PAT em: https://github.com/settings/tokens
+# Para GitHub: https://github.com/settings/tokens
+# Para GitLab: https://gitlab.com/-/profile/personal_access_tokens
+# Para outros: consulte a documentação do seu provedor Git
 
 # Configure credenciais
 git config --global credential.helper store

@@ -32,10 +32,9 @@ Write-Host ""
 
 # Check if there are changes to pull
 Write-Host "🔄 Checking for remote changes..." -ForegroundColor Yellow
-try {
-    git fetch --dry-run 2>&1 | Out-Null
-} catch {
-    Write-Host "Note: Fetch may fail due to authentication in some environments" -ForegroundColor Gray
+git fetch --dry-run 2>&1 | Out-Null
+if ($LASTEXITCODE -ne 0) {
+    Write-Host "Note: Fetch may fail in CI/CD environments or when credentials aren't configured" -ForegroundColor Gray
 }
 Write-Host ""
 
