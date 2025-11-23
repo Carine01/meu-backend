@@ -118,15 +118,11 @@ install_dependencies() {
 validate_build() {
     print_step "Validating build..."
     
-    if npm run build 2>&1 | grep -q "Successfully compiled"; then
+    if npm run build; then
         print_success "Build successful"
     else
-        if npm run build; then
-            print_success "Build successful"
-        else
-            print_error "Build failed"
-            exit 1
-        fi
+        print_error "Build failed"
+        exit 1
     fi
 }
 
@@ -223,6 +219,8 @@ print_summary() {
     local START_TIME=$2
     local END_TIME=$3
     local DURATION=$((END_TIME - START_TIME))
+    local REPO_URL=$(git remote get-url origin 2>/dev/null || echo "https://github.com/Carine01/meu-backend")
+    local REPO_PATH=$(echo "$REPO_URL" | sed 's|.*github.com[:/]\(.*\)\.git|\1|' | sed 's|.*github.com[:/]\(.*\)|\1|')
     
     echo ""
     echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
@@ -234,8 +232,8 @@ print_summary() {
     echo -e "${CYAN}Time:${NC}        $(date '+%Y-%m-%d %H:%M:%S')"
     echo ""
     echo -e "${MAGENTA}Next steps:${NC}"
-    echo "  • View PR: https://github.com/Carine01/meu-backend/compare/$BRANCH_NAME"
-    echo "  • Check Actions: https://github.com/Carine01/meu-backend/actions"
+    echo "  • View PR: https://github.com/$REPO_PATH/compare/$BRANCH_NAME"
+    echo "  • Check Actions: https://github.com/$REPO_PATH/actions"
     echo ""
     echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
 }
