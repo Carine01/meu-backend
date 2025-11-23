@@ -117,9 +117,11 @@ done
 # Disparar agent orchestrator workflow se existir, senão usar script local run-agents-all.sh
 ORCH_NAME="Agent Orchestrator - run agent scripts in sequence (robust)"
 WF_EXISTS=$(gh workflow list --limit 200 --json name --jq ".[] | select(.name==\"$ORCH_NAME\") | .name" 2>/dev/null || true)
+USE_ORCHESTRATOR=false
 if [ -n "$WF_EXISTS" ]; then
   echo "Disparando workflow orquestrador: $ORCH_NAME"
   gh workflow run "$ORCH_NAME" --ref "$BRANCH" || echo "Falha ao disparar workflow orchestrator"
+  USE_ORCHESTRATOR=true
 else
   if [ -x "./scripts/agent/run-agents-all.sh" ]; then
     echo "Executando script local ./scripts/agent/run-agents-all.sh"
@@ -161,49 +163,80 @@ wait_for_workflow_run() {
 # Aguardar todos os workflows críticos
 declare -A RESULTS
 CRITICAL=false
-for wf in "${WORKFLOWS[@]}"; do
-  res=$(wait_for_workflow_run "$wf")
-  RESULTS["$wf"]="$res"
+
+# Se orchestrator foi usado, monitora apenas ele; caso contrário, monitora todos
+if [ "$USE_ORCHESTRATOR" = true ]; then
+  echo "Monitorando apenas workflow orchestrator..."
+  res=$(wait_for_workflow_run "$ORCH_NAME")
+  RESULTS["$ORCH_NAME"]="$res"
   if [[ "$res" =~ "failure|cancelled|timed_out|action_required" ]]; then
     CRITICAL=true
   fi
-done
+else
+  echo "Monitorando todos os workflows críticos..."
+  for wf in "${WORKFLOWS[@]}"; do
+    res=$(wait_for_workflow_run "$wf")
+    RESULTS["$wf"]="$res"
+    if [[ "$res" =~ "failure|cancelled|timed_out|action_required" ]]; then
+      CRITICAL=true
+    fi
+  done
+fi
 
-# Construir resumo
-SUMMARY="🔁 Fast Deploy Agents - resumo para branch \`$BRANCH\`:\n\n"
-for wf in "${WORKFLOWS[@]}"; do
-  SUMMARY+="- $wf : ${RESULTS[$wf]}\n"
+# Construir resumo com formatação apropriada
+SUMMARY="🔁 Fast Deploy Agents - resumo para branch \`$BRANCH\`:
+
+"
+for wf in "${!RESULTS[@]}"; do
+  SUMMARY+="- $wf : ${RESULTS[$wf]}
+"
 done
 
 # Comentar no PR se existir
 if [ -n "${PR_NUMBER:-}" ]; then
   echo "Comentando PR #$PR_NUMBER"
-  gh pr comment "$PR_NUMBER" --body "$SUMMARY" || echo "Falha ao comentar no PR"
+  echo "$SUMMARY" | gh pr comment "$PR_NUMBER" --body-file - || echo "Falha ao comentar no PR"
 else
-  echo -e "$SUMMARY"
+  echo "$SUMMARY"
 fi
 
 # Criar issue se falha crítica
 if [ "$CRITICAL" = true ]; then
   echo "Falha crítica detectada em pelo menos um workflow. Criando issue de incidente."
   ISSUE_TITLE="INCIDENT: workflows falharam em $BRANCH"
-  ISSUE_BODY="Fast Deploy Agents detectou falha em pelo menos um workflow para branch \`$BRANCH\`.\n\nResumo:\n$SUMMARY\n\nAção sugerida: investigar logs no Actions e atribuir desenvolvedor."
-  gh issue create --title "$ISSUE_TITLE" --body "$ISSUE_BODY" --label "incident,priority/high" || echo "Falha ao criar issue"
+  ISSUE_BODY="Fast Deploy Agents detectou falha em pelo menos um workflow para branch \`$BRANCH\`.
+
+Resumo:
+$SUMMARY
+
+Ação sugerida: investigar logs no Actions e atribuir desenvolvedor."
+  echo "$ISSUE_BODY" | gh issue create --title "$ISSUE_TITLE" --body-file - --label "incident,priority/high" || echo "Falha ao criar issue"
 fi
 
 # Tentativa de auto-merge (somente se AUTO_MERGE=true e PR existe)
 if [ "${AUTO_MERGE}" = "true" ] && [ -n "${PR_NUMBER:-}" ]; then
   echo "AUTO_MERGE ativado. Verificando pré-condições..."
-  approvals=$(gh pr review --list --pr "$PR_NUMBER" --json state,author --jq '.[] | select(.state=="APPROVED") | .author.login' 2>/dev/null || true)
+  
+  # Obter autor do PR
+  PR_AUTHOR=$(gh pr view "$PR_NUMBER" --json author --jq '.author.login' 2>/dev/null || true)
+  
+  # Verificar aprovações (excluindo auto-aprovações)
+  approvals=$(gh pr review --list --pr "$PR_NUMBER" --json state,author --jq '.[] | select(.state=="APPROVED" and .author.login!="'"$PR_AUTHOR"'") | .author.login' 2>/dev/null || true)
   if [ -z "$approvals" ]; then
-    echo "Nenhuma aprovação humana detectada. Abortando auto-merge."
+    echo "Nenhuma aprovação de outro usuário detectada. Abortando auto-merge."
   else
-    conclusion=$(gh pr checks "$PR_NUMBER" --json conclusion --jq '.conclusion' 2>/dev/null || true)
-    if [ "$conclusion" = "SUCCESS" ] || [ "$conclusion" = "success" ]; then
-      echo "Checks OK e aprovação presente. Realizando merge (squash) e deletando branch..."
+    echo "Aprovações encontradas de: $approvals"
+    
+    # Verificar que TODOS os checks passaram
+    failed_checks=$(gh pr checks "$PR_NUMBER" --json name,conclusion --jq '.[] | select(.conclusion != "SUCCESS" and .conclusion != "success" and .conclusion != "SKIPPED" and .conclusion != "skipped" and .conclusion != "NEUTRAL" and .conclusion != "neutral") | .name' 2>/dev/null || true)
+    
+    if [ -z "$failed_checks" ]; then
+      echo "Todos os checks passaram. Realizando merge (squash) e deletando branch..."
       gh pr merge "$PR_NUMBER" --squash --delete-branch || echo "Falha no merge automático"
     else
-      echo "Checks não estão com conclusão SUCCESS ($conclusion). Abortando auto-merge."
+      echo "Alguns checks falharam ou estão pendentes:"
+      echo "$failed_checks"
+      echo "Abortando auto-merge."
     fi
   fi
 fi
