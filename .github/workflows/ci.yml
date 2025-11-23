@@ -1,4 +1,4 @@
-name: CI
+name: Testes Automáticos
 
 on:
   push:
