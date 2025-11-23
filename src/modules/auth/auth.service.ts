@@ -109,7 +109,8 @@ export class AuthService {
         access_token: this.jwtService.sign(newPayload, { expiresIn: '15m' }),
       };
     } catch (e) {
-      this.logger.error(`❌ Refresh token inválido: ${e.message}`);
+      const errorMessage = e instanceof Error ? e.message : 'Unknown error';
+      this.logger.error(`❌ Refresh token inválido: ${errorMessage}`);
       throw new UnauthorizedException('Invalid refresh token');
     }
   }

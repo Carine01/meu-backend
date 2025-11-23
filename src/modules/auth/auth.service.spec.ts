@@ -8,6 +8,9 @@ import { Usuario } from './entities/usuario.entity';
 import { UnauthorizedException, ConflictException } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
 
+// Mock bcrypt at the module level
+jest.mock('bcrypt');
+
 const mockJwtService = {
   sign: jest.fn(),
   verify: jest.fn(),
@@ -67,7 +70,7 @@ describe('AuthService', () => {
       const usuario = {
         id: 'user-123',
         email: 'test@example.com',
-        senha: await bcrypt.hash('senha123', 10),
+        senha: 'hashed-password',
         nome: 'Teste',
         clinicId: 'clinic-01',
         roles: ['user'],
@@ -77,8 +80,7 @@ describe('AuthService', () => {
       mockUsuarioRepository.findOne.mockResolvedValue(usuario);
       mockJwtService.sign.mockReturnValueOnce('access-token-abc').mockReturnValueOnce('refresh-token-xyz');
       mockConfigService.get.mockReturnValue('refresh-secret');
-
-      jest.spyOn(bcrypt, 'compare').mockImplementation(async () => true);
+      (bcrypt.compare as jest.Mock).mockResolvedValue(true);
 
       const resultado = await service.login({ email: 'test@example.com', senha: 'senha123' });
 
@@ -101,12 +103,12 @@ describe('AuthService', () => {
       const usuario = {
         id: 'user-123',
         email: 'test@example.com',
-        senha: await bcrypt.hash('senha123', 10),
+        senha: 'hashed-password',
         ativo: true,
       };
 
       mockUsuarioRepository.findOne.mockResolvedValue(usuario);
-      jest.spyOn(bcrypt, 'compare').mockImplementation(async () => false);
+      (bcrypt.compare as jest.Mock).mockResolvedValue(false);
 
       await expect(service.login({ email: 'test@example.com', senha: 'wrong-password' }))
         .rejects
@@ -129,6 +131,8 @@ describe('AuthService', () => {
         ativo: true,
       };
 
+      // Reset mock to ensure clean state
+      mockJwtService.sign.mockReset();
       mockConfigService.get.mockReturnValue('refresh-secret');
       mockJwtService.verify.mockReturnValue(payload);
       mockUsuarioRepository.findOne.mockResolvedValue(usuario);
@@ -188,8 +192,7 @@ describe('AuthService', () => {
       mockUsuarioRepository.findOne.mockResolvedValue(null);
       mockUsuarioRepository.create.mockReturnValue({ ...registerDto, id: 'new-user-456' });
       mockUsuarioRepository.save.mockResolvedValue({ ...registerDto, id: 'new-user-456' });
-
-      jest.spyOn(bcrypt, 'hash').mockImplementation(async () => 'hashed-password');
+      (bcrypt.hash as jest.Mock).mockResolvedValue('hashed-password');
 
       const resultado = await service.register(registerDto);
 
