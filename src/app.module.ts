@@ -29,16 +29,21 @@ import { AuthModule } from './modules/auth/auth.module';
       envFilePath: '.env',
     }),
     
-    // TypeORM - PostgreSQL
+    // TypeORM - Banco de dados PostgreSQL
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
       useFactory: (config: ConfigService) => ({
         type: 'postgres',
-        url: config.get<string>('DATABASE_URL') || 'postgresql://postgres:dev123@localhost:5432/elevare_db',
+        host: config.get('DATABASE_HOST', 'localhost'),
+        port: config.get('DATABASE_PORT', 5432),
+        username: config.get('DATABASE_USER', 'postgres'),
+        password: config.get('DATABASE_PASSWORD', 'postgres'),
+        database: config.get('DATABASE_NAME', 'elevare_iara'),
         entities: [__dirname + '/**/*.entity{.ts,.js}'],
-        synchronize: config.get('DB_SYNCHRONIZE', 'false') === 'true',
-        logging: config.get('DB_LOGGING', 'false') === 'true',
+        synchronize: config.get('NODE_ENV') !== 'production', // Apenas em dev
+        logging: config.get('NODE_ENV') !== 'production',
+        ssl: config.get('NODE_ENV') === 'production' ? { rejectUnauthorized: false } : false,
       }),
     }),
     

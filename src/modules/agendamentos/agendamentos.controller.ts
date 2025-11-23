@@ -12,26 +12,6 @@ export class AgendamentosController {
     private readonly bloqueiosService: BloqueiosService,
   ) {}
 
-  /**
-   * Criar novo agendamento
-   * 
-   * Verifica bloqueios antes de criar.
-   * Se o horário estiver bloqueado, retorna erro 400.
-   * 
-   * @param dados - Dados do agendamento (paciente, data, duração, etc)
-   * @returns Agendamento criado com ID gerado
-   * @throws BadRequestException se horário estiver bloqueado
-   * 
-   * @example
-   * POST /agendamentos
-   * {
-   *   "nomePaciente": "Maria Silva",
-   *   "telefone": "+5511999999999",
-   *   "startISO": "2025-11-25T14:00:00Z",
-   *   "duracaoMinutos": 60,
-   *   "clinicId": "elevare-01"
-   * }
-   */
   @Post()
   async criar(@Body() dados: Partial<Agendamento>): Promise<Agendamento> {
     // Verificar bloqueios antes de criar
@@ -58,35 +38,11 @@ export class AgendamentosController {
     return this.agendamentosService.criarAgendamento(dados);
   }
 
-  /**
-   * Confirmar agendamento
-   * 
-   * Altera status para 'confirmado'.
-   * 
-   * @param id - ID do agendamento
-   * @throws NotFoundException se agendamento não existir
-   * 
-   * @example
-   * PUT /agendamentos/123/confirmar
-   */
   @Put(':id/confirmar')
   async confirmar(@Param('id') id: string): Promise<void> {
     return this.agendamentosService.confirmarAgendamento(id);
   }
 
-  /**
-   * Cancelar agendamento
-   * 
-   * Altera status para 'cancelado' e registra motivo.
-   * 
-   * @param id - ID do agendamento
-   * @param motivo - Motivo do cancelamento (opcional)
-   * @throws NotFoundException se agendamento não existir
-   * 
-   * @example
-   * PUT /agendamentos/123/cancelar
-   * { "motivo": "Paciente solicitou" }
-   */
   @Put(':id/cancelar')
   async cancelar(
     @Param('id') id: string,

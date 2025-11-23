@@ -2,7 +2,6 @@ import { Injectable, Logger } from '@nestjs/common';
 import admin from 'firebase-admin';
 import { FilaService } from '../fila/fila.service';
 import { Lead } from '../mensagens/entities/mensagem.entity';
-import { validateClinicId } from '../../lib/tenant';
 
 /**
  * Regra de disparo semanal
@@ -45,107 +44,24 @@ export class AgendaSemanalService {
   }
 
   /**
-   * Executa agenda para uma clínica específica
-   * @param clinicId - ID da clínica
-   */
-  async executarAgendaDoDiaPorClinica(clinicId: string): Promise<void> {
-    validateClinicId(clinicId);
-    
-    const hoje = new Date();
-    const diasSemana = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
-    const diaSemanaAtual = diasSemana[hoje.getDay()];
-
-    this.logger.log(`Executando agenda semanal para ${diaSemanaAtual} - Clínica: ${clinicId}`, {
-      diaSemana: diaSemanaAtual,
-      data: hoje.toISOString(),
-      clinicId,
-    });
-
-    const regras = this.getRegrasSemanais()[diaSemanaAtual];
-
-    if (!regras || regras.length === 0) {
-      this.logger.log(`Sem regras ativas para ${diaSemanaAtual}`);
-      return;
-    }
-
-    for (const regra of regras) {
-      if (!regra.ativo) {
-        this.logger.debug(`Regra inativa: ${regra.objetivo}`);
-        continue;
-      }
-
-      this.logger.log(`Processando regra: ${regra.objetivo} (${regra.publicoEtiquetas.join(', ')})`, {
-        objetivo: regra.objetivo,
-        etiquetas: regra.publicoEtiquetas,
-        templateKey: regra.templateKey,
-        clinicId,
-      });
-
-      try {
-        // Buscar leads que correspondem às etiquetas da regra E pertencem à clínica
-        const leads = await this.buscarLeadsPorEtiquetasEClinica(regra.publicoEtiquetas, clinicId);
-
-        this.logger.log(`${leads.length} leads encontrados para "${regra.objetivo}"`, {
-          objetivo: regra.objetivo,
-          totalLeads: leads.length,
-          clinicId,
-        });
-
-        // Adicionar cada lead na fila de envio
-        for (const lead of leads) {
-          const horarioEnvio = new Date(Date.now() + 60 * 60 * 1000); // 1h a partir de agora
-          
-          // TODO: Implementar método adicionarMensagem no FilaService
-          // await this.filaService.adicionarMensagem({
-          //   leadId: lead.id,
-          //   telefone: lead.telefone,
-          //   templateKey: regra.templateKey,
-          //   horarioEnvio,
-          //   variaveis: {
-          //     nome: lead.nome,
-          //     objetivo: (lead as any).objetivo || regra.objetivo,
-          //   },
-          //   clinicId, // <--- ISOLAMENTO POR CLÍNICA
-          // });
-        }
-      } catch (error) {
-        this.logger.error(`Erro ao processar regra "${regra.objetivo}" para clínica ${clinicId}:`, error);
-      }
-    }
-  }
-
-  /**
-   * Busca leads por etiquetas E clinicId (multitenancy)
-   * @param etiquetas - Array de etiquetas
-   * @param clinicId - ID da clínica
-   */
-  private async buscarLeadsPorEtiquetasEClinica(
-    etiquetas: string[],
-    clinicId: string,
-  ): Promise<Lead[]> {
-    const snapshot = await this.firestore
-      .collection('leads')
-      .where('clinicId', '==', clinicId)
-      .where('etiquetas', 'array-contains-any', etiquetas)
-      .get();
-
-    return snapshot.docs.map(doc => doc.data() as Lead);
-  }
-
-  /**
-   * Executa agenda automática do dia atual (sem filtro - deprecated)
-   * Use executarAgendaDoDiaPorClinica(clinicId) para multitenancy
-   * @deprecated
+   * Executa agenda automática do dia atual
+   * Deve ser chamado por CronJob diariamente (ex: 9h da manhã)
+   * 
+   * @example
+   * ```typescript
+   * // Em AgendaSemanalController ou CronJob
+   * @Cron('0 9 * * *') // Todo dia às 9h
+   * async handleCron() {
+   *   await this.agendaSemanalService.executarAgendaDoDia();
+   * }
+   * ```
    */
   async executarAgendaDoDia(): Promise<void> {
     const hoje = new Date();
     const diasSemana = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
     const diaSemanaAtual = diasSemana[hoje.getDay()];
 
-    this.logger.log(`Executando agenda semanal para ${diaSemanaAtual}`, {
-      diaSemana: diaSemanaAtual,
-      data: hoje.toISOString(),
-    });
+    this.logger.log(`Executando agenda semanal para ${diaSemanaAtual}`);
 
     const regras = this.getRegrasSemanais()[diaSemanaAtual];
 
@@ -160,20 +76,13 @@ export class AgendaSemanalService {
         continue;
       }
 
-      this.logger.log(`Processando regra: ${regra.objetivo} (${regra.publicoEtiquetas.join(', ')})`, {
-        objetivo: regra.objetivo,
-        etiquetas: regra.publicoEtiquetas,
-        templateKey: regra.templateKey,
-      });
+      this.logger.log(`Processando regra: ${regra.objetivo} (${regra.publicoEtiquetas.join(', ')})`);
 
       try {
         // Buscar leads que correspondem às etiquetas da regra
         const leads = await this.buscarLeadsPorEtiquetas(regra.publicoEtiquetas);
 
-        this.logger.log(`${leads.length} leads encontrados para "${regra.objetivo}"`, {
-          objetivo: regra.objetivo,
-          totalLeads: leads.length,
-        });
+        this.logger.log(`${leads.length} leads encontrados para "${regra.objetivo}"`);
 
         // Adicionar cada lead na fila de envio
         for (const lead of leads) {

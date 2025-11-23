@@ -124,15 +124,6 @@ export class FilaService {
 
       this.logger.log(
         `Mensagem adicionada à fila: ${mensagemKey} para ${leadNome} (${leadTelefone})`,
-        {
-          filaId: itemFila.id,
-          mensagemKey,
-          destinatario: leadNome,
-          telefone: leadTelefone,
-          clinicId,
-          scheduledFor: itemFila.scheduledFor?.toISOString() || new Date().toISOString(),
-          status: itemFila.status,
-        },
       );
 
       return itemFila;
@@ -219,15 +210,6 @@ export class FilaService {
 
             this.logger.error(
               `❌ FALHA DEFINITIVA (${novaTentativa}/${this.MAX_RETRIES}): ${item.msgId} para ${item.destinoNome} - ${err.message}`,
-              {
-                filaId: item.id,
-                mensagemKey: item.msgId,
-                destinatario: item.destinoNome,
-                telefone: item.destinoTelefone,
-                clinicId: item.clinicId,
-                tentativas: novaTentativa,
-                erro: err.message,
-              },
             );
           } else {
             // Retry: mantém pending, incrementa attempts
@@ -423,68 +405,5 @@ export class FilaService {
       );
     }
   }
-
-  /**
-   * Remove mensagens antigas da fila (para limpeza periódica)
-   * 
-   * @param dataLimite - Remove mensagens enviadas antes desta data
-   * @returns Número de mensagens removidas
-   * 
-   * @example
-   * ```typescript
-   * const dataLimite = new Date();
-   * dataLimite.setDate(dataLimite.getDate() - 90); // 90 dias atrás
-   * await filaService.limparMensagensAntigas(dataLimite);
-   * ```
-   */
-  async limparMensagensAntigas(dataLimite: Date): Promise<{ deletedCount: number }> {
-    try {
-      this.logger.log('🧹 Limpando mensagens antigas...', {
-        dataLimite: dataLimite.toISOString()
-      });
-
-      const snapshot = await this.firestore
-        .collection(this.COLLECTION_NAME)
-        .where('status', '==', 'sent')
-        .where('sentAt', '<', admin.firestore.Timestamp.fromDate(dataLimite))
-        .get();
-
-      if (snapshot.empty) {
-        this.logger.debug('Nenhuma mensagem antiga para limpar');
-        return { deletedCount: 0 };
-      }
-
-      // Deletar em batch (máximo 500 por batch no Firestore)
-      const batchSize = 500;
-      let deletedCount = 0;
-
-      for (let i = 0; i < snapshot.docs.length; i += batchSize) {
-        const batch = this.firestore.batch();
-        const batchDocs = snapshot.docs.slice(i, i + batchSize);
-
-        batchDocs.forEach(doc => {
-          batch.delete(doc.ref);
-        });
-
-        await batch.commit();
-        deletedCount += batchDocs.length;
-
-        this.logger.debug(`Batch deletado: ${batchDocs.length} documentos`);
-      }
-
-      this.logger.log('✅ Mensagens antigas removidas', {
-        deletedCount,
-        dataLimite: dataLimite.toISOString()
-      });
-
-      return { deletedCount };
-    } catch (error: any) {
-      const err = error as Error;
-      this.logger.error(`Erro ao limpar mensagens antigas: ${err.message}`, err.stack);
-      throw new HttpException(
-        'Erro ao limpar mensagens antigas',
-        HttpStatus.INTERNAL_SERVER_ERROR,
-      );
-    }
-  }
 }
+

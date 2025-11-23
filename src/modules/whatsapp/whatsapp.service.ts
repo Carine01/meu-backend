@@ -22,17 +22,8 @@ export class WhatsAppService {
    * Envia mensagem de texto
    */
   async sendTextMessage(to: string, message: string): Promise<SendMessageResult> {
-    this.logger.debug(`Enviando mensagem de texto`, { to, messageLength: message.length });
-    
     try {
       const messageId = await this.provider.sendMessage(to, message);
-      
-      this.logger.log(`✅ Mensagem enviada com sucesso`, {
-        messageId,
-        to,
-        status: MessageStatus.SENT,
-        provider: this.configService.get('WHATSAPP_PROVIDER'),
-      });
       
       return {
         messageId,
@@ -40,11 +31,7 @@ export class WhatsAppService {
         timestamp: new Date(),
       };
     } catch (error: any) {
-      this.logger.error(`Erro ao enviar mensagem: ${error.message}`, {
-        to,
-        error: error.message,
-        stack: error.stack,
-      });
+      this.logger.error(`Erro ao enviar mensagem: ${error.message}`);
       throw error;
     }
   }
@@ -93,37 +80,21 @@ export class WhatsAppService {
    * Envia mensagem com retry automático
    */
   async sendWithRetry(to: string, message: string, maxRetries = 3): Promise<SendMessageResult> {
-    let lastError: Error | undefined;
+    let lastError: Error;
 
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
       try {
-        this.logger.log(`Tentativa ${attempt}/${maxRetries} para ${to}`, {
-          attempt,
-          maxRetries,
-          to,
-          backoffMs: attempt > 1 ? 2000 * (attempt - 1) : 0,
-        });
+        this.logger.log(`Tentativa ${attempt}/${maxRetries} para ${to}`);
         return await this.sendTextMessage(to, message);
       } catch (error: any) {
         lastError = error;
-        this.logger.warn(`Tentativa ${attempt} falhou: ${error.message}`, {
-          attempt,
-          maxRetries,
-          to,
-          error: error.message,
-        });
+        this.logger.warn(`Tentativa ${attempt} falhou: ${error.message}`);
         
         if (attempt < maxRetries) {
           await this.sleep(2000 * attempt); // Backoff exponencial
         }
       }
     }
-
-    this.logger.error(`❌ Falha definitiva após ${maxRetries} tentativas`, {
-      to,
-      maxRetries,
-      lastError: lastError?.message,
-    });
 
     throw new Error('Falha ao enviar mensagem após 3 tentativas');
   }

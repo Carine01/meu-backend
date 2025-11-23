@@ -49,25 +49,12 @@ export class EventsService {
       const saved = await this.eventsRepository.save(event);
       
       this.logger.debug(
-        `Event logged: ${dto.eventType} for lead ${dto.leadId || 'N/A'}`,
-        {
-          eventType: dto.eventType,
-          leadId: dto.leadId,
-          agendamentoId: dto.agendamentoId,
-          mensagemId: dto.mensagemId,
-          source: dto.source,
-          userId: dto.userId,
-        },
+        `Event logged: ${dto.eventType} for lead ${dto.leadId || 'N/A'}`
       );
 
       return saved;
     } catch (error: any) {
-      this.logger.error(`Failed to log event: ${error.message}`, {
-        eventType: dto.eventType,
-        leadId: dto.leadId,
-        error: error.message,
-        stack: error.stack,
-      });
+      this.logger.error(`Failed to log event: ${error.message}`, error.stack);
       // Não lança erro para não quebrar o fluxo principal
       return undefined as any;
     }

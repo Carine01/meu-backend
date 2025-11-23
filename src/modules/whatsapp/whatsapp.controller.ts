@@ -9,26 +9,8 @@ export class WhatsAppController {
   constructor(private readonly whatsappService: WhatsAppService) {}
 
   /**
-   * Webhook para receber status de mensagens e callbacks do WhatsApp Business API
-   * 
-   * Este endpoint é chamado pelo Meta/WhatsApp quando:
-   * - Uma mensagem é entregue
-   * - Uma mensagem é lida
-   * - O usuário responde
-   * - Há alterações de status
-   * 
-   * ⚠️ ATENÇÃO: Este endpoint NÃO deve ter autenticação JWT!
-   * O WhatsApp precisa conseguir chamar livremente.
-   * 
-   * @param payload - Payload do webhook do Meta
-   * @returns Confirmação de recebimento
-   * 
-   * @example
-   * POST /whatsapp/webhook
-   * {
-   *   "object": "whatsapp_business_account",
-   *   "entry": [...]
-   * }
+   * Webhook para receber status de mensagens (WhatsApp Business API)
+   * ATENÇÃO: Este endpoint NÃO deve ter autenticação (usado pelo WhatsApp)
    */
   @Post('webhook')
   async handleWebhook(@Body() payload: any) {
@@ -79,28 +61,8 @@ export class WhatsAppController {
   }
 
   /**
-   * Enviar mensagem manualmente (para testes ou uso direto)
-   * 
-   * 🔒 Protegido por JWT - Apenas usuários autenticados
-   * 
-   * @param body - Número de destino e texto da mensagem
-   * @returns Resultado do envio (messageId, status, timestamp)
-   * @throws UnauthorizedException se token inválido
-   * 
-   * @example
-   * POST /whatsapp/send
-   * Authorization: Bearer <token>
-   * {
-   *   "to": "+5511999999999",
-   *   "message": "Olá! Esta é uma mensagem de teste."
-   * }
-   * 
-   * Response:
-   * {
-   *   "messageId": "wamid.xxx",
-   *   "status": "sent",
-   *   "timestamp": "2025-11-22T01:00:00Z"
-   * }
+   * Endpoint manual para testes
+   * PROTEGIDO: Requer autenticação JWT
    */
   @Post('send')
   @UseGuards(JwtAuthGuard)

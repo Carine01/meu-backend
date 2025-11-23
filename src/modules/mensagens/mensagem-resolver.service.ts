@@ -1,8 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { getMensagemByKey, BIBLIOTECA_MENSAGENS } from './mensagens-biblioteca';
 import { MensagemTemplate } from './entities/mensagem.entity';
-import { validateClinicId } from '../../lib/tenant';
-import admin from 'firebase-admin';
 
 /**
  * Perfil Profissional - Dados da Carine Marques / Elevare Estética
@@ -49,66 +47,9 @@ export interface PerfilProfissional {
 export class MensagemResolverService {
   private readonly logger = new Logger(MensagemResolverService.name);
 
-  private readonly firestore: admin.firestore.Firestore;
-
-  constructor() {
-    this.firestore = admin.firestore();
-  }
-
-  /**
-   * Busca perfil profissional específico de uma clínica
-   * @param clinicId - ID da clínica
-   * @returns Perfil profissional da clínica ou perfil padrão
-   */
-  async getPerfilPorClinica(clinicId: string): Promise<PerfilProfissional> {
-    validateClinicId(clinicId);
-    
-    try {
-      const doc = await this.firestore.collection('profiles').doc(clinicId).get();
-      if (doc.exists) {
-        return doc.data() as PerfilProfissional;
-      }
-    } catch (error) {
-      this.logger.warn(`Erro ao buscar perfil da clínica ${clinicId}, usando perfil padrão`);
-    }
-    
-    return this.perfilProfissional;
-  }
-
-  /**
-   * Resolve mensagem específica para uma clínica
-   * @param template - Template com variáveis {{var}}
-   * @param clinicId - ID da clínica
-   * @param variaveis - Variáveis customizadas
-   */
-  async resolverMensagemPorClinica(
-    template: string,
-    clinicId: string,
-    variaveis: Record<string, string | number> = {},
-  ): Promise<string> {
-    validateClinicId(clinicId);
-    const perfil = await this.getPerfilPorClinica(clinicId);
-    
-    let mensagem = template;
-
-    // 1. Aplicar variáveis customizadas fornecidas
-    for (const [chave, valor] of Object.entries(variaveis)) {
-      const regex = new RegExp(`\\{\\{${chave}\\}\\}`, 'g');
-      mensagem = mensagem.replace(regex, String(valor));
-    }
-
-    // 2. Aplicar perfil da clínica
-    for (const [chave, valor] of Object.entries(perfil)) {
-      const regex = new RegExp(`\\{\\{${chave}\\}\\}`, 'g');
-      mensagem = mensagem.replace(regex, String(valor));
-    }
-
-    return mensagem;
-  }
-
   /**
    * Perfil profissional padrão (Carine Marques / Elevare)
-   * Usado como fallback quando clínica não tem perfil configurado
+   * TODO: Buscar do Firestore collection 'profiles' por clinicId
    */
   private readonly perfilProfissional: PerfilProfissional = {
     clinica_nome: 'Elevare Estética',

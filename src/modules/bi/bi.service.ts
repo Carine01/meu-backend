@@ -1,7 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import admin from 'firebase-admin';
 import { Lead, Agendamento, FilaEnvio } from '../mensagens/entities/mensagem.entity';
-import { validateClinicId } from '../../lib/tenant';
 
 /**
  * Métricas do Dashboard
@@ -64,134 +63,8 @@ export class BiService {
   }
 
   /**
-   * Retorna métricas para uma clínica específica
-   * Filtra todos os dados por clinicId
-   */
-  async getReportForClinic(clinicId: string): Promise<DashboardMetrics> {
-    validateClinicId(clinicId);
-    this.logger.log(`📊 Gerando relatório para clínica: ${clinicId}`);
-    
-    const agora = new Date();
-    const thirtyDaysAgo = new Date(agora.getTime() - 30 * 24 * 60 * 60 * 1000);
-    const sevenDaysAgo = new Date(agora.getTime() - 7 * 24 * 60 * 60 * 1000);
-    const hoje = new Date(agora.getFullYear(), agora.getMonth(), agora.getDate());
-
-    try {
-      // === LEADS (filtrado por clinicId) ===
-      const [leadsSnapshot30d, leadsSnapshot7d, leadsSnapshotHoje, allLeads] =
-        await Promise.all([
-          this.firestore
-            .collection('leads')
-            .where('clinicId', '==', clinicId)
-            .where('createdAt', '>=', thirtyDaysAgo)
-            .get(),
-          this.firestore.collection('leads')
-            .where('clinicId', '==', clinicId)
-            .where('createdAt', '>=', sevenDaysAgo).get(),
-          this.firestore.collection('leads')
-            .where('clinicId', '==', clinicId)
-            .where('createdAt', '>=', hoje).get(),
-          this.firestore.collection('leads')
-            .where('clinicId', '==', clinicId)
-            .get(),
-        ]);
-
-      const leads30d = leadsSnapshot30d.size;
-      const leads7d = leadsSnapshot7d.size;
-      const leadsHoje = leadsSnapshotHoje.size;
-
-      let somaScores = 0;
-      let countQuente = 0;
-      let countMorno = 0;
-      let countFrio = 0;
-
-      allLeads.docs.forEach(doc => {
-        const lead = doc.data() as Lead;
-        if (lead.score) somaScores += lead.score;
-        if (lead.stage === 'quente') countQuente++;
-        else if (lead.stage === 'morno') countMorno++;
-        else if (lead.stage === 'frio') countFrio++;
-      });
-
-      const totalLeads = allLeads.size;
-      const scoreMedioLeads = totalLeads > 0 ? Math.round(somaScores / totalLeads) : 0;
-      const percentualQuente = totalLeads > 0 ? Math.round((countQuente / totalLeads) * 100) : 0;
-      const percentualMorno = totalLeads > 0 ? Math.round((countMorno / totalLeads) * 100) : 0;
-      const percentualFrio = totalLeads > 0 ? Math.round((countFrio / totalLeads) * 100) : 0;
-
-      // === AGENDAMENTOS (filtrado por clinicId) ===
-      const [agendadosSnapshot30d, agendadosSnapshot7d, agendadosSnapshotHoje] =
-        await Promise.all([
-          this.firestore
-            .collection('agendamentos')
-            .where('clinicId', '==', clinicId)
-            .where('createdAt', '>=', thirtyDaysAgo)
-            .get(),
-          this.firestore
-            .collection('agendamentos')
-            .where('clinicId', '==', clinicId)
-            .where('createdAt', '>=', sevenDaysAgo)
-            .get(),
-          this.firestore
-            .collection('agendamentos')
-            .where('clinicId', '==', clinicId)
-            .where('createdAt', '>=', hoje)
-            .get(),
-        ]);
-
-      // === FILA (filtrado por clinicId) ===
-      const [filaPendenteSnap, filaEnviados30dSnap, filaFalhas30dSnap] = await Promise.all([
-        this.firestore
-          .collection('fila_envio')
-          .where('clinicId', '==', clinicId)
-          .where('status', '==', 'pendente')
-          .get(),
-        this.firestore
-          .collection('fila_envio')
-          .where('clinicId', '==', clinicId)
-          .where('status', '==', 'enviado')
-          .where('createdAt', '>=', thirtyDaysAgo)
-          .get(),
-        this.firestore
-          .collection('fila_envio')
-          .where('clinicId', '==', clinicId)
-          .where('status', '==', 'erro')
-          .where('createdAt', '>=', thirtyDaysAgo)
-          .get(),
-      ]);
-
-      return {
-        leads30d,
-        leads7d,
-        leadsHoje,
-        agendados30d: agendadosSnapshot30d.size,
-        agendados7d: agendadosSnapshot7d.size,
-        agendadosHoje: agendadosSnapshotHoje.size,
-        compareceu30d: 0,
-        comparecimentoPct: 0,
-        noShow30d: 0,
-        noShowPct: 0,
-        reagendamentos30d: 0,
-        vendas30d: 0,
-        ticketMedio: 0,
-        filaPendente: filaPendenteSnap.size,
-        filaEnviados30d: filaEnviados30dSnap.size,
-        filaFalhas30d: filaFalhas30dSnap.size,
-        scoreMedioLeads,
-        percentualQuente,
-        percentualMorno,
-        percentualFrio,
-      };
-    } catch (error) {
-      this.logger.error(`❌ Erro ao gerar relatório para clínica ${clinicId}:`, error);
-      throw error;
-    }
-  }
-
-  /**
-   * Retorna métricas completas do dashboard (sem filtro - deprecated)
-   * Use getReportForClinic(clinicId) para multitenancy
-   * @deprecated
+   * Retorna métricas completas do dashboard
+   * Equivalente à aba "Dashboard" do Google Sheets original
    */
   async getDashboardMetrics(): Promise<DashboardMetrics> {
     const agora = new Date();

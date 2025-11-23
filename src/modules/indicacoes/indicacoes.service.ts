@@ -68,12 +68,6 @@ export class IndicacoesService {
       recompensa.sessoesGratisDisponiveis += (novasSessoes - sessoesAnteriores);
       this.logger.log(
         `🎁 ${indicadorId} ganhou sessão grátis! Total: ${recompensa.sessoesGratisDisponiveis}`,
-        {
-          indicadorId,
-          pontosAcumulados: recompensa.pontosAcumulados,
-          sessoesGratisDisponiveis: recompensa.sessoesGratisDisponiveis,
-          novasSessoes: novasSessoes - sessoesAnteriores,
-        },
       );
     }
 
@@ -81,14 +75,6 @@ export class IndicacoesService {
 
     this.logger.log(
       `✅ Indicação registrada: ${indicacao.id} | Indicador: ${indicadorId} | Pontos: ${recompensa.pontosAcumulados}`,
-      {
-        indicacaoId: indicacao.id,
-        indicadorId,
-        indicado: dados.nome,
-        telefoneIndicado: dados.telefone,
-        pontosAcumulados: recompensa.pontosAcumulados,
-        sessoesGratisDisponiveis: recompensa.sessoesGratisDisponiveis,
-      },
     );
 
     return { indicacao, recompensa };

@@ -15,10 +15,10 @@ import { FirebaseAuthGuard } from '../firebase-auth.guard';
 
 /**
  * Controller para gerenciar perfis de clínicas
- * Rotas protegidas por Firebase Auth (temporariamente desabilitado para dev)
+ * Rotas protegidas por Firebase Auth
  */
 @Controller('profile')
-// @UseGuards(FirebaseAuthGuard) // TODO: Habilitar em produção após configurar Firebase
+@UseGuards(FirebaseAuthGuard) // Protege todas as rotas com autenticação
 export class ProfileController {
   constructor(private readonly profileService: ProfileService) {}
 

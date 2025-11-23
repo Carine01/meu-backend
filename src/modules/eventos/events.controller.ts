@@ -9,35 +9,8 @@ export class EventsController {
   constructor(private readonly eventsService: EventsService) {}
 
   /**
-   * Obter timeline completa de um lead
-   * 
-   * Retorna todos os eventos relacionados a um lead em ordem cronológica reversa.
-   * Útil para:
-   * - Visualizar histórico completo
-   * - Auditoria de ações
-   * - Análise de comportamento
-   * 
-   * @param leadId - ID do lead
-   * @param limit - Número máximo de eventos (padrão: 50)
-   * @returns Timeline com eventos do lead
-   * 
-   * @example
-   * GET /eventos/timeline/lead123?limit=100
-   * Authorization: Bearer <token>
-   * 
-   * Response:
-   * {
-   *   "leadId": "lead123",
-   *   "total": 25,
-   *   "events": [
-   *     {
-   *       "eventType": "LEAD_CREATED",
-   *       "eventDate": "2025-11-20T10:00:00Z",
-   *       "metadata": {...}
-   *     },
-   *     ...
-   *   ]
-   * }
+   * GET /eventos/timeline/:leadId
+   * Retorna timeline completa de um lead
    */
   @Get('timeline/:leadId')
   async getLeadTimeline(
@@ -86,31 +59,8 @@ export class EventsController {
   }
 
   /**
-   * Obter estatísticas de eventos por tipo
-   * 
-   * Agrega eventos por tipo no período especificado.
-   * Útil para dashboards e análises.
-   * 
-   * @param startDate - Data inicial (ISO 8601) - padrão: 30 dias atrás
-   * @param endDate - Data final (ISO 8601) - padrão: hoje
-   * @returns Estatísticas agregadas por tipo de evento
-   * 
-   * @example
-   * GET /eventos/stats?startDate=2025-11-01&endDate=2025-11-30
-   * Authorization: Bearer <token>
-   * 
-   * Response:
-   * {
-   *   "period": {
-   *     "start": "2025-11-01T00:00:00Z",
-   *     "end": "2025-11-30T23:59:59Z"
-   *   },
-   *   "stats": {
-   *     "LEAD_CREATED": 150,
-   *     "MESSAGE_SENT": 450,
-   *     "AGENDAMENTO_CREATED": 75
-   *   }
-   * }
+   * GET /eventos/stats
+   * Estatísticas de eventos por tipo
    */
   @Get('stats')
   async getStats(

@@ -14,39 +14,6 @@ interface CreateLeadDto {
 export class LeadsController {
   constructor(private readonly leadsService: LeadsService) {}
 
-  /**
-   * Criar novo lead e enviar para Supabase/IARA
-   * 
-   * Este endpoint recebe dados de formulários e:
-   * 1. Valida os dados
-   * 2. Envia para Supabase Edge Function (IARA)
-   * 3. IARA processa e adiciona na fila de mensagens
-   * 
-   * 🔒 Protegido por JWT
-   * 
-   * @param createLeadDto - Dados do lead (nome, telefone, origem)
-   * @returns Confirmação de criação
-   * @throws HttpException se erro ao processar
-   * 
-   * @example
-   * POST /leads
-   * Authorization: Bearer <token>
-   * {
-   *   "nome": "Maria Silva",
-   *   "phone": "+5511999999999",
-   *   "clinicId": "elevare-01",
-   *   "origem": "form_site"
-   * }
-   * 
-   * Response:
-   * {
-   *   "success": true,
-   *   "data": {
-   *     "leadId": "lead123",
-   *     "status": "created"
-   *   }
-   * }
-   */
   @Post()
   async create(@Body() createLeadDto: CreateLeadDto) {
     try {
