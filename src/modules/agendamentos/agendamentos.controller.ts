@@ -51,8 +51,8 @@ export class AgendamentosController {
   @Put(':id/cancelar')
   async cancelar(
     @Param('id') id: string,
-    @Body('motivo') motivo?: string,
-    @Req() req?: any,
+    @Body('motivo') motivo: string | undefined,
+    @Req() req: any,
   ): Promise<void> {
     const clinicId = req.user.clinicId;
     return this.agendamentosService.cancelarAgendamento(id, clinicId, motivo);

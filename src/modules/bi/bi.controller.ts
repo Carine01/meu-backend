@@ -110,7 +110,7 @@ export class BiController {
    * ]
    */
   @Get('etiquetas')
-  async getTopEtiquetas(@Query('limit') limit?: string, @Req() req?: any) {
+  async getTopEtiquetas(@Query('limit') limit?: string, @Req() req: any) {
     const clinicId = req.user.clinicId;
     const limitNum = limit ? parseInt(limit, 10) : 10;
     return this.biService.getTopEtiquetas(limitNum, clinicId);
