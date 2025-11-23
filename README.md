@@ -25,6 +25,15 @@ Veja o arquivo `.env.example` para todas as variáveis necessárias (Firebase, U
 - `npm run start:prod` — inicia em modo produção
 - `npm run test` — executa os testes
 
+## Automação
+- `scripts/automacao-agente.sh` — script de automação completa que:
+  - Sincroniza com a branch main
+  - Limpa arquivos temporários (node_modules, dist, .cache)
+  - Instala dependências
+  - Executa build
+  - Roda testes
+  - Commita e envia mudanças para o GitHub
+
 ## Documentação
 - [NestJS](https://docs.nestjs.com/)
 - [Firebase](https://firebase.google.com/docs)
