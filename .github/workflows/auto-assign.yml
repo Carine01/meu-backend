@@ -1,5 +1,8 @@
 name: Auto-assign reviewers
 on: pull_request
+permissions:
+  contents: read
+  pull-requests: write
 jobs:
   assign:
     runs-on: ubuntu-latest

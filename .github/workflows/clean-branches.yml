@@ -2,6 +2,8 @@ name: Clean stale branches
 on:
   schedule:
     - cron: '0 4 * * 1' # toda segunda às 04:00
+permissions:
+  contents: write
 jobs:
   prune:
     runs-on: ubuntu-latest

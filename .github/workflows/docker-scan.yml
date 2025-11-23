@@ -2,6 +2,9 @@ name: Docker Scan & SBOM
 on:
   push:
     paths: ['Dockerfile', 'deploy/**']
+permissions:
+  contents: read
+  security-events: write
 jobs:
   scan:
     runs-on: ubuntu-latest
