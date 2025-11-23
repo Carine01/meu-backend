@@ -1,6 +1,6 @@
 # Health Check Report
 
-**Data/Hora:** $(date '+%Y-%m-%d %H:%M:%S %Z')
+**Data/Hora:** 2025-11-23 18:08:18 UTC
 
 ## 🏥 Status dos Endpoints de Saúde
 
@@ -109,4 +109,4 @@ Uma vez que a aplicação esteja rodando com as credenciais corretas:
 
 ---
 
-*Gerado automaticamente pela rotina de automação - $(date -Iseconds)*
+*Gerado automaticamente pela rotina de automação - 2025-11-23T18:08:18+00:00*

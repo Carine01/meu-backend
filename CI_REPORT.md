@@ -1,6 +1,6 @@
 # CI/CD Report - GitHub Actions
 
-**Data/Hora do Relatório:** $(date '+%Y-%m-%d %H:%M:%S %Z')
+**Data/Hora do Relatório:** 2025-11-23 18:08:18 UTC
 
 ## �� Resumo dos Workflows
 
@@ -194,4 +194,4 @@ Para executar workflows manualmente:
 
 ---
 
-*Gerado automaticamente pela rotina de automação - $(date -Iseconds)*
+*Gerado automaticamente pela rotina de automação - 2025-11-23T18:08:18+00:00*
