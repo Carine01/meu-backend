@@ -39,7 +39,7 @@ git pull
 
 # Ou especificar o remoto e a branch
 git pull origin main
-git pull origin copilot/update-git-pull-command-again
+git pull origin feat/sua-branch
 ```
 
 ### Método 2: VS Code Interface
