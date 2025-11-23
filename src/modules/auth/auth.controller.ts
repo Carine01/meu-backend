@@ -40,6 +40,12 @@ export class AuthController {
     };
   }
 
+  @Post('refresh')
+  @HttpCode(200)
+  async refresh(@Body() body: { refresh_token: string }) {
+    return this.authService.refreshToken(body.refresh_token);
+  }
+
   @Post('seed-admin')
   async seedAdmin() {
     await this.authService.seedAdminUser();
