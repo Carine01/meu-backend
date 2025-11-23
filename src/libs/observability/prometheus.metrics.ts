@@ -13,7 +13,7 @@ export class PrometheusService {
   constructor() {
     this.registry = new Registry();
 
-    // Contador de requisições ao endpoint de mensagens com label clinicId
+    // Counter for mensagens endpoint requests with clinicId label
     this.mensagensRequests = new Counter({
       name: 'mensagens_requests_total',
       help: 'Total number of mensagens requests',
@@ -27,8 +27,8 @@ export class PrometheusService {
    * @param clinicId - Clinic ID to dimension the metric
    */
   incrementMensagensRequests(clinicId: string): void {
-    // Sanitize clinicId para prevenir cardinality explosion
-    // Remove caracteres especiais, mantém apenas alphanumeric, underscore e hyphen
+    // Sanitize clinicId to prevent cardinality explosion
+    // Remove special characters, keep only alphanumeric, underscore and hyphen
     const sanitizedClinicId = clinicId.replace(/[^a-zA-Z0-9_-]/g, '_');
     this.mensagensRequests.inc({ clinicId: sanitizedClinicId });
   }

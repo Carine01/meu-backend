@@ -40,17 +40,17 @@ describe('MensagensController', () => {
 
   it('should throw BadRequestException when clinicId is missing', async () => {
     await expect(controller.findAll(undefined as any)).rejects.toThrow(BadRequestException);
-    await expect(controller.findAll(undefined as any)).rejects.toThrow('Header x-clinic-id é obrigatório');
+    await expect(controller.findAll(undefined as any)).rejects.toThrow('Header x-clinic-id is required');
   });
 
   it('should throw BadRequestException when clinicId is empty string', async () => {
     await expect(controller.findAll('')).rejects.toThrow(BadRequestException);
-    await expect(controller.findAll('')).rejects.toThrow('Header x-clinic-id é obrigatório');
+    await expect(controller.findAll('')).rejects.toThrow('Header x-clinic-id is required');
   });
 
   it('should throw BadRequestException when clinicId is whitespace only', async () => {
     await expect(controller.findAll('   ')).rejects.toThrow(BadRequestException);
-    await expect(controller.findAll('   ')).rejects.toThrow('Header x-clinic-id é obrigatório');
+    await expect(controller.findAll('   ')).rejects.toThrow('Header x-clinic-id is required');
   });
 
   it('should call service with trimmed clinicId', async () => {
@@ -65,13 +65,13 @@ describe('MensagensController', () => {
 
   it('should throw BadRequestException for clinicId with special characters', async () => {
     await expect(controller.findAll('CLINIC@123')).rejects.toThrow(BadRequestException);
-    await expect(controller.findAll('CLINIC@123')).rejects.toThrow('formato inválido');
+    await expect(controller.findAll('CLINIC@123')).rejects.toThrow('invalid format');
   });
 
   it('should throw BadRequestException for clinicId exceeding 50 characters', async () => {
     const longClinicId = 'A'.repeat(51);
     await expect(controller.findAll(longClinicId)).rejects.toThrow(BadRequestException);
-    await expect(controller.findAll(longClinicId)).rejects.toThrow('formato inválido');
+    await expect(controller.findAll(longClinicId)).rejects.toThrow('invalid format');
   });
 
   it('should accept clinicId with exactly 50 characters', async () => {

@@ -14,11 +14,11 @@ export class MensagensRepository implements IMensagensRepository {
    * @returns Array of clinic messages
    */
   async findAllByClinic(clinicId: string): Promise<Mensagem[]> {
-    // Exemplo com TypeORM:
+    // Example with TypeORM:
     // return this.ormRepo.find({ where: { clinicId } });
     
-    // Stub para exemplo - retorna array vazio
-    // Em produção, implementar busca real no banco de dados
+    // TODO: Implement actual database query
+    // Currently returns empty array as stub
     return [];
   }
 }

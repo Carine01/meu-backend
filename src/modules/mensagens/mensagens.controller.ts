@@ -21,13 +21,13 @@ export class MensagensController {
   async findAll(@Headers('x-clinic-id') clinicId: string) {
     const trimmedClinicId = clinicId?.trim();
     if (!trimmedClinicId) {
-      throw new BadRequestException('Header x-clinic-id é obrigatório');
+      throw new BadRequestException('Header x-clinic-id is required');
     }
     
-    // Validar formato do clinicId: alphanumeric, underscore, hyphen (min 1, max 50 chars)
+    // Validate clinicId format: alphanumeric, underscore, hyphen (min 1, max 50 chars)
     const validClinicIdPattern = /^[a-zA-Z0-9_-]{1,50}$/;
     if (!validClinicIdPattern.test(trimmedClinicId)) {
-      throw new BadRequestException('Header x-clinic-id possui formato inválido. Use apenas letras, números, underscore e hífen (máx 50 caracteres)');
+      throw new BadRequestException('Header x-clinic-id has invalid format. Use only letters, numbers, underscore and hyphen (max 50 characters)');
     }
     
     return this.service.findAllByClinic(trimmedClinicId);
