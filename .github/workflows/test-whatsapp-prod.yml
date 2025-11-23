@@ -11,7 +11,7 @@ jobs:
     steps:
       - name: Enviar mensagem simulada
         run: |
-          RESPONSE=$(curl -X POST -s ${{ secrets.WHATSAPP_PROD_URL }}/simulate \
+          RESPONSE=$(curl -X POST -s --max-time 30 --fail ${{ secrets.WHATSAPP_PROD_URL }}/simulate \
           -H "Content-Type: application/json" \
           -d '{"message":"Oi"}')
 

@@ -143,12 +143,19 @@ export class WhatsAppController {
    */
   @Post('simulate')
   async simulate(@Body() body: { message?: string }) {
-    this.logger.log(`🧪 Simulação de teste recebida: ${body.message || 'sem mensagem'}`);
+    // Validação de entrada
+    if (body.message && body.message.length > 100) {
+      return {
+        status: 'error',
+        message: 'Mensagem muito longa (máximo 100 caracteres)'
+      };
+    }
+
+    this.logger.log(`🧪 Simulação de teste recebida`);
     
     return {
       status: 'ok',
       message: 'Simulação executada com sucesso',
-      receivedMessage: body.message || null,
       timestamp: new Date().toISOString()
     };
   }
