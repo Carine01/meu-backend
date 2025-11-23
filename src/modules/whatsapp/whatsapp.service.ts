@@ -139,10 +139,21 @@ export class WhatsAppService {
   }
 
   async sendMessage(dto: SendMessageDto) {
-    return this.repo.save({
-      ...dto,
+    if (!dto.clinicId) {
+      throw new Error('clinicId is required');
+    }
+    
+    // Send the message via provider
+    const result = await this.sendTextMessage(dto.to, dto.message);
+    
+    // Save to database
+    await this.repo.save({
+      to: dto.to,
+      message: dto.message,
       clinicId: dto.clinicId,
     });
+    
+    return result;
   }
 
   async listMessages(limit: number = 50, clinicId?: string) {

@@ -107,6 +107,8 @@ export class WhatsAppController {
   @Post('send')
   @RequireClinicId()
   async sendMessage(@Body() dto: SendMessageDto, @ClinicId() clinicId: string) {
+    // Inject the clinicId from header into the DTO
+    dto.clinicId = clinicId;
     return this.whatsappService.sendMessage(dto);
   }
 
