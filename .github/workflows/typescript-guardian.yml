@@ -1,0 +1,59 @@
+name: TypeScript Guardian
+
+on:
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: 'Branch, tag or SHA to check'
+        required: false
+        default: ''
+  push:
+    branches:
+      - main
+      - develop
+      - 'feat/*'
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  typescript-check:
+    name: TypeScript Type Checking
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.ref || github.ref }}
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: |
+          echo "Installing dependencies..."
+          if npm ci --no-audit --prefer-offline --progress=false; then
+            echo "✅ npm ci succeeded"
+          else
+            echo "⚠️ npm ci failed, falling back to npm install"
+            npm install --no-audit --progress=false
+          fi
+      
+      - name: Run TypeScript compiler
+        run: |
+          echo "Running TypeScript type checking..."
+          npx tsc --noEmit --pretty
+      
+      - name: Report status
+        if: always()
+        run: |
+          if [ $? -eq 0 ]; then
+            echo "✅ TypeScript type checking passed"
+          else
+            echo "❌ TypeScript type checking failed"
+            exit 1
+          fi

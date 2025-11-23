@@ -1,0 +1,86 @@
+*** Begin Patch
+*** New File: .github/workflows/agent-orchestrator.yml
++name: Agent Orchestrator - run agent scripts in sequence (robust)
++
++on:
++  workflow_dispatch:
++  push:
++    branches:
++      - 'feat/*'
++      - 'fix/*'
++
++jobs:
++  orchestrate:
++    name: Run Agent Orchestrator
++    runs-on: ubuntu-latest
++    steps:
++      - uses: actions/checkout@v4
++      - name: Run orchestrator
++        run: echo "Orchestrator placeholder"
+*** End Patch
+*** Begin Patch
+*** New File: .github/workflows/typescript-guardian.yml
++name: TypeScript Guardian
++
++on:
++  workflow_dispatch:
++  push:
++    branches:
++      - main
++      - 'feat/*'
++  pull_request:
++    branches:
++      - main
++
++jobs:
++  typescript-check:
++    runs-on: ubuntu-latest
++    steps:
++      - uses: actions/checkout@v4
++      - uses: actions/setup-node@v4
++        with:
++          node-version: '18'
++      - run: npm ci
++      - run: npx tsc --noEmit
+*** End Patch
+*** Begin Patch
+*** New File: .github/workflows/register-fila-fallback.yml
++name: Register Fila Fallback (AST)
++
++on:
++  workflow_dispatch:
++  push:
++    branches:
++      - main
++      - 'feat/*'
++
++jobs:
++  register:
++    runs-on: ubuntu-latest
++    steps:
++      - uses: actions/checkout@v4
++      - uses: actions/setup-node@v4
++      - run: npm ci
++      - run: npm run build
+*** End Patch
+*** Begin Patch
+*** New File: .github/workflows/whatsapp-monitor.yml
++name: WhatsApp Monitor
++
++on:
++  workflow_dispatch:
++  push:
++    branches:
++      - main
++      - 'feat/*'
++  schedule:
++    - cron: '0 */6 * * *'
++
++jobs:
++  monitor:
++    runs-on: ubuntu-latest
++    steps:
++      - uses: actions/checkout@v4
++      - name: Check WhatsApp integration
++        run: echo "WhatsApp monitor placeholder"
+*** End Patch
