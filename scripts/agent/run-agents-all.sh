@@ -214,7 +214,7 @@ if [ -n "$PR_NUMBER" ]; then
 
 **Branch:** \`$BRANCH\`
 **Run Date:** $(date '+%Y-%m-%d %H:%M:%S')
-**Triggered by:** @$GITHUB_ACTOR
+**Triggered by:** @${GITHUB_ACTOR:-automation}
 
 ### Workflow Results:
 
@@ -226,7 +226,9 @@ if [ -n "$PR_NUMBER" ]; then
         result=${workflow_results[$name]}
         
         if [ -n "$run_id" ] && [ "$run_id" != "null" ]; then
-            run_url="https://github.com/$GITHUB_REPOSITORY/actions/runs/$run_id"
+            # Try to get the repository from gh or use a default
+            repo=$(gh repo view --json nameWithOwner --jq '.nameWithOwner' 2>/dev/null || echo "owner/repo")
+            run_url="https://github.com/$repo/actions/runs/$run_id"
             comment_body+="- $result **$name** ([View logs]($run_url))
 "
         else
