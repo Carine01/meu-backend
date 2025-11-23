@@ -1,0 +1,30 @@
+name: Bug Hunter Elevare
+
+on:
+  push:
+  schedule:
+    - cron: "*/30 * * * *"
+
+jobs:
+  bug-hunter:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Instalar dependências
+        run: npm ci
+
+      - name: Rodar análise estática
+        run: |
+          npx eslint . -f json -o eslint-report.json || true
+
+      - name: Criar issue para cada erro encontrado
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          ERRORS=$(jq '.[] | .messages[]?' eslint-report.json)
+          if [[ -n "$ERRORS" ]]; then
+            gh issue create --title "Bug detectado automaticamente" \
+            --body "O sistema detectou o seguinte problema:\n\n$ERRORS"
+          fi
