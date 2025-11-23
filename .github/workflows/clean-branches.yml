@@ -1,0 +1,12 @@
+name: Clean stale branches
+on:
+  schedule:
+    - cron: '0 4 * * 1' # toda segunda às 04:00
+jobs:
+  prune:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pascalgn/automerge-action@v0.15.3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}

@@ -1,0 +1,16 @@
+name: Docker Scan & SBOM
+on:
+  push:
+    paths: ['Dockerfile', 'deploy/**']
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build image
+        run: docker build -t repo/temp:scan .
+      - name: Trivy scan
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'image'
+          image-ref: 'repo/temp:scan'
