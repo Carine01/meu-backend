@@ -1,4 +1,4 @@
-import { Controller, Post, Body, Get, Param, Logger, UseGuards } from '@nestjs/common';
+import { Controller, Post, Body, Get, Param, Logger, UseGuards, BadRequestException } from '@nestjs/common';
 import { WhatsAppService } from './whatsapp.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 
@@ -145,10 +145,7 @@ export class WhatsAppController {
   async simulate(@Body() body: { message?: string }) {
     // Validação de entrada
     if (body.message && body.message.length > 100) {
-      return {
-        status: 'error',
-        message: 'Mensagem muito longa (máximo 100 caracteres)'
-      };
+      throw new BadRequestException('Mensagem muito longa (máximo 100 caracteres)');
     }
 
     this.logger.log(`🧪 Simulação de teste recebida`);
