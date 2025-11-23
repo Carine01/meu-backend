@@ -11,7 +11,7 @@ jobs:
     steps:
       - name: Checar saúde do backend
         run: |
-          STATUS=$(curl -sf http://${{ secrets.SERVER_IP }}:3000/health || echo "fail")
+          STATUS=$(curl -s http://${{ secrets.SERVER_IP }}:3000/health || echo "fail")
           if [[ "$STATUS" != *"ok"* ]]; then
             curl -X POST ${{ secrets.ALERT_WEBHOOK }} \
             -H "Content-Type: application/json" \
@@ -21,7 +21,7 @@ jobs:
 
       - name: Checar fila do WhatsApp
         run: |
-          STATUS=$(curl -sf http://${{ secrets.SERVER_IP }}:3000/whatsapp/health || echo "fail")
+          STATUS=$(curl -s http://${{ secrets.SERVER_IP }}:3000/whatsapp/health || echo "fail")
           if [[ "$STATUS" != *"ok"* ]]; then
             curl -X POST ${{ secrets.ALERT_WEBHOOK }} \
             -H "Content-Type: application/json" \
