@@ -29,6 +29,12 @@ Veja o arquivo `.env.example` para todas as variáveis necessárias (Firebase, U
 - [NestJS](https://docs.nestjs.com/)
 - [Firebase](https://firebase.google.com/docs)
 
+## Guias de Desenvolvimento
+- 🏎️ **[Comandos Ferrari](./COMANDOS_FERRARI.md)** — Sincronização 100% com GitHub
+- 📋 [Passo a Passo Git](./PASSO_A_PASSO_GIT.md) — Instalação e configuração do Git
+- 🚀 [Comandos GitHub](./COMANDOS_GITHUB.md) — Setup completo com GitHub CLI
+- 👨‍💻 [Comandos do Programador](./COMANDOS_PROGRAMADOR.md) — Comandos essenciais
+
 ---
 
 > Projeto criado por Carine01
