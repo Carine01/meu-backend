@@ -13,12 +13,21 @@ echo "Disparando workflows no ref: $REF"
 
 for wf in "${WORKFLOWS[@]}"; do
   echo "-> Disparando workflow: $wf"
-  run_id=$(gh workflow run "$wf" --ref "$REF" --json workflow,id --jq '.id' 2>/dev/null || true)
-  if [ -z "$run_id" ]; then
+  gh workflow run "$wf" --ref "$REF" 2>/dev/null || {
     echo "  Falha ao disparar $wf — verifique nome do workflow e permissões"
     continue
+  }
+  echo "  Workflow $wf disparado. Aguardando alguns segundos para o run aparecer..."
+  sleep 5
+  
+  # Buscar o run_id mais recente desse workflow no ref especificado
+  run_id=$(gh run list --workflow "$wf" --branch "$REF" --limit 1 --json databaseId --jq '.[0].databaseId' 2>/dev/null || true)
+  if [ -z "$run_id" ]; then
+    echo "  Não foi possível obter run_id para $wf. Continuando..."
+    continue
   fi
-  echo "  Workflow $wf disparado (id: $run_id). Esperando conclusão..."
+  echo "  Run ID encontrado: $run_id. Esperando conclusão..."
+  
   # Poll status
   while true; do
     sleep 8

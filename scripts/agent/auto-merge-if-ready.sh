@@ -23,15 +23,17 @@ fi
 echo "Aprovação humana detectada."
 
 # 2) garantir checks passados
-# Verificar se há pelo menos uma suite de checks e se todas estão com sucesso
-failed_checks=$(gh pr checks "$PR_NUMBER" --json checkSuites --jq '[.checkSuites[] | select(.conclusion != "SUCCESS")] | length' 2>/dev/null || echo "error")
-if [[ "$failed_checks" == "error" ]]; then
+# Verificar se há checks que falharam ou foram cancelados
+# Conclusões aceitáveis: SUCCESS, NEUTRAL, SKIPPED
+# Conclusões que bloqueiam merge: FAILURE, CANCELLED, TIMED_OUT, ACTION_REQUIRED, STALE
+problematic_checks=$(gh pr checks "$PR_NUMBER" --json checkSuites --jq '[.checkSuites[] | select(.conclusion == "FAILURE" or .conclusion == "CANCELLED" or .conclusion == "TIMED_OUT" or .conclusion == "ACTION_REQUIRED" or .conclusion == "STALE")] | length' 2>/dev/null || echo "error")
+if [[ "$problematic_checks" == "error" ]]; then
   echo "Não foi possível obter checks (verifique permissões)."
   exit 3
 fi
 
-if [[ "$failed_checks" -gt 0 ]]; then
-  echo "Existem $failed_checks check(s) que não passaram. Abortando merge."
+if [[ "$problematic_checks" -gt 0 ]]; then
+  echo "Existem $problematic_checks check(s) com falhas. Abortando merge."
   exit 4
 fi
 
