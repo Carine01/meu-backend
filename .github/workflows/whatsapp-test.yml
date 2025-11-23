@@ -1,0 +1,24 @@
+name: Testes WhatsApp Automatizados
+
+on:
+  schedule:
+    - cron: '*/15 * * * *'
+
+jobs:
+  whatsapp-test:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Instalar dependências
+      run: npm ci
+
+    - name: Iniciar backend
+      run: docker compose up -d --build
+
+    - name: Testar resposta simulada
+      run: |
+        RESPONSE=$(curl -s "http://localhost:3000/whatsapp/test-bot")
+        echo "Resposta: $RESPONSE"
+        [[ "$RESPONSE" == *"ok"* ]] || exit 1

@@ -119,5 +119,32 @@ export class WhatsAppController {
     const hasWhatsApp = await this.whatsappService.isWhatsAppNumber(phoneNumber);
     return { phoneNumber, hasWhatsApp };
   }
+
+  /**
+   * Endpoint de teste para verificar se o bot WhatsApp está funcionando
+   * 
+   * 🔓 PÚBLICO - Não requer autenticação (usado para testes automatizados)
+   * 
+   * @returns Status ok para confirmar que o serviço está operacional
+   * 
+   * @example
+   * GET /whatsapp/test-bot
+   * 
+   * Response:
+   * {
+   *   "status": "ok",
+   *   "timestamp": "2025-11-23T18:10:00.000Z",
+   *   "service": "whatsapp-bot"
+   * }
+   */
+  @Get('test-bot')
+  testBot() {
+    this.logger.log('🤖 Test bot endpoint called');
+    return {
+      status: 'ok',
+      timestamp: new Date().toISOString(),
+      service: 'whatsapp-bot'
+    };
+  }
 }
 
