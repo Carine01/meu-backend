@@ -2,16 +2,16 @@ import { Injectable } from '@nestjs/common';
 import { IMensagensRepository, Mensagem } from './mensagens.service';
 
 /**
- * Repository de Mensagens
- * Implementa a interface IMensagensRepository para dependency injection
+ * Messages Repository
+ * Implements IMensagensRepository interface for dependency injection
  */
 @Injectable()
 export class MensagensRepository implements IMensagensRepository {
   /**
-   * Busca todas as mensagens de uma clínica específica
+   * Retrieves all messages for a specific clinic
    * 
-   * @param clinicId - ID da clínica
-   * @returns Array de mensagens da clínica
+   * @param clinicId - Clinic ID
+   * @returns Array of clinic messages
    */
   async findAllByClinic(clinicId: string): Promise<Mensagem[]> {
     // Exemplo com TypeORM:

@@ -2,8 +2,8 @@ import { Controller, Get, Headers, BadRequestException } from '@nestjs/common';
 import { MensagensService } from './mensagens.service';
 
 /**
- * Controller de Mensagens
- * Endpoints para gestão de mensagens com suporte a multitenancy
+ * Messages Controller
+ * Endpoints for messages management with multitenancy support
  */
 @Controller('mensagens')
 export class MensagensController {
@@ -11,11 +11,11 @@ export class MensagensController {
 
   /**
    * GET /mensagens
-   * Busca mensagens da clínica identificada no header x-clinic-id
+   * Retrieves messages from clinic identified in x-clinic-id header
    * 
-   * @param clinicId - ID da clínica vindo do header x-clinic-id
-   * @returns Array de mensagens da clínica
-   * @throws BadRequestException se clinicId não for fornecido ou inválido
+   * @param clinicId - Clinic ID from x-clinic-id header
+   * @returns Array of clinic messages
+   * @throws BadRequestException if clinicId is not provided or invalid
    */
   @Get()
   async findAll(@Headers('x-clinic-id') clinicId: string) {

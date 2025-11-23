@@ -2,7 +2,7 @@ import { Injectable, Inject } from '@nestjs/common';
 import { PrometheusService } from '../../libs/observability/prometheus.metrics';
 
 /**
- * Interface para entidade Mensagem
+ * Interface for Mensagem entity
  */
 export interface Mensagem {
   id: number | string;
@@ -14,7 +14,7 @@ export interface Mensagem {
 }
 
 /**
- * Interface para Repository - SOLID: Interface Segregation & Dependency Inversion
+ * Repository interface - SOLID: Interface Segregation & Dependency Inversion
  */
 export interface IMensagensRepository {
   findAllByClinic(clinicId: string): Promise<Mensagem[]>;
@@ -22,8 +22,8 @@ export interface IMensagensRepository {
 }
 
 /**
- * Service de Mensagens com suporte a multitenancy
- * Filtra mensagens por clinicId para garantir isolamento de dados
+ * Messages Service with multitenancy support
+ * Filters messages by clinicId to ensure data isolation
  */
 @Injectable()
 export class MensagensService {
@@ -34,11 +34,11 @@ export class MensagensService {
   ) {}
 
   /**
-   * Busca todas as mensagens de uma clínica específica
-   * Garante isolamento de dados através do clinicId
+   * Retrieves all messages for a specific clinic
+   * Ensures data isolation through clinicId
    * 
-   * @param clinicId - ID da clínica
-   * @returns Array de mensagens filtradas por clinicId
+   * @param clinicId - Clinic ID
+   * @returns Array of messages filtered by clinicId
    */
   async findAllByClinic(clinicId: string): Promise<Mensagem[]> {
     this.prometheus.incrementMensagensRequests(clinicId);

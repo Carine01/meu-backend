@@ -2,8 +2,8 @@ import { Injectable } from '@nestjs/common';
 import { Counter, Registry } from 'prom-client';
 
 /**
- * Serviço de métricas Prometheus
- * Gerencia contadores e métricas para observabilidade
+ * Prometheus metrics service
+ * Manages counters and metrics for observability
  */
 @Injectable()
 export class PrometheusService {
@@ -23,8 +23,8 @@ export class PrometheusService {
   }
 
   /**
-   * Incrementa contador de requisições de mensagens
-   * @param clinicId - ID da clínica para dimensionar a métrica
+   * Increments messages requests counter
+   * @param clinicId - Clinic ID to dimension the metric
    */
   incrementMensagensRequests(clinicId: string): void {
     // Sanitize clinicId para prevenir cardinality explosion
@@ -34,7 +34,7 @@ export class PrometheusService {
   }
 
   /**
-   * Retorna todas as métricas em formato Prometheus
+   * Returns all metrics in Prometheus format
    */
   async getMetrics(): Promise<string> {
     return this.registry.metrics();
