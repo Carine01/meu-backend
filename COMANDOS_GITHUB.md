@@ -259,6 +259,45 @@ gh milestone create "MVP - 100%" --due-date "$(date -d '+3 days' +%F)" --descrip
 
 ---
 
+## 🔍 Monitorar Workflow Runs
+
+### Scripts Automatizados
+
+Criamos scripts para facilitar o monitoramento de workflows:
+
+```bash
+# Linux/Mac - Assistir último workflow automaticamente
+./scripts/watch-workflow.sh
+
+# Windows - Assistir último workflow automaticamente
+.\scripts\watch-workflow.ps1
+
+# Listar workflows recentes
+./scripts/watch-workflow.sh list
+.\scripts\watch-workflow.ps1 list
+
+# Assistir workflow específico
+./scripts/watch-workflow.sh watch 123456
+.\scripts\watch-workflow.ps1 watch 123456
+```
+
+### Comandos Manuais
+
+```bash
+# Listar workflows
+gh run list
+
+# Assistir último workflow
+gh run watch $(gh run list --limit 1 --json databaseId --jq '.[0].databaseId')
+
+# Assistir workflow específico
+gh run watch <run_id>
+```
+
+📚 **Documentação completa:** [`docs/WORKFLOW_MONITORING.md`](docs/WORKFLOW_MONITORING.md)
+
+---
+
 **🎯 Pronto para executar!**
 
 **Comandos rápidos (copy/paste):**
