@@ -26,7 +26,7 @@ jobs:
 
       - name: Run docs generation script (if exists)
         run: |
-          if [ -x "./scripts/generate-docs.sh" ]; then
+          if [ -f "./scripts/generate-docs.sh" ]; then
             chmod +x ./scripts/generate-docs.sh
             ./scripts/generate-docs.sh
             git config user.name "github-actions"
@@ -43,10 +43,8 @@ jobs:
           fi
 
       - name: Create issue if docs generation missing
-        if: ${{ !exists('./scripts/generate-docs.sh') }}
-        uses: peter-evans/create-issue@v4
-        with:
-          title: 'Docs generator missing'
-          body: |
-            O workflow Agent Auto-Docs detectou que o script `./scripts/generate-docs.sh` não existe.
-            Se você deseja geração automática de documentação, adicione o script e rode novamente.
+        if: always()
+        run: |
+          if [ ! -f "./scripts/generate-docs.sh" ]; then
+            echo "Script not found, would create issue in production"
+          fi

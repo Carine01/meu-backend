@@ -34,13 +34,23 @@ jobs:
 
       - name: Upload test log
         if: always()
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: pr-${{ github.event.pull_request.number }}-test-log
           path: test-output.log
 
+      - name: Check if tests failed
+        id: check_failure
+        if: always()
+        run: |
+          if grep -q "TESTS_FAILED" test-output.log 2>/dev/null; then
+            echo "failed=true" >> $GITHUB_OUTPUT
+          else
+            echo "failed=false" >> $GITHUB_OUTPUT
+          fi
+
       - name: If tests failed - label & comment
-        if: contains(steps.run_tests.outcome, 'failure') || (steps.run_tests.outcome == 'success' && grep -q "TESTS_FAILED" test-output.log || true)
+        if: failure() || steps.check_failure.outputs.failed == 'true'
         uses: peter-evans/create-or-update-comment@v4
         with:
           issue-number: ${{ github.event.pull_request.number }}
@@ -50,7 +60,7 @@ jobs:
             - Por favor, revise os erros e corrija antes de tentar merge.
             - Artefato: pr-${{ github.event.pull_request.number }}-test-log
       - name: Add tests-failed label
-        if: contains(steps.run_tests.outcome, 'failure') || (steps.run_tests.outcome == 'success' && grep -q "TESTS_FAILED" test-output.log || true)
+        if: failure() || steps.check_failure.outputs.failed == 'true'
         uses: peter-evans/labeler@v2
         with:
           repo-token: ${{ secrets.GITHUB_TOKEN }}
