@@ -142,19 +142,27 @@ case $choice in
     10)
         echo -e "${BLUE}📚 Abrindo Documentação...${NC}"
         echo ""
-        if command -v less &> /dev/null; then
-            less PAINEL_COMANDO.md
+        if [ -f "PAINEL_COMANDO.md" ]; then
+            if command -v less &> /dev/null; then
+                less PAINEL_COMANDO.md
+            else
+                cat PAINEL_COMANDO.md
+            fi
         else
-            cat PAINEL_COMANDO.md
+            echo -e "${RED}❌ Arquivo PAINEL_COMANDO.md não encontrado${NC}"
         fi
         ;;
     11)
         echo -e "${BLUE}📋 Abrindo Checklist Dev...${NC}"
         echo ""
-        if command -v less &> /dev/null; then
-            less CHECKLIST_DEV.md
+        if [ -f "CHECKLIST_DEV.md" ]; then
+            if command -v less &> /dev/null; then
+                less CHECKLIST_DEV.md
+            else
+                cat CHECKLIST_DEV.md
+            fi
         else
-            cat CHECKLIST_DEV.md
+            echo -e "${RED}❌ Arquivo CHECKLIST_DEV.md não encontrado${NC}"
         fi
         ;;
     0)

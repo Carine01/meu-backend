@@ -22,7 +22,8 @@ BLUE='\033[0;34m'
 NC='\033[0m'
 
 # Verificar se estamos na branch main
-CURRENT_BRANCH=$(git branch --show-current)
+# Use rev-parse for better compatibility with older Git versions
+CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD 2>/dev/null || git branch --show-current)
 if [ "$CURRENT_BRANCH" != "main" ]; then
     echo -e "${RED}❌ ATENÇÃO: Você não está na branch main!${NC}"
     echo "   Branch atual: $CURRENT_BRANCH"

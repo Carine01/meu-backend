@@ -29,7 +29,8 @@ if ! gh auth status &> /dev/null; then
 fi
 
 echo "🔍 Verificando branch atual..."
-CURRENT_BRANCH=$(git branch --show-current)
+# Use rev-parse for better compatibility with older Git versions
+CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD 2>/dev/null || git branch --show-current)
 echo "Branch atual: $CURRENT_BRANCH"
 echo ""
 

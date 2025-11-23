@@ -49,7 +49,14 @@ echo -e "${BLUE}📊 Resposta do servidor:${NC}"
 echo "HTTP Status: $HTTP_CODE"
 echo ""
 echo "Corpo da resposta:"
-echo "$HTTP_BODY" | python3 -m json.tool 2>/dev/null || echo "$HTTP_BODY"
+# Try jq first, then python, then just echo the body
+if command -v jq &> /dev/null; then
+    echo "$HTTP_BODY" | jq . 2>/dev/null || echo "$HTTP_BODY"
+elif command -v python3 &> /dev/null; then
+    echo "$HTTP_BODY" | python3 -m json.tool 2>/dev/null || echo "$HTTP_BODY"
+else
+    echo "$HTTP_BODY"
+fi
 echo ""
 
 # Verificar resultado

@@ -44,10 +44,18 @@ echo ""
 
 # 4. BUILD
 echo -e "${BLUE}🔨 4/8 - Compilando TypeScript...${NC}"
-npm run build || {
-    echo -e "${YELLOW}⚠️  Build teve erros, continuando...${NC}"
-}
-echo -e "${GREEN}✓ Build concluído${NC}"
+if npm run build; then
+    echo -e "${GREEN}✓ Build concluído${NC}"
+else
+    echo -e "${RED}❌ Build falhou!${NC}"
+    echo -e "${YELLOW}⚠️  Atenção: O build falhou. Código pode estar quebrado.${NC}"
+    echo -e "${YELLOW}   Deseja continuar mesmo assim? (s/n)${NC}"
+    read -r CONTINUE
+    if [ "$CONTINUE" != "s" ] && [ "$CONTINUE" != "S" ]; then
+        echo "Operação cancelada."
+        exit 1
+    fi
+fi
 echo ""
 
 # 5. TESTES
