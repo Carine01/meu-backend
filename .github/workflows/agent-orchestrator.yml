@@ -74,10 +74,7 @@ jobs:
         continue-on-error: true
         run: |
           echo "🧪 Running tests..."
-          npm test -- --passWithNoTests || {
-            echo "⚠️  Some tests failed, but continuing..."
-            exit 0
-          }
+          npm test -- --passWithNoTests
       
       - name: Run health check
         continue-on-error: true

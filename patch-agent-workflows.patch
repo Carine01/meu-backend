@@ -1,9 +1,9 @@
 diff --git a/.github/workflows/agent-orchestrator.yml b/.github/workflows/agent-orchestrator.yml
 new file mode 100644
-index 0000000..5b65d3f
+index 0000000..75fa81c
 --- /dev/null
 +++ b/.github/workflows/agent-orchestrator.yml
-@@ -0,0 +1,129 @@
+@@ -0,0 +1,126 @@
 +name: Agent Orchestrator - run agent scripts in sequence (robust)
 +
 +on:
@@ -80,10 +80,7 @@ index 0000000..5b65d3f
 +        continue-on-error: true
 +        run: |
 +          echo "🧪 Running tests..."
-+          npm test -- --passWithNoTests || {
-+            echo "⚠️  Some tests failed, but continuing..."
-+            exit 0
-+          }
++          npm test -- --passWithNoTests
 +      
 +      - name: Run health check
 +        continue-on-error: true

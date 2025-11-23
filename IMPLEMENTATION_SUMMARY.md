@@ -209,6 +209,22 @@ env:
 
 ---
 
+## Known Issues (Pre-existing, Out of Scope)
+
+1. **firebaseConfig.ts contains demo API keys**
+   - File: `src/firebaseConfig.ts` 
+   - Status: Excluded from build in this PR
+   - Note: Contains keys for "flutter-ai-playground" demo project
+   - Recommendation: Remove file or use environment variables
+   - Impact: None (file not used and excluded from compilation)
+
+2. **Optional scripts may have missing dependencies**
+   - Scripts: `fix-entities.ts`, `add-clinicid.ts`
+   - Note: These are optional and use `continue-on-error`
+   - Impact: None (workflow continues if scripts are missing)
+
+---
+
 ## Files Changed
 
 | File | Change Type | Purpose |
