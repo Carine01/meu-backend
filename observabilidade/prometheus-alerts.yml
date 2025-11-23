@@ -1,0 +1,11 @@
+groups:
+- name: api-alerts
+  rules:
+    - alert: HighLoginFailures
+      expr: increase(login_failures_total[5m]) > 10
+      for: 5m
+      labels:
+        severity: warning
+      annotations:
+        summary: "Muitas falhas de login detectadas"
+        description: "Mais de 10 falhas de login nos últimos 5 minutos."

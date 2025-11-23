@@ -20,6 +20,7 @@ import { IndicacoesModule } from './modules/indicacoes/indicacoes.module';
 import { AgendamentosModule } from './modules/agendamentos/agendamentos.module';
 import { EventosModule } from './modules/eventos/events.module';
 import { AuthModule } from './modules/auth/auth.module';
+import { PrometheusController } from './observability/prometheus.controller';
 
 @Module({
   imports: [
@@ -91,7 +92,7 @@ import { AuthModule } from './modules/auth/auth.module';
     // FlowModule,
     // ...
   ],
-  controllers: [HealthController, TestController, AuthTestController, FirestoreController],
+  controllers: [HealthController, TestController, AuthTestController, FirestoreController, PrometheusController],
   providers: [
     FirebaseAuthService, 
     FirebaseAuthGuard, 

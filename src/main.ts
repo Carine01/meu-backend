@@ -4,6 +4,7 @@ import { Logger, ValidationPipe } from '@nestjs/common';
 import { Logger as PinoLogger } from 'nestjs-pino';
 import helmet from 'helmet';
 import { CorrelationInterceptor } from './shared/logger';
+import { prometheusMiddleware } from './observability/prometheus.middleware';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, {
@@ -15,6 +16,9 @@ async function bootstrap() {
 
   // Correlation ID para rastreamento de requisições
   app.useGlobalInterceptors(new CorrelationInterceptor());
+
+  // Prometheus monitoring
+  app.use(prometheusMiddleware());
 
   // SEGURANÇA: Helmet - protege contra vulnerabilidades conhecidas
   app.use(helmet());
