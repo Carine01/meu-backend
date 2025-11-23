@@ -9,6 +9,11 @@ set -euo pipefail
 WORKFLOWS=("TypeScript Guardian" "Register Fila Fallback (AST)" "Docker Builder" "WhatsApp Monitor")
 REF=${1:-HEAD}  # branch/ref a usar (padrão: HEAD)
 
+# Resolver REF para branch name se for HEAD
+if [ "$REF" == "HEAD" ]; then
+  REF=$(git rev-parse --abbrev-ref HEAD)
+fi
+
 echo "Disparando workflows no ref: $REF"
 
 for wf in "${WORKFLOWS[@]}"; do

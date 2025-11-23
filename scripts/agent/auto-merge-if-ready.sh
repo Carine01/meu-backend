@@ -15,7 +15,7 @@ fi
 echo "Verificando PR #$PR_NUMBER ..."
 
 # 1) garantir ao menos 1 aprovação humana
-approvals=$(gh api repos/{owner}/{repo}/pulls/"$PR_NUMBER"/reviews --jq '.[] | select(.state=="APPROVED") | .user.login' 2>/dev/null || true)
+approvals=$(gh pr view "$PR_NUMBER" --json reviews --jq '.reviews[] | select(.state=="APPROVED") | .author.login' 2>/dev/null || true)
 if [ -z "$approvals" ]; then
   echo "Nenhuma aprovação encontrada. Abortando merge automatizado."
   exit 2
