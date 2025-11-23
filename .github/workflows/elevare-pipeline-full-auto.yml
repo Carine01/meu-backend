@@ -130,4 +130,4 @@ jobs:
       - name: Remote deploy
         run: |
           echo "Deploy remoto aqui (SSH / API / VPS)."
-          echo "Habilite adicionando DEPLOY_ENABLED=true nos secrets."
+          echo "Habilite adicionando DEPLOY_ENABLED=true nas variáveis do repositório."
