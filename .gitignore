@@ -11,3 +11,6 @@ dist/
 service-account.json
 *.firebase-admin.json
 *.credentials.json
+
+# Patch files
+*.patch
