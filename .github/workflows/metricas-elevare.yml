@@ -13,7 +13,7 @@ jobs:
 
       - name: Coletar métricas
         run: |
-          echo "$(date): $(curl -s http://${{ secrets.SERVER_IP }}:3000/health)" >> metrics.log
+          echo "$(date): $(curl -s --max-time 30 --fail http://${{ secrets.SERVER_IP }}:3000/health || echo 'ERROR: Unable to reach health endpoint')" >> metrics.log
 
       - name: Publicar métricas
         uses: peaceiris/actions-gh-pages@v3
