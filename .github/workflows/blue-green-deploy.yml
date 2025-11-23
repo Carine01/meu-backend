@@ -1,0 +1,32 @@
+name: Deploy Blue/Green Elevare
+
+on:
+  push:
+    branches: ["main"]
+
+jobs:
+  blue-green:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Deploy versão green
+        run: ssh ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_IP }} "
+          cd /var/www/elevare-green &&
+          git pull &&
+          docker compose up -d --build
+        "
+
+      - name: Testar versão green
+        run: |
+          RESPONSE=$(curl -s http://${{ secrets.SERVER_IP }}:3001/health)
+          echo "Resposta Green: $RESPONSE"
+          [[ "$RESPONSE" == *"ok"* ]] || exit 1
+
+      - name: Trocar tráfego para green
+        run: ssh ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_IP }} "
+          ln -sfn /var/www/elevare-green /var/www/elevare &&
+          docker compose down &&
+          docker compose up -d --build
+        "
