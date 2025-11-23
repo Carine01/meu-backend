@@ -29,8 +29,10 @@ export class AgendamentosService {
   /**
    * Confirmar agendamento
    */
-  async confirmarAgendamento(id: string): Promise<void> {
-    const agendamento = await this.agendamentoRepo.findOne({ where: { id } });
+  async confirmarAgendamento(id: string, clinicId: string): Promise<void> {
+    const agendamento = await this.agendamentoRepo.findOne({ 
+      where: { id, clinicId } 
+    });
 
     if (!agendamento) {
       throw new NotFoundException(`Agendamento ${id} não encontrado`);
@@ -45,8 +47,10 @@ export class AgendamentosService {
   /**
    * Cancelar agendamento
    */
-  async cancelarAgendamento(id: string, motivo?: string): Promise<void> {
-    const agendamento = await this.agendamentoRepo.findOne({ where: { id } });
+  async cancelarAgendamento(id: string, clinicId: string, motivo?: string): Promise<void> {
+    const agendamento = await this.agendamentoRepo.findOne({ 
+      where: { id, clinicId } 
+    });
 
     if (!agendamento) {
       throw new NotFoundException(`Agendamento ${id} não encontrado`);
@@ -64,8 +68,10 @@ export class AgendamentosService {
   /**
    * Marcar comparecimento
    */
-  async marcarComparecimento(id: string): Promise<void> {
-    const agendamento = await this.agendamentoRepo.findOne({ where: { id } });
+  async marcarComparecimento(id: string, clinicId: string): Promise<void> {
+    const agendamento = await this.agendamentoRepo.findOne({ 
+      where: { id, clinicId } 
+    });
 
     if (!agendamento) {
       throw new NotFoundException(`Agendamento ${id} não encontrado`);
@@ -80,8 +86,10 @@ export class AgendamentosService {
   /**
    * Marcar no-show (falta)
    */
-  async marcarNoShow(id: string): Promise<void> {
-    const agendamento = await this.agendamentoRepo.findOne({ where: { id } });
+  async marcarNoShow(id: string, clinicId: string): Promise<void> {
+    const agendamento = await this.agendamentoRepo.findOne({ 
+      where: { id, clinicId } 
+    });
 
     if (!agendamento) {
       throw new NotFoundException(`Agendamento ${id} não encontrado`);
@@ -96,8 +104,10 @@ export class AgendamentosService {
   /**
    * Reagendar
    */
-  async reagendar(id: string, novoStartISO: string): Promise<void> {
-    const agendamento = await this.agendamentoRepo.findOne({ where: { id } });
+  async reagendar(id: string, novoStartISO: string, clinicId: string): Promise<void> {
+    const agendamento = await this.agendamentoRepo.findOne({ 
+      where: { id, clinicId } 
+    });
 
     if (!agendamento) {
       throw new NotFoundException(`Agendamento ${id} não encontrado`);
@@ -116,8 +126,10 @@ export class AgendamentosService {
   /**
    * Buscar agendamento por ID
    */
-  async findById(id: string): Promise<Agendamento> {
-    const agendamento = await this.agendamentoRepo.findOne({ where: { id } });
+  async findById(id: string, clinicId: string): Promise<Agendamento> {
+    const agendamento = await this.agendamentoRepo.findOne({ 
+      where: { id, clinicId } 
+    });
 
     if (!agendamento) {
       throw new NotFoundException(`Agendamento ${id} não encontrado`);
@@ -129,8 +141,9 @@ export class AgendamentosService {
   /**
    * Listar todos agendamentos
    */
-  async findAll(): Promise<Agendamento[]> {
+  async findAll(clinicId: string): Promise<Agendamento[]> {
     return this.agendamentoRepo.find({
+      where: { clinicId },
       order: { startISO: 'ASC' },
     });
   }
