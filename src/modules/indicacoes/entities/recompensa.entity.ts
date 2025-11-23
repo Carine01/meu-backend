@@ -1,6 +1,7 @@
-import { Entity, PrimaryColumn, Column, CreateDateColumn, UpdateDateColumn } from 'typeorm';
+import { Entity, PrimaryColumn, Column, CreateDateColumn, UpdateDateColumn, Index } from 'typeorm';
 
 @Entity('recompensas')
+@Index(['clinicId']) // Index for clinic filtering
 export class Recompensa {
   @PrimaryColumn('uuid')
   leadId!: string;

@@ -1,6 +1,8 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, Index } from 'typeorm';
 
 @Entity('usuarios')
+@Index(['clinicId']) // Index for clinic filtering
+@Index(['email']) // Index for login lookups (already unique but explicit index)
 export class Usuario {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
