@@ -470,9 +470,10 @@ gh secret list
 #### **1. Preparação (5 min)**
 
 ```bash
-# Mergear PRs
+# Mergear PRs - fetch first to ensure we have latest changes
 git checkout main
-git pull origin main
+git fetch origin main
+git merge origin/main --ff-only  # Ensure local main is up to date
 git merge feat/ci-tests-logs-cron --no-ff
 git merge feat/whatsapp-clinicid-filters --no-ff
 git push origin main
