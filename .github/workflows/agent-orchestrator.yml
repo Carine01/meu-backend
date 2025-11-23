@@ -1,0 +1,97 @@
+name: Agent Orchestrator - run agent scripts in sequence (robust)
+
+on:
+  pull_request:
+    types: [opened, reopened, synchronize]
+  workflow_dispatch:
+    inputs:
+      auto_merge:
+        description: 'Enable automatic merge if all checks pass and approvals exist'
+        required: false
+        default: 'false'
+      reviewers:
+        description: 'Comma-separated reviewers to request (e.g. dev1,dev2). Empty = none'
+        required: false
+        default: ''
+      labels:
+        description: 'Comma-separated labels to add (default: implementation,priority/high)'
+        required: false
+        default: 'implementation,priority/high'
+
+permissions:
+  contents: write
+  pull-requests: write
+  checks: read
+
+jobs:
+  orchestrate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      AUTO_MERGE: ${{ github.event.inputs.auto_merge || 'false' }}
+      REVIEWERS_INPUT: ${{ github.event.inputs.reviewers || '' }}
+      LABELS_INPUT: ${{ github.event.inputs.labels || 'implementation,priority/high' }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Ensure gh CLI present (install if missing)
+        run: |
+          if command -v gh >/dev/null 2>&1; then
+            echo "gh CLI already installed: $(gh --version)"
+          else
+            echo "gh CLI not found. Installing..."
+            curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | sudo dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg
+            sudo chmod go+r /usr/share/keyrings/githubcli-archive-keyring.gpg
+            echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | sudo tee /etc/apt/sources.list.d/github-cli.list > /dev/null
+            sudo apt update
+            sudo apt install gh -y
+            gh --version || true
+          fi
+
+      - name: Ensure scripts are executable
+        run: |
+          chmod +x ./scripts/agent/run-all-checks.sh || true
+          chmod +x ./scripts/agent/auto-comment-and-assign.sh || true
+          chmod +x ./scripts/agent/auto-merge-if-ready.sh || true
+
+      - name: Run all checks (dispara workflows)
+        id: runchecks
+        run: |
+          echo "Executando run-all-checks.sh (dispara workflows principais)..."
+          ./scripts/agent/run-all-checks.sh "${{ github.head_ref || github.ref }}" || echo "run-all-checks retornou não-zero; continuando"
+
+      - name: Detect PR number if missing
+        id: detect_pr
+        run: |
+          PR_NUMBER="${{ github.event.pull_request.number || '' }}"
+          if [ -z "$PR_NUMBER" ]; then
+            echo "PR number não presente no evento; tentando detectar pela branch..."
+            PR_NUMBER=$(gh pr list --head "${{ github.head_ref }}" --state open --json number --jq '.[0].number' || true)
+          fi
+          if [ -z "$PR_NUMBER" ]; then
+            echo "PR_NUMBER_NOT_FOUND=true" >> $GITHUB_OUTPUT
+          else
+            echo "PR_NUMBER=$PR_NUMBER" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Post comment, labels and request reviewers (if PR detected)
+        if: steps.detect_pr.outputs.PR_NUMBER != 'true'
+        run: |
+          PR_NUMBER=${{ steps.detect_pr.outputs.PR_NUMBER }}
+          echo "PR_NUMBER detected: $PR_NUMBER"
+          REVIEWERS="${{ env.REVIEWERS_INPUT }}"
+          LABELS="${{ env.LABELS_INPUT }}"
+          echo "Calling auto-comment-and-assign.sh for PR #${PR_NUMBER}"
+          ./scripts/agent/auto-comment-and-assign.sh "$PR_NUMBER" "$REVIEWERS" "$LABELS"
+
+      - name: Optionally attempt auto-merge (guarded)
+        if: env.AUTO_MERGE == 'true' && steps.detect_pr.outputs.PR_NUMBER != 'true'
+        run: |
+          PR_NUMBER=${{ steps.detect_pr.outputs.PR_NUMBER }}
+          echo "AUTO_MERGE enabled. Attempting auto-merge for PR #${PR_NUMBER}"
+          ./scripts/agent/auto-merge-if-ready.sh "$PR_NUMBER" "squash" || echo "Auto-merge não autorizado ou falhou; revisar manualmente."
+
+      - name: Final status note
+        run: echo "Agent Orchestrator run finalizada. AUTO_MERGE=${{ env.AUTO_MERGE }}, REVIEWERS='${{ env.REVIEWERS_INPUT }}', LABELS='${{ env.LABELS_INPUT }}'"
