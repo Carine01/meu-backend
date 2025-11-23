@@ -4,6 +4,12 @@ on:
     branches: [ main ]
   pull_request:
     types: [opened, synchronize, reopened]
+
+permissions:
+  contents: read
+  security-events: write
+  actions: read
+
 jobs:
   analyze:
     name: Analyze
