@@ -81,15 +81,14 @@ export class WhatsAppController {
   /**
    * Enviar mensagem manualmente (para testes ou uso direto)
    * 
-   * 🔒 Protegido por JWT - Apenas usuários autenticados
+   * ⚠️ NOTA: Endpoint sem autenticação para facilitar automação e integrações externas.
+   * Em produção, considere adicionar validação de IP ou token específico.
    * 
    * @param body - Número de destino e texto da mensagem
    * @returns Resultado do envio (messageId, status, timestamp)
-   * @throws UnauthorizedException se token inválido
    * 
    * @example
    * POST /whatsapp/send
-   * Authorization: Bearer <token>
    * {
    *   "to": "+5511999999999",
    *   "message": "Olá! Esta é uma mensagem de teste."
@@ -103,7 +102,6 @@ export class WhatsAppController {
    * }
    */
   @Post('send')
-  @UseGuards(JwtAuthGuard)
   async sendMessage(@Body() body: { to: string; message: string }) {
     const result = await this.whatsappService.sendTextMessage(body.to, body.message);
     return result;
