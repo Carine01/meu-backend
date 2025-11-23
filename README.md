@@ -32,6 +32,9 @@ Veja o arquivo `.env.example` para todas as variáveis necessárias (Firebase, U
 - [Firebase](https://firebase.google.com/docs)
 
 ### 🚀 Automação e CI/CD
+
+**🎯 [QUICK_START.md](QUICK_START.md) - Comece em 5 minutos!**
+
 - **[GUIA_AUTOMACAO_COMPLETA.md](GUIA_AUTOMACAO_COMPLETA.md)** - Guia completo de automação GitHub (scripts, workflows, comandos)
 - **[scripts/comandos-rapidos.sh](scripts/comandos-rapidos.sh)** - Comandos rápidos prontos para copy/paste
 - **[COMANDOS_GITHUB.md](COMANDOS_GITHUB.md)** - Comandos para criação de issues e PRs
