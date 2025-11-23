@@ -293,7 +293,7 @@ git reset --hard origin/master
 ## 🎯 MELHORES PRÁTICAS
 
 1. **Sempre faça backup** de mudanças importantes antes de usar `reset --hard`
-2. **Communique a equipe** antes de forçar sincronizações em branches compartilhadas
+2. **Comunique a equipe** antes de forçar sincronizações em branches compartilhadas
 3. **Use branches** para experimentação, mantenha `main` limpa
 4. **Commit frequentemente** para não perder trabalho
 5. **Verifique o status** antes de comandos destrutivos
