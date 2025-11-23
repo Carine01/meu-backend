@@ -124,7 +124,6 @@ done
 echo ""
 echo "[5/9] Disparando workflows críticos..."
 WORKFLOWS=("CI" "Docker Builder" "Agent Orchestrator - run agent scripts in sequence (robust)")
-RUN_IDS=()
 
 for wf in "${WORKFLOWS[@]}"; do
   echo "  Disparando workflow: $wf"
@@ -169,10 +168,14 @@ fi
 # ==============================================================================
 echo ""
 echo "[7/9] Comentando no PR..."
-SUMMARY="🤖 **Resumo de Execução dos Agents**\n\n"
-SUMMARY+="Branch: \`$BRANCH\`\n"
-SUMMARY+="Timestamp: $(date -u +"%Y-%m-%d %H:%M:%S UTC")\n\n"
-SUMMARY+="### Status dos Workflows:\n\n"
+SUMMARY="🤖 **Resumo de Execução dos Agents**
+
+Branch: \`$BRANCH\`
+Timestamp: $(date -u +"%Y-%m-%d %H:%M:%S UTC")
+
+### Status dos Workflows:
+
+"
 
 FAILED_WORKFLOWS=()
 
@@ -180,19 +183,23 @@ for wf in "${WORKFLOWS[@]}"; do
   run_id=$(gh run list --workflow "$wf" --branch "$BRANCH" --limit 5 --json databaseId,status,conclusion --jq '.[0] | .databaseId' 2>/dev/null || true)
   if [ -n "$run_id" ]; then
     status_info=$(gh run view "$run_id" --json status,conclusion --jq '.status + " / " + (.conclusion // "pending")' 2>/dev/null || echo "unknown")
-    SUMMARY+="- **$wf**: $status_info\n"
+    SUMMARY+="- **$wf**: $status_info
+"
     
     # Check for failures
     if [[ "$status_info" =~ "failure" ]]; then
       FAILED_WORKFLOWS+=("$wf")
     fi
   else
-    SUMMARY+="- **$wf**: não encontrado\n"
+    SUMMARY+="- **$wf**: não encontrado
+"
   fi
 done
 
-SUMMARY+="\n---\n"
-SUMMARY+="Deploy executado por: fast-deploy-agents.sh\n"
+SUMMARY+="
+---
+Deploy executado por: fast-deploy-agents.sh
+"
 
 gh pr comment "$PR_NUMBER" --body "$SUMMARY" || echo "  Falha ao comentar no PR"
 
@@ -203,16 +210,24 @@ echo ""
 echo "[8/9] Verificando falhas..."
 if [ ${#FAILED_WORKFLOWS[@]} -gt 0 ]; then
   echo "  Detectadas falhas em: ${FAILED_WORKFLOWS[*]}"
-  ISSUE_BODY="## 🚨 Incidente: Falha em Workflows\n\n"
-  ISSUE_BODY+="**PR**: #$PR_NUMBER\n"
-  ISSUE_BODY+="**Branch**: \`$BRANCH\`\n"
-  ISSUE_BODY+="**Data**: $(date -u +"%Y-%m-%d %H:%M:%S UTC")\n\n"
-  ISSUE_BODY+="### Workflows com Falha:\n\n"
+  ISSUE_BODY="## 🚨 Incidente: Falha em Workflows
+
+**PR**: #$PR_NUMBER
+**Branch**: \`$BRANCH\`
+**Data**: $(date -u +"%Y-%m-%d %H:%M:%S UTC")
+
+### Workflows com Falha:
+
+"
   for failed_wf in "${FAILED_WORKFLOWS[@]}"; do
-    ISSUE_BODY+="- $failed_wf\n"
+    ISSUE_BODY+="- $failed_wf
+"
   done
-  ISSUE_BODY+="\n### Ação Necessária:\n\n"
-  ISSUE_BODY+="Por favor, revise os logs dos workflows e corrija os erros antes de tentar merge.\n"
+  ISSUE_BODY+="
+### Ação Necessária:
+
+Por favor, revise os logs dos workflows e corrija os erros antes de tentar merge.
+"
   
   gh issue create --title "🚨 Workflow failures on $BRANCH" \
     --body "$ISSUE_BODY" \

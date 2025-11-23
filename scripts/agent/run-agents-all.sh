@@ -31,11 +31,14 @@ for wf in "${WORKFLOWS[@]}"; do
 done
 
 if [ -n "$PR_NUMBER" ]; then
-  SUMMARY="Agentes executados para branch $BRANCH\n"
+  SUMMARY="Agentes executados para branch $BRANCH
+
+"
   for wf in "${WORKFLOWS[@]}"; do
     run_id=$(gh run list --workflow "$wf" --branch "$BRANCH" --limit 20 --json databaseId,headBranch --jq '.[] | select(.headBranch=="'"$BRANCH"'") | .databaseId' | head -n1)
     s="$(gh run view "$run_id" --json status,conclusion --jq '.status + " / " + (.conclusion // "")' 2>/dev/null || true)"
-    SUMMARY+="- $wf : $s\n"
+    SUMMARY+="- $wf : $s
+"
   done
   gh pr comment "$PR_NUMBER" --body "$SUMMARY" || echo "Falha ao comentar PR"
 fi

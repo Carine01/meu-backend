@@ -38,8 +38,18 @@ jobs:
           name: pr-${{ github.event.pull_request.number }}-test-log
           path: test-output.log
 
+      - name: Check for test failures
+        id: check_failures
+        if: always()
+        run: |
+          if grep -q "TESTS_FAILED" test-output.log 2>/dev/null; then
+            echo "TESTS_HAVE_FAILED=true" >> $GITHUB_OUTPUT
+          else
+            echo "TESTS_HAVE_FAILED=false" >> $GITHUB_OUTPUT
+          fi
+
       - name: If tests failed - label & comment
-        if: contains(steps.run_tests.outcome, 'failure') || (steps.run_tests.outcome == 'success' && grep -q "TESTS_FAILED" test-output.log || true)
+        if: steps.run_tests.outcome == 'failure' || steps.check_failures.outputs.TESTS_HAVE_FAILED == 'true'
         uses: peter-evans/create-or-update-comment@v4
         with:
           issue-number: ${{ github.event.pull_request.number }}
@@ -49,8 +59,8 @@ jobs:
             - Por favor, revise os erros e corrija antes de tentar merge.
 
       - name: Add tests-failed label
-        if: contains(steps.run_tests.outcome, 'failure') || (steps.run_tests.outcome == 'success' && grep -q "TESTS_FAILED" test-output.log || true)
-        uses: peter-evans/labeler@v2
-        with:
-          repo-token: ${{ secrets.GITHUB_TOKEN }}
-          labels: tests-failed
+        if: steps.run_tests.outcome == 'failure' || steps.check_failures.outputs.TESTS_HAVE_FAILED == 'true'
+        run: |
+          gh pr edit ${{ github.event.pull_request.number }} --add-label "tests-failed"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

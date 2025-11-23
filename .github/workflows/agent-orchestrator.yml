@@ -69,13 +69,13 @@ jobs:
           fi
 
       - name: Post comment, labels and request reviewers (if PR)
-        if: steps.detect_pr.outputs.PR_NUMBER != 'true'
+        if: steps.detect_pr.outputs.PR_NUMBER_NOT_FOUND != 'true'
         run: |
           PR_NUMBER=${{ steps.detect_pr.outputs.PR_NUMBER }}
           ./scripts/agent/auto-comment-and-assign.sh "$PR_NUMBER" "${{ env.REVIEWERS_INPUT }}" "${{ env.LABELS_INPUT }}"
 
       - name: Optionally attempt auto-merge (guarded)
-        if: env.AUTO_MERGE == 'true' && steps.detect_pr.outputs.PR_NUMBER != 'true'
+        if: env.AUTO_MERGE == 'true' && steps.detect_pr.outputs.PR_NUMBER_NOT_FOUND != 'true'
         run: |
           PR_NUMBER=${{ steps.detect_pr.outputs.PR_NUMBER }}
           ./scripts/agent/auto-merge-if-ready.sh "$PR_NUMBER" "squash" || echo "Auto-merge não autorizado ou falhou; revisar manualmente."
