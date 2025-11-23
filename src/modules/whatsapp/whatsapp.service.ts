@@ -1,6 +1,10 @@
 import { Injectable, Logger, Inject } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
 import { WhatsAppProvider, MessageStatus, SendMessageResult } from './whatsapp-provider.interface';
+import { WhatsappMessage } from './entities/whatsapp-message.entity';
+import { SendMessageDto } from './dto/send-message.dto';
 
 /**
  * Service principal que abstrai o provider de WhatsApp
@@ -14,6 +18,8 @@ export class WhatsAppService {
     @Inject('WHATSAPP_PROVIDER')
     private readonly provider: WhatsAppProvider,
     private readonly configService: ConfigService,
+    @InjectRepository(WhatsappMessage)
+    private repo: Repository<WhatsappMessage>,
   ) {
     this.logger.log(`🔌 WhatsApp provider: ${this.configService.get('WHATSAPP_PROVIDER', 'baileys')}`);
   }
@@ -130,6 +136,26 @@ export class WhatsAppService {
 
   private sleep(ms: number): Promise<void> {
     return new Promise(resolve => setTimeout(resolve, ms));
+  }
+
+  async sendMessage(dto: SendMessageDto) {
+    return this.repo.save({
+      ...dto,
+      clinicId: dto.clinicId,
+    });
+  }
+
+  async listMessages(limit: number = 50, clinicId?: string) {
+    const whereClause: any = {};
+    if (clinicId) {
+      whereClause.clinicId = clinicId;
+    }
+    
+    return this.repo.find({
+      take: limit,
+      where: whereClause,
+      order: { createdAt: 'DESC' },
+    });
   }
 }
 
