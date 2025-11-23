@@ -9,14 +9,26 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      - name: Setup SSH key
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+
+      - name: Setup SSH known hosts
+        run: |
+          ssh-keyscan -H ${{ secrets.SERVER_IP }} >> ~/.ssh/known_hosts
+
       - name: Auto-restart backend e fila se travarem
         run: |
-          ssh -o StrictHostKeyChecking=no ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_IP }} "
-          if ! curl -s http://localhost:3000/health | grep -q ok; then
+          ssh ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_IP }} "
+          if ! curl -s --max-time 10 --connect-timeout 5 http://localhost:3000/health | jq -e '.status == \"ok\"' > /dev/null 2>&1; then
+              echo 'Backend health check failed, restarting...'
               docker compose restart backend
           fi
 
-          if ! curl -s http://localhost:3000/whatsapp/health | grep -q ok; then
+          if ! curl -s --max-time 10 --connect-timeout 5 http://localhost:3000/whatsapp/health | jq -e '.status == \"ok\"' > /dev/null 2>&1; then
+              echo 'WhatsApp queue health check failed, restarting...'
               docker compose restart queue
           fi
           "
