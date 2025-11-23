@@ -1,4 +1,9 @@
 #!/bin/bash
+#
+# Script de Automação Completa - Agente Automático
+# Este script sincroniza, constrói, testa e envia mudanças para o GitHub
+# ATENÇÃO: Este script é destinado para uso automatizado e fará commit/push diretamente na main
+#
 
 echo "🔄 Sincronizando branch..."
 git fetch origin main
