@@ -9,6 +9,29 @@ export class WhatsAppController {
   constructor(private readonly whatsappService: WhatsAppService) {}
 
   /**
+   * Health check endpoint for WhatsApp service
+   * 
+   * Returns the status of the WhatsApp service.
+   * 
+   * 🔓 PÚBLICO - Não requer autenticação
+   * 
+   * @returns Status OK and timestamp
+   * 
+   * @example
+   * GET /whatsapp/health
+   * 
+   * Response:
+   * {
+   *   "status": "ok",
+   *   "timestamp": "2025-11-23T17:52:40.584Z"
+   * }
+   */
+  @Get('health')
+  health() {
+    return { status: 'ok', timestamp: new Date().toISOString() };
+  }
+
+  /**
    * Webhook para receber status de mensagens e callbacks do WhatsApp Business API
    * 
    * Este endpoint é chamado pelo Meta/WhatsApp quando:

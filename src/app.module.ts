@@ -20,6 +20,7 @@ import { IndicacoesModule } from './modules/indicacoes/indicacoes.module';
 import { AgendamentosModule } from './modules/agendamentos/agendamentos.module';
 import { EventosModule } from './modules/eventos/events.module';
 import { AuthModule } from './modules/auth/auth.module';
+import { WhatsAppModule } from './modules/whatsapp/whatsapp.module';
 
 @Module({
   imports: [
@@ -29,17 +30,31 @@ import { AuthModule } from './modules/auth/auth.module';
       envFilePath: '.env',
     }),
     
-    // TypeORM - PostgreSQL
+    // TypeORM - PostgreSQL or SQLite
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
-      useFactory: (config: ConfigService) => ({
-        type: 'postgres',
-        url: config.get<string>('DATABASE_URL') || 'postgresql://postgres:dev123@localhost:5432/elevare_db',
-        entities: [__dirname + '/**/*.entity{.ts,.js}'],
-        synchronize: config.get('DB_SYNCHRONIZE', 'false') === 'true',
-        logging: config.get('DB_LOGGING', 'false') === 'true',
-      }),
+      useFactory: (config: ConfigService) => {
+        const dbType = config.get<string>('DB_TYPE', 'postgres');
+        
+        if (dbType === 'sqlite') {
+          return {
+            type: 'better-sqlite3',
+            database: config.get<string>('DB_DATABASE', 'dev.sqlite'),
+            entities: [__dirname + '/**/*.entity{.ts,.js}'],
+            synchronize: config.get('DB_SYNCHRONIZE', 'false') === 'true',
+            logging: config.get('DB_LOGGING', 'false') === 'true',
+          };
+        }
+        
+        return {
+          type: 'postgres',
+          url: config.get<string>('DATABASE_URL') || 'postgresql://postgres:dev123@localhost:5432/elevare_db',
+          entities: [__dirname + '/**/*.entity{.ts,.js}'],
+          synchronize: config.get('DB_SYNCHRONIZE', 'false') === 'true',
+          logging: config.get('DB_LOGGING', 'false') === 'true',
+        };
+      },
     }),
     
     // Schedule - Para CronJobs
@@ -83,6 +98,7 @@ import { AuthModule } from './modules/auth/auth.module';
     IndicacoesModule,
     AgendamentosModule,
     EventosModule,
+    WhatsAppModule,
     // FlowModule,
     // ...
   ],
