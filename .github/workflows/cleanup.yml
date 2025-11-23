@@ -1,0 +1,27 @@
+name: Limpeza Automática
+
+on:
+  schedule:
+    - cron: "0 3 * * *"
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+        token: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Remover arquivos desnecessários
+      run: |
+        rm -rf logs/*.log || true
+        rm -rf temp || true
+
+    - name: Apagar branches já mergidas
+      run: |
+        git fetch --prune
+        git branch -r --merged | grep -v "main" | sed 's/origin\///' | xargs -r -n 1 git push origin --delete
