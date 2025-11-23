@@ -2,7 +2,7 @@
 set -euo pipefail
 
 # scripts/agent/fast-deploy-agents.sh
-# Automatiza finalização pelo GitHub agents sem pausas.
+# Automatiza a finalização pelos GitHub agents sem pausas.
 # Uso:
 #   export GITHUB_TOKEN="$(gh auth token)"     # se local
 #   export DB_URL="postgresql://user:pass@..." # opcional: para criar secret
@@ -10,10 +10,13 @@ set -euo pipefail
 #   export WHATSAPP_PROVIDER_API_URL="https://api..."
 #   export JWT_SECRET="..."                    # opcional
 #   export AUTO_MERGE="false"                  # opcional: true|false (default false)
+#   export BASE_BRANCH="main"                  # opcional: branch base (default main)
+#   export PATCHES="patch1.patch,patch2.patch" # opcional: lista de patches separados por vírgula
 #   ./scripts/agent/fast-deploy-agents.sh branch-name
 #
 BRANCH="${1:-feat/whatsapp-clinicid-filters}"
 AUTO_MERGE="${AUTO_MERGE:-false}"
+BASE_BRANCH="${BASE_BRANCH:-main}"
 
 # Workflows a monitorar (ajuste nomes se necessário)
 WORKFLOWS=(
@@ -55,8 +58,16 @@ apply_patch_if_exists() {
   fi
 }
 
-PATCHES=("patch-clinicId-filters.patch" "patch-agent-workflows.patch" "patch-agent-workflows-2.patch")
-for p in "${PATCHES[@]}"; do
+# Patches a aplicar (configurável via env var PATCHES)
+if [ -n "${PATCHES:-}" ]; then
+  # Usar patches da variável de ambiente (separados por vírgula)
+  IFS=',' read -ra PATCHES_ARRAY <<< "$PATCHES"
+else
+  # Usar patches padrão
+  PATCHES_ARRAY=("patch-clinicId-filters.patch" "patch-agent-workflows.patch" "patch-agent-workflows-2.patch")
+fi
+
+for p in "${PATCHES_ARRAY[@]}"; do
   apply_patch_if_exists "$p"
 done
 
@@ -79,7 +90,7 @@ fi
 PR_NUMBER=$(gh pr list --state open --head "$BRANCH" --json number --jq '.[0].number' 2>/dev/null || true)
 if [ -z "$PR_NUMBER" ]; then
   echo "Nenhum PR aberto para $BRANCH. Criando PR..."
-  PR_URL=$(gh pr create --base main --head "$BRANCH" --title "feat: ${BRANCH}" --body "Automated PR for ${BRANCH}" --label "automation" 2>/dev/null || true)
+  PR_URL=$(gh pr create --base "$BASE_BRANCH" --head "$BRANCH" --title "feat: ${BRANCH}" --body "Automated PR for ${BRANCH}" --label "automation" 2>/dev/null || true)
   # extrair número do URL se obtido
   if [ -n "$PR_URL" ]; then
     PR_NUMBER=$(echo "$PR_URL" | sed -E 's#.*/pull/([0-9]+).*#\1#')
@@ -227,8 +238,8 @@ if [ "${AUTO_MERGE}" = "true" ] && [ -n "${PR_NUMBER:-}" ]; then
   else
     echo "Aprovações encontradas de: $approvals"
     
-    # Verificar que TODOS os checks passaram
-    failed_checks=$(gh pr checks "$PR_NUMBER" --json name,conclusion --jq '.[] | select(.conclusion != "SUCCESS" and .conclusion != "success" and .conclusion != "SKIPPED" and .conclusion != "skipped" and .conclusion != "NEUTRAL" and .conclusion != "neutral") | .name' 2>/dev/null || true)
+    # Verificar que TODOS os checks passaram (usando regex case-insensitive)
+    failed_checks=$(gh pr checks "$PR_NUMBER" --json name,conclusion --jq '.[] | select(.conclusion | test("^(success|skipped|neutral)$"; "i") | not) | .name' 2>/dev/null || true)
     
     if [ -z "$failed_checks" ]; then
       echo "Todos os checks passaram. Realizando merge (squash) e deletando branch..."

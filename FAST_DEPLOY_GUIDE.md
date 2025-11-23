@@ -19,6 +19,10 @@ export DB_URL="postgresql://user:pass@host:5432/db"
 export WHATSAPP_PROVIDER_TOKEN="seu_token"
 export WHATSAPP_PROVIDER_API_URL="https://api.whatsapp.com"
 export JWT_SECRET="seu_secret"
+
+# Configurações opcionais
+export BASE_BRANCH="main"              # ou "develop", "production", etc.
+export PATCHES="patch1.patch,patch2.patch"  # lista customizada de patches
 ```
 
 ### 3. Executar

@@ -104,6 +104,16 @@ export JWT_SECRET="my-secret-key"
 
 ## 🔧 Configuração
 
+### Variáveis de Ambiente de Configuração
+
+O script suporta as seguintes variáveis de ambiente para personalização:
+
+| Variável | Descrição | Padrão |
+|----------|-----------|--------|
+| `BASE_BRANCH` | Branch base para criar PR | `main` |
+| `AUTO_MERGE` | Habilitar auto-merge | `false` |
+| `PATCHES` | Lista de patches (separados por vírgula) | `patch-clinicId-filters.patch,patch-agent-workflows.patch,patch-agent-workflows-2.patch` |
+
 ### Workflows Monitorados
 
 O script monitora os seguintes workflows (editável no script):
@@ -200,7 +210,23 @@ export JWT_SECRET="super-secret"
 ./scripts/agent/fast-deploy-agents.sh feat/config-update
 ```
 
-### Cenário 3: CI/CD no GitHub Actions
+### Cenário 3: Deploy com Branch Base Customizada
+
+```bash
+# Para repositórios que usam 'develop' ou outra branch principal
+export BASE_BRANCH="develop"
+./scripts/agent/fast-deploy-agents.sh feat/nova-feature
+```
+
+### Cenário 4: Deploy com Patches Customizados
+
+```bash
+# Definir patches específicos
+export PATCHES="meu-patch.patch,outro-patch.patch"
+./scripts/agent/fast-deploy-agents.sh feat/custom-patches
+```
+
+### Cenário 5: CI/CD no GitHub Actions
 
 ```yaml
 name: Fast Deploy
