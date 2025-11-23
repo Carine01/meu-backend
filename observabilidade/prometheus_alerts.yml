@@ -1,0 +1,57 @@
+groups:
+  - name: authentication_alerts
+    interval: 30s
+    rules:
+      # Alerta de tentativas de login excessivas
+      - alert: ExcessiveLoginAttempts
+        expr: |
+          sum(increase(login_attempts_total[5m])) by (user) > 10
+        for: 1m
+        labels:
+          severity: warning
+          category: security
+        annotations:
+          summary: "Tentativas de login excessivas detectadas"
+          description: "O usuário {{ $labels.user }} fez mais de 10 tentativas de login nos últimos 5 minutos. Valor atual: {{ $value }}"
+
+      # Alerta de falhas de login
+      - alert: HighLoginFailureRate
+        expr: |
+          sum(increase(login_failures_total[5m])) by (user) > 5
+        for: 1m
+        labels:
+          severity: warning
+          category: security
+        annotations:
+          summary: "Taxa alta de falhas de login"
+          description: "O usuário {{ $labels.user }} teve mais de 5 falhas de login nos últimos 5 minutos. Valor atual: {{ $value }}"
+
+  - name: rbac_performance_alerts
+    interval: 30s
+    rules:
+      # Alerta de latência alta em rotas protegidas por RBAC
+      - alert: HighRBACRouteLatency
+        expr: |
+          histogram_quantile(0.95, sum(rate(http_request_duration_ms_bucket{route=~"/admin.*"}[5m])) by (le, route)) > 500
+        for: 2m
+        labels:
+          severity: warning
+          category: performance
+        annotations:
+          summary: "Latência alta em rotas protegidas por RBAC"
+          description: "O p95 da latência da rota {{ $labels.route }} passou de 500ms. Valor atual: {{ $value }}ms"
+
+  - name: token_refresh_alerts
+    interval: 30s
+    rules:
+      # Alerta de ausência de refresh tokens válidos
+      - alert: RefreshTokenFailures
+        expr: |
+          sum(increase(refresh_token_failures_total[10m])) > 0
+        for: 1m
+        labels:
+          severity: critical
+          category: security
+        annotations:
+          summary: "Falhas ao validar refresh tokens"
+          description: "Houve {{ $value }} falha(s) ao validar refresh tokens nos últimos 10 minutos"
