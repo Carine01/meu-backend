@@ -37,9 +37,11 @@ jobs:
           npm ci --no-audit --prefer-offline --progress=false || npm install --no-audit --progress=false
       
       - name: Run TypeScript build
+        id: build
         run: npm run build
       
       - name: Run tests
+        id: test
         run: npm run test -- --passWithNoTests
       
       - name: Run agent task
@@ -59,9 +61,7 @@ jobs:
               npm audit --production || true
               ;;
             "validate")
-              echo "Running validation..."
-              npm run build
-              npm test -- --passWithNoTests
+              echo "✅ Validation already completed in previous steps"
               ;;
             *)
               echo "Unknown agent task: ${{ github.event.inputs.agent_task }}"
@@ -69,6 +69,7 @@ jobs:
           esac
       
       - name: Validate code patterns
+        id: patterns
         run: |
           echo "Checking for code patterns..."
           # Check for console.log usage (should use logger instead)
@@ -78,17 +79,35 @@ jobs:
             echo "✅ No console.log found"
           fi
           
-          # Check for missing clinicId in queries
-          if grep -r "\.find\s*({" src/ --include="*.service.ts" 2>/dev/null | grep -v "clinicId" | grep -v "test"; then
-            echo "⚠️ Warning: Found queries without clinicId filter"
+          # Check for missing clinicId in service find methods
+          if grep -rE "this\.(repo|repository)\.find\s*\(\s*\{" src/ --include="*.service.ts" 2>/dev/null | grep -v "clinicId" | grep -v "test"; then
+            echo "⚠️ Warning: Found database queries without clinicId filter"
           else
-            echo "✅ All queries appear to have clinicId filters"
+            echo "✅ All database queries appear to have clinicId filters"
           fi
       
       - name: Generate summary
         if: always()
         run: |
           echo "## Agent Runner Summary" >> $GITHUB_STEP_SUMMARY
-          echo "- Build: ✅ Passed" >> $GITHUB_STEP_SUMMARY
-          echo "- Tests: ✅ Passed" >> $GITHUB_STEP_SUMMARY
-          echo "- Code validation: ✅ Completed" >> $GITHUB_STEP_SUMMARY
+          
+          # Build status
+          if [ "${{ steps.build.outcome }}" == "success" ]; then
+            echo "- Build: ✅ Passed" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "- Build: ❌ Failed" >> $GITHUB_STEP_SUMMARY
+          fi
+          
+          # Test status
+          if [ "${{ steps.test.outcome }}" == "success" ]; then
+            echo "- Tests: ✅ Passed" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "- Tests: ❌ Failed" >> $GITHUB_STEP_SUMMARY
+          fi
+          
+          # Pattern validation status
+          if [ "${{ steps.patterns.outcome }}" == "success" ]; then
+            echo "- Code validation: ✅ Completed" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "- Code validation: ⚠️ Issues found" >> $GITHUB_STEP_SUMMARY
+          fi
