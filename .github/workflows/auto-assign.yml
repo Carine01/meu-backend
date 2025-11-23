@@ -5,6 +5,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      # IMPORTANTE: Substitua 'devuser1,devuser2' pelos usernames reais do GitHub
       - uses: kentaro-m/auto-assign-action@v1
         with:
           reviewers: 'devuser1,devuser2'
