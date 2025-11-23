@@ -34,8 +34,11 @@ echo ""
 
 # Step 2: Pull latest images
 echo -e "${YELLOW}Step 2/4: Pulling latest images...${NC}"
-docker compose -f "$COMPOSE_FILE" pull || echo -e "${YELLOW}Warning: Some images may not have remote versions to pull${NC}"
-echo -e "${GREEN}✓ Images pulled${NC}"
+if docker compose -f "$COMPOSE_FILE" pull; then
+    echo -e "${GREEN}✓ Images pulled${NC}"
+else
+    echo -e "${YELLOW}Warning: Some images may not have remote versions to pull${NC}"
+fi
 echo ""
 
 # Step 3: Build and start containers

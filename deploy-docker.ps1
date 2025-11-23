@@ -43,7 +43,11 @@ Write-Output ""
 Write-ColorOutput Yellow "Step 2/4: Pulling latest images..."
 try {
     docker compose -f $ComposeFile pull
-    Write-ColorOutput Green "✓ Images pulled"
+    if ($LASTEXITCODE -eq 0) {
+        Write-ColorOutput Green "✓ Images pulled"
+    } else {
+        Write-ColorOutput Yellow "Warning: Some images may not have remote versions to pull"
+    }
 } catch {
     Write-ColorOutput Yellow "Warning: Some images may not have remote versions to pull"
 }
