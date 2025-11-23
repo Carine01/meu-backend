@@ -102,3 +102,4 @@ fi
 echo ""
 echo -e "${GREEN}🎉 Automação completa para PR #${PR_NUMBER}!${NC}"
 echo -e "${CYAN}🔗 Ver PR: https://github.com/$(gh repo view --json nameWithOwner -q .nameWithOwner)/pull/${PR_NUMBER}${NC}"
+

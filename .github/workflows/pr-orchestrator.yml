@@ -74,3 +74,4 @@ jobs:
           echo "- **Labels:** ${{ steps.set-pr.outputs.labels || 'Nenhuma' }}" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "🔗 [Ver PR #${{ steps.set-pr.outputs.pr_number }}](https://github.com/${{ github.repository }}/pull/${{ steps.set-pr.outputs.pr_number }})" >> $GITHUB_STEP_SUMMARY
+

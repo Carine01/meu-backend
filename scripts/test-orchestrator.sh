@@ -13,7 +13,6 @@ if ! command -v gh &> /dev/null; then
     echo "⚠️  GitHub CLI (gh) is not installed. This is required for the orchestrator."
     echo "Install it with: brew install gh (Mac) or apt install gh (Linux)"
     echo ""
-    echo "✅ Script validation:"
 else
     echo "✅ GitHub CLI is installed"
     echo ""
@@ -76,3 +75,4 @@ echo "━━━━━━━━━━━━━━━━━━━━━━━━�
 echo "✅ All tests passed! The orchestrator is ready to use."
 echo ""
 echo "📚 Read the full documentation at: docs/ORCHESTRATOR.md"
+
