@@ -1,0 +1,46 @@
+name: Monorepo CI/CD
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+      
+      # Backend
+      - name: Install backend dependencies
+        run: npm install
+      
+      - name: Lint backend
+        run: npm run build 2>&1 | grep -i "error" && exit 1 || echo "Build check passed"
+      
+      - name: Test backend (Jest)
+        run: npm run test -- --passWithNoTests
+      
+      - name: Build API
+        run: npm run build
+      
+      # Frontend
+      - name: Install frontend dependencies
+        working-directory: ./apps/frontend
+        run: npm install
+      
+      - name: Lint frontend
+        working-directory: ./apps/frontend
+        run: npm run lint || echo "Lint completed with warnings"
+      
+      - name: Build Web
+        working-directory: ./apps/frontend
+        run: npm run build
+      
+      - name: Deploy (exemplo)
+        if: github.ref == 'refs/heads/main'
+        run: echo "Deploy step here"

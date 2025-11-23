@@ -20,6 +20,7 @@ import { IndicacoesModule } from './modules/indicacoes/indicacoes.module';
 import { AgendamentosModule } from './modules/agendamentos/agendamentos.module';
 import { EventosModule } from './modules/eventos/events.module';
 import { AuthModule } from './modules/auth/auth.module';
+import { ProductsModule } from './modules/products/products.module';
 
 @Module({
   imports: [
@@ -88,6 +89,7 @@ import { AuthModule } from './modules/auth/auth.module';
     IndicacoesModule,
     AgendamentosModule,
     EventosModule,
+    ProductsModule,
     // FlowModule,
     // ...
   ],
