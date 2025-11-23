@@ -17,6 +17,9 @@ on:
 jobs:
   register-fallback:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write  # Need write to commit changes
+      pull-requests: read
     
     steps:
       - name: Checkout code

@@ -12,6 +12,9 @@ on:
 jobs:
   health-check:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write  # Need write to create/update/close incident issues
     
     steps:
       - name: Checkout code
