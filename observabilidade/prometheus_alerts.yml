@@ -30,6 +30,8 @@ groups:
     interval: 30s
     rules:
       # Alerta de latência alta em rotas protegidas por RBAC
+      # O pattern /admin.* monitora todas as rotas que começam com /admin
+      # incluindo /admin, /admin/users, /admin/settings, etc.
       - alert: HighRBACRouteLatency
         expr: |
           histogram_quantile(0.95, sum(rate(http_request_duration_ms_bucket{route=~"/admin.*"}[5m])) by (le, route)) > 500
