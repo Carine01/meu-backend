@@ -9,13 +9,34 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      - name: Configurar SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H ${{ secrets.SERVER_IP }} >> ~/.ssh/known_hosts
+
       - name: Baixar logs
-        run: ssh ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_IP }} "docker logs backend --tail 500" > logs.txt
+        run: ssh -i ~/.ssh/id_rsa ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_IP }} "docker logs backend --tail 500" > logs.txt
 
       - name: Detectar anomalias
         run: |
-          if grep -q "UnhandledPromiseRejection" logs.txt || grep -q "500" logs.txt; then
+          TIMESTAMP=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+          ANOMALY_FOUND=false
+          ANOMALY_TYPE=""
+          
+          if grep -q "UnhandledPromiseRejection" logs.txt; then
+            ANOMALY_FOUND=true
+            ANOMALY_TYPE="UnhandledPromiseRejection"
+            DETAILS=$(grep "UnhandledPromiseRejection" logs.txt | tail -5)
+          elif grep -q "500" logs.txt; then
+            ANOMALY_FOUND=true
+            ANOMALY_TYPE="HTTP 500 Error"
+            DETAILS=$(grep "500" logs.txt | tail -5)
+          fi
+          
+          if [ "$ANOMALY_FOUND" = true ]; then
             curl -X POST ${{ secrets.ALERT_WEBHOOK }} \
               -H "Content-Type: application/json" \
-              -d '{"alert":"Anomalia detectada nos logs."}'
+              -d "{\"alert\":\"Anomalia detectada nos logs\",\"type\":\"$ANOMALY_TYPE\",\"timestamp\":\"$TIMESTAMP\",\"details\":\"$DETAILS\"}"
           fi
