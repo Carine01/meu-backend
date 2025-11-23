@@ -1,11 +1,15 @@
 // src/firebaseConfig.ts
 
+// NOTA: Este arquivo contém configuração do Firebase Client SDK que não é usado no backend.
+// O backend usa firebase-admin (veja src/firebaseAdmin.ts).
+// Este arquivo é mantido para referência do frontend, mas não é compilado no build do backend.
+
 // Importe a função necessária para inicializar o Firebase
 // Certifique-se de que "firebase/app" está correto com base na sua instalação
-import { initializeApp } from "firebase/app";
+// import { initializeApp } from "firebase/app";
 
 // Sua Configuração do Firebase para o aplicativo "Elevare Atendimento"
-const firebaseConfig = {
+export const firebaseConfig = {
   apiKey: "AIzaSyA_4outYN1Bp-NiwMS-lYjEzbaZbx7HDSE",
   authDomain: "flutter-ai-playground-61f8b.firebaseapp.com",
   projectId: "flutter-ai-playground-61f8b",
@@ -15,9 +19,9 @@ const firebaseConfig = {
 };
 
 // Inicializar o Firebase
-const app = initializeApp(firebaseConfig);
+// const app = initializeApp(firebaseConfig);
 
 // É uma boa prática exportar a instância 'app' para que outros módulos
 // do seu aplicativo possam usá-la facilmente.
-export { app };
+// export { app };
 
