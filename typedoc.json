@@ -11,5 +11,5 @@
   "excludeExternals": true,
   "excludePrivate": false,
   "excludeProtected": false,
-  "out": "docs"
+  "out": "api-docs"
 }
