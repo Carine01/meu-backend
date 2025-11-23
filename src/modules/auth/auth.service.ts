@@ -18,6 +18,14 @@ export class AuthService {
     private configService: ConfigService,
   ) {}
 
+  private getRefreshSecret(): string {
+    const secret = this.configService.get<string>('JWT_REFRESH_SECRET');
+    if (!secret) {
+      throw new Error('JWT_REFRESH_SECRET is not configured. Please set it in your environment variables.');
+    }
+    return secret;
+  }
+
   async login(loginDto: LoginDto): Promise<{ access_token: string; refresh_token: string; user: any }> {
     const usuario = await this.usuarioRepo.findOne({ 
       where: { email: loginDto.email, ativo: true } 
@@ -41,7 +49,7 @@ export class AuthService {
 
     this.logger.log(`✅ Login: ${usuario.email} (Clinic: ${usuario.clinicId})`);
 
-    const refreshSecret = this.configService.get<string>('JWT_REFRESH_SECRET', 'your-super-secret-jwt-refresh-key-change-in-production');
+    const refreshSecret = this.getRefreshSecret();
 
     return {
       access_token: this.jwtService.sign(payload, { expiresIn: '15m' }),
@@ -83,7 +91,7 @@ export class AuthService {
 
   async refreshToken(token: string): Promise<{ access_token: string }> {
     try {
-      const refreshSecret = this.configService.get<string>('JWT_REFRESH_SECRET', 'your-super-secret-jwt-refresh-key-change-in-production');
+      const refreshSecret = this.getRefreshSecret();
       const payload = this.jwtService.verify(token, { secret: refreshSecret });
       
       // Optionally check if token is revoked/blacklisted here

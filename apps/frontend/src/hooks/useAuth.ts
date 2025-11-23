@@ -26,13 +26,36 @@ export function useAuth() {
 
   // Exemplo de uso automático do refresh token
   const getValidToken = async () => {
+    if (!token) {
+      throw new Error('No token available');
+    }
+
     try {
-      // Opcional: checar expiração do token JWT
+      // Checar expiração do token JWT
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      const expirationTime = payload.exp * 1000; // Convert to milliseconds
+      const currentTime = Date.now();
+      const bufferTime = 60000; // Refresh 1 minute before expiration
+
+      if (expirationTime - currentTime < bufferTime) {
+        // Token expired or about to expire, refresh it
+        const newToken = await refreshToken();
+        setToken(newToken);
+        return newToken;
+      }
+
       return token;
     } catch (e) {
-      const newToken = await refreshToken();
-      setToken(newToken);
-      return newToken;
+      // If token is invalid or expired, try to refresh
+      try {
+        const newToken = await refreshToken();
+        setToken(newToken);
+        return newToken;
+      } catch (refreshError) {
+        // Refresh failed, user needs to login again
+        logout();
+        throw new Error('Session expired. Please login again.');
+      }
     }
   };
 
