@@ -1,0 +1,25 @@
+name: Deploy Automático Elevare
+
+on:
+  push:
+    branches: [ "main" ]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    if: ${{ github.ref == 'refs/heads/main' }}
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Deploy para servidor
+      uses: easingthemes/ssh-deploy@v4
+      with:
+        ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+        remote-user: ${{ secrets.SERVER_USER }}
+        server-ip: ${{ secrets.SERVER_IP }}
+        remote-path: "/var/www/elevare"
+        local-path: "."
+
+    - name: Reiniciar serviço
+      run: ssh -o StrictHostKeyChecking=no ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_IP }} "cd /var/www/elevare && docker compose down && docker compose up -d --build"
