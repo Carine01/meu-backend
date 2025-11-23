@@ -1,0 +1,61 @@
+name: Bug Hunter Elevare
+
+on:
+  push:
+  schedule:
+    - cron: "0 */2 * * *"  # A cada 2 horas
+
+jobs:
+  bug-hunter:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Instalar dependências
+        run: npm ci
+
+      - name: Rodar análise estática
+        run: |
+          npx eslint . -f json -o eslint-report.json || true
+
+      - name: Criar issue para cada erro encontrado
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          # Verifica se o arquivo de relatório existe e tem conteúdo
+          if [[ ! -f eslint-report.json ]] || [[ ! -s eslint-report.json ]]; then
+            echo "Nenhum relatório ESLint encontrado ou arquivo vazio"
+            exit 0
+          fi
+          
+          # Conta o número de arquivos com erros
+          ERROR_COUNT=$(jq '[.[] | select(.errorCount > 0)] | length' eslint-report.json)
+          
+          if [[ "$ERROR_COUNT" -gt 0 ]]; then
+            echo "Encontrados erros em $ERROR_COUNT arquivo(s)"
+            
+            # Cria um resumo dos erros
+            SUMMARY=$(jq -r '[.[] | select(.errorCount > 0) | {file: .filePath, errors: .errorCount, warnings: .warningCount}] | 
+              "## Resumo de Erros ESLint\n\nTotal de arquivos com erros: " + (length | tostring) + "\n\n" +
+              (map("- **" + (.file | split("/") | last) + "**: " + (.errors | tostring) + " erro(s), " + (.warnings | tostring) + " aviso(s)") | join("\n"))' eslint-report.json)
+            
+            # Verifica se já existe uma issue aberta com o mesmo título
+            EXISTING_ISSUE=$(gh issue list --label "bug-hunter" --state open --limit 1 --json number --jq '.[0].number' || echo "")
+            
+            if [[ -n "$EXISTING_ISSUE" ]]; then
+              echo "Issue #$EXISTING_ISSUE já existe. Atualizando com novo comentário..."
+              gh issue comment "$EXISTING_ISSUE" --body "$SUMMARY"
+            else
+              echo "Criando nova issue..."
+              gh issue create \
+                --title "🔍 Bug Hunter: Erros detectados automaticamente" \
+                --label "bug-hunter,automated" \
+                --body "$SUMMARY"
+            fi
+          else
+            echo "Nenhum erro encontrado! 🎉"
+          fi
