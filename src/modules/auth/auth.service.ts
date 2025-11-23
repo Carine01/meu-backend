@@ -2,6 +2,7 @@ import { Injectable, UnauthorizedException, ConflictException, Logger } from '@n
 import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import { ConfigService } from '@nestjs/config';
 import * as bcrypt from 'bcrypt';
 import { Usuario } from './entities/usuario.entity';
 import { LoginDto, RegisterDto } from './dto/auth.dto';
@@ -14,9 +15,10 @@ export class AuthService {
     @InjectRepository(Usuario)
     private usuarioRepo: Repository<Usuario>,
     private jwtService: JwtService,
+    private configService: ConfigService,
   ) {}
 
-  async login(loginDto: LoginDto): Promise<{ access_token: string; user: any }> {
+  async login(loginDto: LoginDto): Promise<{ access_token: string; refresh_token: string; user: any }> {
     const usuario = await this.usuarioRepo.findOne({ 
       where: { email: loginDto.email, ativo: true } 
     });
@@ -39,8 +41,11 @@ export class AuthService {
 
     this.logger.log(`✅ Login: ${usuario.email} (Clinic: ${usuario.clinicId})`);
 
+    const refreshSecret = this.configService.get<string>('JWT_REFRESH_SECRET', 'your-super-secret-jwt-refresh-key-change-in-production');
+
     return {
-      access_token: this.jwtService.sign(payload),
+      access_token: this.jwtService.sign(payload, { expiresIn: '15m' }),
+      refresh_token: this.jwtService.sign(payload, { expiresIn: '7d', secret: refreshSecret }),
       user: {
         id: usuario.id,
         email: usuario.email,
@@ -74,6 +79,39 @@ export class AuthService {
 
     this.logger.log(`🆕 Usuário criado: ${usuario.email}`);
     return usuario;
+  }
+
+  async refreshToken(token: string): Promise<{ access_token: string }> {
+    try {
+      const refreshSecret = this.configService.get<string>('JWT_REFRESH_SECRET', 'your-super-secret-jwt-refresh-key-change-in-production');
+      const payload = this.jwtService.verify(token, { secret: refreshSecret });
+      
+      // Optionally check if token is revoked/blacklisted here
+      // For now, we just verify the user still exists and is active
+      const usuario = await this.usuarioRepo.findOne({ 
+        where: { id: payload.sub, ativo: true } 
+      });
+
+      if (!usuario) {
+        throw new UnauthorizedException('Usuário não encontrado ou inativo');
+      }
+
+      const newPayload = {
+        sub: payload.sub,
+        email: payload.email,
+        clinicId: payload.clinicId,
+        roles: payload.roles,
+      };
+
+      this.logger.log(`🔄 Token renovado: ${payload.email}`);
+
+      return {
+        access_token: this.jwtService.sign(newPayload, { expiresIn: '15m' }),
+      };
+    } catch (e) {
+      this.logger.error(`❌ Refresh token inválido: ${e.message}`);
+      throw new UnauthorizedException('Invalid refresh token');
+    }
   }
 
   async seedAdminUser(): Promise<void> {
