@@ -1,14 +1,15 @@
 // src/services/eventos.service.spec.ts
 import { Test, TestingModule } from '@nestjs/testing';
-import { EventosService } from './eventos.service';
+import { EventsService as EventosService } from '../modules/eventos/events.service';
 import { getRepositoryToken } from '@nestjs/typeorm';
-import { Evento } from '../entities/evento.entity';
+import { Evento } from '../modules/eventos/entities/evento.entity';
 
-const mock = () => ({ find: jest.fn(), save: jest.fn() });
+type MockRepo = { find: jest.Mock; save: jest.Mock };
+const mock = (): MockRepo => ({ find: jest.fn(), save: jest.fn() });
 
 describe('EventosService', () => {
   let service: EventosService;
-  let repo;
+  let repo: MockRepo;
 
   beforeEach(async () => {
     const module = await Test.createTestingModule({
@@ -18,7 +19,7 @@ describe('EventosService', () => {
       ],
     }).compile();
     service = module.get(EventosService);
-    repo = module.get(getRepositoryToken(Evento));
+    repo = module.get<MockRepo>(getRepositoryToken(Evento));
   });
 
   it('lista eventos', async () => {

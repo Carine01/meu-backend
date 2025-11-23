@@ -1,6 +1,6 @@
 // src/services/auth.service.spec.ts
 import { Test } from '@nestjs/testing';
-import { AuthService } from './auth.service';
+import { AuthService } from '../modules/auth/auth.service';
 import { UsersService } from './users.service';
 
 const userMock = { findOneByEmail: jest.fn() };

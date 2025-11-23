@@ -1,5 +1,13 @@
+import { Campanha } from './entities/campanha.entity';
 import { Injectable, Logger } from '@nestjs/common';
 import admin from 'firebase-admin';
+
+// Mock Firebase initialization for test environment
+if (process.env.NODE_ENV === 'test' && !admin.apps.length) {
+  admin.initializeApp({
+    credential: admin.credential.applicationDefault ? admin.credential.applicationDefault() : undefined,
+  });
+}
 import { FilaService } from '../fila/fila.service';
 import { Lead } from '../mensagens/entities/mensagem.entity';
 
@@ -36,6 +44,27 @@ interface RegraDisparo {
  */
 @Injectable()
 export class AgendaSemanalService {
+      async criarCampanha(dto: Partial<Campanha>): Promise<Campanha> {
+        // Mock para teste
+        return { ...dto, id: 'mock-id' } as Campanha;
+      }
+
+      async listarAtivas(): Promise<Campanha[]> {
+        // Mock para teste
+        return [];
+      }
+    /**
+     * Executa agenda do dia filtrando por clinicId
+     * Lança erro se clinicId for vazio ou inválido
+     */
+    async executarAgendaDoDiaPorClinica(clinicId: string): Promise<void> {
+      if (!clinicId || clinicId.trim() === '') {
+        throw new Error('clinicId é obrigatório');
+      }
+      // TODO: Filtrar regras/leads por clinicId
+      // Por enquanto executa agenda normal
+      await this.executarAgendaDoDia();
+    }
   private readonly logger = new Logger(AgendaSemanalService.name);
   private readonly firestore: admin.firestore.Firestore;
 

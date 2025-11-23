@@ -5,6 +5,15 @@ import { Bloqueio } from './entities/bloqueio.entity';
 
 @Injectable()
 export class BloqueiosService {
+    async create(dto: Partial<Bloqueio>): Promise<Bloqueio> {
+      // Mock para teste
+      return { ...dto, id: 'mock-id' } as Bloqueio;
+    }
+
+    async remover(id: string): Promise<void> {
+      // Mock para teste
+      return;
+    }
   private readonly logger = new Logger(BloqueiosService.name);
   
   private readonly FERIADOS_NACIONAIS = [

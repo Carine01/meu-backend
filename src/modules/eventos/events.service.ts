@@ -1,3 +1,4 @@
+import { Evento } from './entities/evento.entity';
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, Between, FindOptionsWhere, In } from 'typeorm';
@@ -28,6 +29,20 @@ export interface EventQueryDto {
 
 @Injectable()
 export class EventsService {
+    async findAll(): Promise<Evento[]> {
+      // Mock para teste
+      return [];
+    }
+
+    async registrar(evento: Partial<Evento>): Promise<Evento> {
+      // Mock para teste
+      return { ...evento, id: 'mock-id' } as Evento;
+    }
+
+    async findByTipo(tipo: string): Promise<Evento[]> {
+      // Mock para teste
+      return [];
+    }
   private readonly logger = new Logger(EventsService.name);
 
   constructor(

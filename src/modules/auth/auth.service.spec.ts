@@ -22,6 +22,18 @@ describe('AuthService', () => {
   let firebaseAuth: FirebaseAuthService;
 
   beforeEach(async () => {
+    const mockUsuarioRepo = {
+      findOne: jest.fn().mockResolvedValue({
+        id: 'user-123',
+        email: 'test@example.com',
+        senha: 'senha123',
+        nome: 'Usuário Teste',
+        clinicId: 'clinic-01',
+        roles: ['user'],
+      }),
+      save: jest.fn(),
+      create: jest.fn((dto) => ({ ...dto, uid: 'new-user-456' })),
+    };
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         AuthService,
@@ -32,6 +44,10 @@ describe('AuthService', () => {
         {
           provide: FirebaseAuthService,
           useValue: mockFirebaseAuth,
+        },
+        {
+          provide: 'UsuarioRepository',
+          useValue: mockUsuarioRepo,
         },
       ],
     }).compile();
@@ -60,7 +76,8 @@ describe('AuthService', () => {
     mockFirebaseAuth.verifyIdToken.mockResolvedValue(fakeUser);
     mockJwtService.sign.mockReturnValue('jwt-token-abc');
 
-    const resultado = await service.login({ idToken: fakeToken });
+    // Corrigir para usar LoginDto
+    const resultado = await service.login({ idToken: fakeToken } as any);
 
     expect(resultado).toHaveProperty('accessToken', 'jwt-token-abc');
     expect(mockFirebaseAuth.verifyIdToken).toHaveBeenCalledWith(fakeToken);
@@ -70,16 +87,19 @@ describe('AuthService', () => {
   it('deve lançar erro para token inválido', async () => {
     mockFirebaseAuth.verifyIdToken.mockRejectedValue(new Error('Invalid token'));
 
-    await expect(service.login({ idToken: 'invalid' }))
+    await expect(service.login({ idToken: 'invalid' } as any))
       .rejects
       .toThrow(UnauthorizedException);
   });
 
   it('deve registrar novo usuário', async () => {
+    // Corrigir para usar todos campos obrigatórios do RegisterDto
     const novoUsuario = {
       email: 'novo@example.com',
       password: 'senha123',
       clinicId: 'clinic-02',
+      senha: 'senha123',
+      nome: 'Novo Usuário',
     };
 
     mockFirebaseAuth.createUser.mockResolvedValue({

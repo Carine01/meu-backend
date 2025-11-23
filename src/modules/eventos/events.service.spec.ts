@@ -15,12 +15,22 @@ describe('EventsService', () => {
   let service: EventsService;
 
   beforeEach(async () => {
+    const mockRepo = {
+      save: jest.fn(),
+      find: jest.fn(),
+      findOne: jest.fn(),
+      delete: jest.fn(),
+    };
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         EventsService,
         {
           provide: 'FIRESTORE',
           useValue: mockFirestore,
+        },
+        {
+          provide: 'EventRepository',
+          useValue: mockRepo,
         },
       ],
     }).compile();

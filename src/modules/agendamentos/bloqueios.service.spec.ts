@@ -15,12 +15,22 @@ describe('BloqueiosService', () => {
   let service: BloqueiosService;
 
   beforeEach(async () => {
+    const mockRepo = {
+      save: jest.fn(),
+      find: jest.fn(),
+      findOne: jest.fn(),
+      delete: jest.fn(),
+    };
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         BloqueiosService,
         {
           provide: 'FIRESTORE',
           useValue: mockFirestore,
+        },
+        {
+          provide: 'BloqueioRepository',
+          useValue: mockRepo,
         },
       ],
     }).compile();

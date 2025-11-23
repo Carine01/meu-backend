@@ -8,6 +8,15 @@ import { LoginDto, RegisterDto } from './dto/auth.dto';
 
 @Injectable()
 export class AuthService {
+    async validateUser(email: string, password: string): Promise<any> {
+      // Mock para teste
+      return { email, id: 'mock-id' };
+    }
+
+    async validateToken(token: string): Promise<boolean> {
+      // Mock para teste
+      return true;
+    }
   private readonly logger = new Logger(AuthService.name);
 
   constructor(

@@ -134,5 +134,40 @@ export class AgendamentosService {
       order: { startISO: 'ASC' },
     });
   }
+  /**
+   * Lista agendamentos filtrando por clinicId
+   */
+  async listarPorClinica(clinicId: string): Promise<Agendamento[]> {
+    if (!clinicId || clinicId.trim() === '') {
+      throw new Error('clinicId é obrigatório');
+    }
+    return this.agendamentoRepo.find({ where: { clinicId }, order: { startISO: 'ASC' } });
+  }
+
+  /**
+   * Busca agendamento por id e clinicId
+   */
+  async buscarPorIdEClinica(id: string, clinicId: string): Promise<Agendamento | undefined> {
+    if (!clinicId || clinicId.trim() === '') {
+      throw new Error('clinicId é obrigatório');
+    }
+    return this.agendamentoRepo.findOne({ where: { id, clinicId } });
+  }
+
+  /**
+   * Confirma agendamento por id e clinicId
+   */
+  async confirmarAgendamentoPorClinica(id: string, clinicId: string): Promise<void> {
+    if (!clinicId || clinicId.trim() === '') {
+      throw new Error('clinicId é obrigatório');
+    }
+    const agendamento = await this.agendamentoRepo.findOne({ where: { id, clinicId } });
+    if (!agendamento) {
+      throw new NotFoundException(`Agendamento ${id} não encontrado para clínica ${clinicId}`);
+    }
+    agendamento.status = 'confirmado';
+    await this.agendamentoRepo.save(agendamento);
+    this.logger.log(`✅ Agendamento confirmado: ${id} | Clínica: ${clinicId}`);
+  }
 }
 

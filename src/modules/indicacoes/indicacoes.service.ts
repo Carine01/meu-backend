@@ -12,6 +12,16 @@ interface DadosIndicacao {
 
 @Injectable()
 export class IndicacoesService {
+    async findAll(): Promise<Indicacao[]> {
+      // Utiliza o mock do repositório para testes
+      return await this.indicacaoRepo.find();
+    }
+
+    async create(dto: Partial<Indicacao>): Promise<Indicacao> {
+      // Utiliza o mock do repositório para testes
+      const entity = this.indicacaoRepo.create(dto);
+      return await this.indicacaoRepo.save(entity);
+    }
   private readonly logger = new Logger(IndicacoesService.name);
 
   constructor(

@@ -13,12 +13,20 @@ describe('AgendaSemanalService', () => {
   let service: AgendaSemanalService;
 
   beforeEach(async () => {
+    const mockFilaService = {
+      adicionarNaFila: jest.fn(),
+      processarFila: jest.fn(),
+    };
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         AgendaSemanalService,
         {
           provide: 'FIRESTORE',
           useValue: mockFirestore,
+        },
+        {
+          provide: 'FilaService',
+          useValue: mockFilaService,
         },
       ],
     }).compile();

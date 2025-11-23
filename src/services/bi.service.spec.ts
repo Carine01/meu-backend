@@ -1,6 +1,6 @@
 // src/services/bi.service.spec.ts
 import { Test } from '@nestjs/testing';
-import { BiService } from './bi.service';
+import { BiService } from '../modules/bi/bi.service';
 
 describe('BiService', () => {
   let service: BiService;

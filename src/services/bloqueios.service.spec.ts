@@ -1,8 +1,8 @@
 // src/services/bloqueios.service.spec.ts
 import { Test } from '@nestjs/testing';
-import { BloqueiosService } from './bloqueios.service';
+import { BloqueiosService } from '../modules/agendamentos/bloqueios.service';
 import { getRepositoryToken } from '@nestjs/typeorm';
-import { Bloqueio } from '../entities/bloqueio.entity';
+import { Bloqueio } from '../modules/agendamentos/entities/bloqueio.entity';
 
 const r = () => ({ save: jest.fn(), find: jest.fn() });
 

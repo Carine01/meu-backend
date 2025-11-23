@@ -42,10 +42,6 @@ export class Agendamento {
   @UpdateDateColumn()
   updatedAt!: Date;
 
-  constructor() {
-    this.id = `AGD${Date.now()}`;
-    this.status = 'agendado';
-    this.duracaoMinutos = 60;
-  }
+  // Removido construtor para evitar inicialização duplicada, propriedades obrigatórias já usam '!'.
 }
 
