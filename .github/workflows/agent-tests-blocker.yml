@@ -1,0 +1,57 @@
+name: Agent Tests Blocker
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  issues: write
+  pull-requests: write
+  contents: read
+
+jobs:
+  run-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Install deps
+        run: npm ci
+
+      - name: Run tests (CI)
+        id: run_tests
+        run: |
+          set -o pipefail
+          npm run test 2>&1 | tee test-output.log || echo "TESTS_FAILED"
+          # exit code propagation handled below
+
+      - name: Upload test log
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: pr-${{ github.event.pull_request.number }}-test-log
+          path: test-output.log
+
+      - name: If tests failed - label & comment
+        if: contains(steps.run_tests.outcome, 'failure') || (steps.run_tests.outcome == 'success' && grep -q "TESTS_FAILED" test-output.log || true)
+        uses: peter-evans/create-or-update-comment@v4
+        with:
+          issue-number: ${{ github.event.pull_request.number }}
+          body: |
+            ⚠️ **Testes falharam neste PR**
+            - Os testes automatizados retornaram falha. Artefatos de log foram anexados.
+            - Por favor, revise os erros e corrija antes de tentar merge.
+            - Artefato: pr-${{ github.event.pull_request.number }}-test-log
+      - name: Add tests-failed label
+        if: contains(steps.run_tests.outcome, 'failure') || (steps.run_tests.outcome == 'success' && grep -q "TESTS_FAILED" test-output.log || true)
+        uses: peter-evans/labeler@v2
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+          labels: tests-failed
