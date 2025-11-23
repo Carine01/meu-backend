@@ -2,7 +2,7 @@
 
 // Importe a função necessária para inicializar o Firebase
 // Certifique-se de que "firebase/app" está correto com base na sua instalação
-import { initializeApp } from "firebase/app";
+// import { initializeApp } from "firebase/app";
 
 // Sua Configuração do Firebase para o aplicativo "Elevare Atendimento"
 const firebaseConfig = {
@@ -15,9 +15,9 @@ const firebaseConfig = {
 };
 
 // Inicializar o Firebase
-const app = initializeApp(firebaseConfig);
+// const app = initializeApp(firebaseConfig);
 
 // É uma boa prática exportar a instância 'app' para que outros módulos
 // do seu aplicativo possam usá-la facilmente.
-export { app };
+// export { app };
 
