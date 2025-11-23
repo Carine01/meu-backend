@@ -17,22 +17,7 @@ Write-Host ""
 # ============================================
 Write-Host "[1/4] 📦 Verificando GitHub CLI..." -ForegroundColor Yellow
 
-try {
-    $ghVersion = gh --version 2>$null
-    if ($ghVersion) {
-        $versionLine = ($ghVersion -split "`n")[0]
-        Write-Host "   ✅ $versionLine" -ForegroundColor Green
-    } else {
-        Write-Host "   ❌ GitHub CLI não encontrado" -ForegroundColor Red
-        Write-Host ""
-        Write-Host "Para instalar o GitHub CLI:" -ForegroundColor Yellow
-        Write-Host "   winget install GitHub.cli" -ForegroundColor Cyan
-        Write-Host "   ou" -ForegroundColor Yellow
-        Write-Host "   choco install gh" -ForegroundColor Cyan
-        Write-Host ""
-        exit 1
-    }
-} catch {
+function Show-GhInstallInstructions {
     Write-Host "   ❌ GitHub CLI não encontrado" -ForegroundColor Red
     Write-Host ""
     Write-Host "Para instalar o GitHub CLI:" -ForegroundColor Yellow
@@ -41,6 +26,18 @@ try {
     Write-Host "   choco install gh" -ForegroundColor Cyan
     Write-Host ""
     exit 1
+}
+
+try {
+    $ghVersion = gh --version 2>$null
+    if ($ghVersion) {
+        $versionLine = ($ghVersion -split "`n")[0]
+        Write-Host "   ✅ $versionLine" -ForegroundColor Green
+    } else {
+        Show-GhInstallInstructions
+    }
+} catch {
+    Show-GhInstallInstructions
 }
 
 # ============================================
@@ -118,7 +115,8 @@ foreach ($workflow in $allWorkflows) {
     try {
         Write-Host "   Cancelando: $($workflow.name) (ID: $($workflow.databaseId))..." -ForegroundColor Gray -NoNewline
         
-        gh run cancel $workflow.databaseId 2>$null
+        $errorOutput = $null
+        gh run cancel $workflow.databaseId 2>&1 | Tee-Object -Variable errorOutput | Out-Null
         
         if ($LASTEXITCODE -eq 0) {
             Write-Host " ✅" -ForegroundColor Green
@@ -126,7 +124,8 @@ foreach ($workflow in $allWorkflows) {
         } else {
             Write-Host " ❌" -ForegroundColor Red
             $failedCount++
-            $errors += "Falha ao cancelar workflow ID $($workflow.databaseId): $($workflow.name)"
+            $errorMsg = if ($errorOutput) { $errorOutput -join "; " } else { "Falha desconhecida" }
+            $errors += "Falha ao cancelar workflow ID $($workflow.databaseId): $($workflow.name) - $errorMsg"
         }
     } catch {
         Write-Host " ❌" -ForegroundColor Red
