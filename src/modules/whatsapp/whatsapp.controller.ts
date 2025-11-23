@@ -1,6 +1,7 @@
 import { Controller, Post, Body, Get, Param, Logger, UseGuards } from '@nestjs/common';
 import { WhatsAppService } from './whatsapp.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { SendMessageDto } from './dto/send-message.dto';
 
 @Controller('whatsapp')
 export class WhatsAppController {
@@ -82,7 +83,8 @@ export class WhatsAppController {
    * Enviar mensagem manualmente (para testes ou uso direto)
    * 
    * ⚠️ NOTA: Endpoint sem autenticação para facilitar automação e integrações externas.
-   * Em produção, considere adicionar validação de IP ou token específico.
+   * Em produção, considere adicionar validação de IP, API key ou token específico.
+   * O ThrottlerGuard global limita requisições para prevenir abuso.
    * 
    * @param body - Número de destino e texto da mensagem
    * @returns Resultado do envio (messageId, status, timestamp)
@@ -102,7 +104,7 @@ export class WhatsAppController {
    * }
    */
   @Post('send')
-  async sendMessage(@Body() body: { to: string; message: string }) {
+  async sendMessage(@Body() body: SendMessageDto) {
     const result = await this.whatsappService.sendTextMessage(body.to, body.message);
     return result;
   }

@@ -23,7 +23,7 @@ import { MockWhatsAppProvider } from './mock.provider';
         if (provider === 'baileys') {
           // Baileys provider for MVP
           const baileysProvider = new BaileysProvider();
-          baileysProvider.initialize(); // Inicia conexão
+          baileysProvider.initialize(); // Initialize connection
           return baileysProvider;
         }
         

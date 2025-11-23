@@ -9,6 +9,7 @@ import { WhatsAppProvider, MessageStatus } from './whatsapp-provider.interface';
 export class MockWhatsAppProvider implements WhatsAppProvider {
   private readonly logger = new Logger(MockWhatsAppProvider.name);
   private messageCounter = 0;
+  private readonly MESSAGE_PREVIEW_LENGTH = 50;
 
   constructor() {
     this.logger.log('🧪 MockWhatsAppProvider initialized - No real WhatsApp connection');
@@ -21,7 +22,7 @@ export class MockWhatsAppProvider implements WhatsAppProvider {
     this.logger.log(`📤 [MOCK] Message sent to ${to}`, {
       messageId,
       to,
-      message: message.substring(0, 50),
+      message: message.substring(0, this.MESSAGE_PREVIEW_LENGTH),
       timestamp: new Date().toISOString(),
     });
     
