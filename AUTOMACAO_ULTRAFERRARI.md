@@ -39,24 +39,31 @@ O script `automacao-ultraferrari.sh` executa automaticamente as seguintes etapas
 chmod +x automacao-ultraferrari.sh
 ```
 
-### 2. Editar o script (opcional)
+### 2. Configurar variáveis de ambiente (opcional)
 
-Antes de executar, você pode editar o script para:
+Antes de executar, você pode configurar variáveis de ambiente:
 
-- **Substituir `<PR_ID_DOCUMENTACAO>`** pela ID real do PR de documentação
-- Ajustar timeouts ou comportamentos específicos
-
-Exemplo:
 ```bash
-# Linha 13 do script
-gh pr merge 123 --merge || echo "⚠️ PR já mergeado ou falhou"
+# ID do PR de documentação (opcional)
+export DOCS_PR_ID=123
+
+# Outras variáveis que podem ser úteis
+export NODE_ENV=development
+export PORT=3000
 ```
+
+Se `DOCS_PR_ID` não estiver definida, o script pulará automaticamente o merge do PR.
 
 ### 3. Executar o script
 
 #### No Linux/macOS:
 ```bash
 ./automacao-ultraferrari.sh
+```
+
+#### Com PR de documentação:
+```bash
+DOCS_PR_ID=123 ./automacao-ultraferrari.sh
 ```
 
 #### No Windows (usando Git Bash):

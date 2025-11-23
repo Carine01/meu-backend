@@ -10,11 +10,15 @@ echo "🚦 Iniciando execução automática completa..."
 # 1️⃣ Merge do PR de documentação
 echo "🔹 Merge do PR de documentação"
 if command -v gh &> /dev/null; then
-    # Substitua <PR_ID_DOCUMENTACAO> pelo ID real do PR quando executar
-    # gh pr merge <PR_ID_DOCUMENTACAO> --merge || echo "⚠️ PR já mergeado ou falhou"
-    echo "⚠️ Substitua <PR_ID_DOCUMENTACAO> pelo ID real do PR de documentação"
+    # Use a variável de ambiente DOCS_PR_ID se definida
+    if [[ -n "${DOCS_PR_ID}" ]]; then
+        gh pr merge "${DOCS_PR_ID}" --merge || echo "⚠️ PR já mergeado ou falhou"
+    else
+        echo "ℹ️ Variável DOCS_PR_ID não definida. Pulando merge do PR."
+        echo "ℹ️ Para habilitar: export DOCS_PR_ID=<número_do_pr>"
+    fi
 else
-    echo "⚠️ GitHub CLI (gh) não está instalado. Pule a etapa de merge do PR."
+    echo "⚠️ GitHub CLI (gh) não está instalado. Pulando merge do PR."
 fi
 
 # 2️⃣ Instalar dependências
