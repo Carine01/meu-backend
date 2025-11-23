@@ -1,0 +1,84 @@
+name: Agent Orchestrator - run agent scripts in sequence (robust)
+
+on:
+  pull_request:
+    types: [opened, reopened, synchronize]
+  workflow_dispatch:
+    inputs:
+      auto_merge:
+        description: 'Enable automatic merge if all checks pass and approvals exist'
+        required: false
+        default: 'false'
+      reviewers:
+        description: 'Comma-separated reviewers (e.g. dev1,dev2)'
+        required: false
+        default: ''
+      labels:
+        description: 'Comma-separated labels'
+        required: false
+        default: 'implementation,priority/high'
+
+permissions:
+  contents: write
+  pull-requests: write
+  checks: read
+
+jobs:
+  orchestrate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      AUTO_MERGE: ${{ github.event.inputs.auto_merge || 'false' }}
+      REVIEWERS_INPUT: ${{ github.event.inputs.reviewers || '' }}
+      LABELS_INPUT: ${{ github.event.inputs.labels || 'implementation,priority/high' }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Ensure gh CLI present (install if missing)
+        run: |
+          if command -v gh >/dev/null 2>&1; then
+            echo "gh CLI already installed"
+          else
+            sudo apt update
+            sudo apt install -y gh
+          fi
+
+      - name: Ensure scripts are executable
+        run: |
+          chmod +x ./scripts/agent/run-all-checks.sh || true
+          chmod +x ./scripts/agent/auto-comment-and-assign.sh || true
+          chmod +x ./scripts/agent/auto-merge-if-ready.sh || true
+
+      - name: Run all checks (dispara workflows)
+        run: |
+          ./scripts/agent/run-all-checks.sh "${{ github.head_ref || github.ref }}" || echo "run-all-checks retornou não-zero; continuar"
+
+      - name: Detect PR number if missing
+        id: detect_pr
+        run: |
+          PR_NUMBER="${{ github.event.pull_request.number || '' }}"
+          if [ -z "$PR_NUMBER" ]; then
+            PR_NUMBER=$(gh pr list --head "${{ github.head_ref }}" --state open --json number --jq '.[0].number' || true)
+          fi
+          if [ -z "$PR_NUMBER" ]; then
+            echo "PR_NUMBER_NOT_FOUND=true" >> $GITHUB_OUTPUT
+          else
+            echo "PR_NUMBER=$PR_NUMBER" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Post comment, labels and request reviewers (if PR)
+        if: steps.detect_pr.outputs.PR_NUMBER_NOT_FOUND != 'true'
+        run: |
+          PR_NUMBER=${{ steps.detect_pr.outputs.PR_NUMBER }}
+          ./scripts/agent/auto-comment-and-assign.sh "$PR_NUMBER" "${{ env.REVIEWERS_INPUT }}" "${{ env.LABELS_INPUT }}"
+
+      - name: Optionally attempt auto-merge (guarded)
+        if: env.AUTO_MERGE == 'true' && steps.detect_pr.outputs.PR_NUMBER_NOT_FOUND != 'true'
+        run: |
+          PR_NUMBER=${{ steps.detect_pr.outputs.PR_NUMBER }}
+          ./scripts/agent/auto-merge-if-ready.sh "$PR_NUMBER" "squash" || echo "Auto-merge não autorizado ou falhou; revisar manualmente."
+
+      - name: Final status note
+        run: echo "Agent Orchestrator run finalizada. AUTO_MERGE=${{ env.AUTO_MERGE }}"
