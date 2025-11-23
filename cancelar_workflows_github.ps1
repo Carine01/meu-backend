@@ -115,10 +115,10 @@ foreach ($workflow in $allWorkflows) {
     try {
         Write-Host "   Cancelando: $($workflow.name) (ID: $($workflow.databaseId))..." -ForegroundColor Gray -NoNewline
         
-        $errorOutput = $null
-        gh run cancel $workflow.databaseId 2>&1 | Tee-Object -Variable errorOutput | Out-Null
+        $errorOutput = gh run cancel $workflow.databaseId 2>&1
+        $success = $LASTEXITCODE -eq 0
         
-        if ($LASTEXITCODE -eq 0) {
+        if ($success) {
             Write-Host " ✅" -ForegroundColor Green
             $canceledCount++
         } else {
