@@ -16,7 +16,7 @@ export class PrometheusService {
     // Contador de requisições ao endpoint de mensagens com label clinicId
     this.mensagensRequests = new Counter({
       name: 'mensagens_requests_total',
-      help: 'Total de requisições em mensagens',
+      help: 'Total number of mensagens requests',
       labelNames: ['clinicId'],
       registers: [this.registry],
     });

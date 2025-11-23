@@ -19,9 +19,10 @@ export class MensagensController {
    */
   @Get()
   async findAll(@Headers('x-clinic-id') clinicId: string) {
-    if (!clinicId || clinicId.trim() === '') {
+    const trimmedClinicId = clinicId?.trim();
+    if (!trimmedClinicId) {
       throw new BadRequestException('Header x-clinic-id é obrigatório');
     }
-    return this.service.findAllByClinic(clinicId);
+    return this.service.findAllByClinic(trimmedClinicId);
   }
 }
