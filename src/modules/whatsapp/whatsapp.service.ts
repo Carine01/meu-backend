@@ -1,4 +1,4 @@
-import { Injectable, Logger, Inject } from '@nestjs/common';
+import { Injectable, Logger, Inject, BadRequestException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -138,9 +138,10 @@ export class WhatsAppService {
     return new Promise(resolve => setTimeout(resolve, ms));
   }
 
-  async sendMessage(dto: SendMessageDto) {
-    if (!dto.clinicId) {
-      throw new Error('clinicId is required');
+  async sendMessage(dto: SendMessageDto, clinicId?: string) {
+    const finalClinicId = clinicId || dto.clinicId;
+    if (!finalClinicId) {
+      throw new BadRequestException('clinicId is required');
     }
     
     // Send the message via provider
@@ -150,21 +151,20 @@ export class WhatsAppService {
     await this.repo.save({
       to: dto.to,
       message: dto.message,
-      clinicId: dto.clinicId,
+      clinicId: finalClinicId,
     });
     
     return result;
   }
 
   async listMessages(limit: number = 50, clinicId?: string) {
-    const whereClause: any = {};
-    if (clinicId) {
-      whereClause.clinicId = clinicId;
+    if (!clinicId) {
+      throw new BadRequestException('clinicId is required for multi-tenant isolation');
     }
     
     return this.repo.find({
       take: limit,
-      where: whereClause,
+      where: { clinicId },
       order: { createdAt: 'DESC' },
     });
   }

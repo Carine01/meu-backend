@@ -1,4 +1,4 @@
-import { Controller, Post, Body, Get, Param, Logger, UseGuards, Query } from '@nestjs/common';
+import { Controller, Post, Body, Get, Param, Logger, UseGuards, Query, ParseIntPipe } from '@nestjs/common';
 import { WhatsAppService } from './whatsapp.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { SendMessageDto } from './dto/send-message.dto';
@@ -107,9 +107,8 @@ export class WhatsAppController {
   @Post('send')
   @RequireClinicId()
   async sendMessage(@Body() dto: SendMessageDto, @ClinicId() clinicId: string) {
-    // Inject the clinicId from header into the DTO
-    dto.clinicId = clinicId;
-    return this.whatsappService.sendMessage(dto);
+    // Pass clinicId as a separate parameter instead of mutating DTO
+    return this.whatsappService.sendMessage(dto, clinicId);
   }
 
   /**
@@ -127,8 +126,9 @@ export class WhatsAppController {
    * List messages with clinic filter
    */
   @Get('messages')
+  @RequireClinicId()
   listMessages(
-    @Query('limit') limit: number,
+    @Query('limit', new ParseIntPipe({ optional: true })) limit: number = 50,
     @ClinicId() clinicId: string,
   ) {
     return this.whatsappService.listMessages(limit, clinicId);
