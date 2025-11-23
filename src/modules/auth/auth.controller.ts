@@ -4,6 +4,7 @@ import { JwtAuthGuard } from './jwt-auth.guard';
 import { RolesGuard } from './roles.guard';
 import { Roles } from './roles.decorator';
 import { LoginDto, RegisterDto } from './dto/auth.dto';
+import { loginAttempts, loginFailures } from '../../observability/prometheus.metrics';
 
 @Controller('auth')
 export class AuthController {
@@ -14,7 +15,13 @@ export class AuthController {
   @Post('login')
   @HttpCode(200)
   async login(@Body() loginDto: LoginDto) {
-    return this.authService.login(loginDto);
+    loginAttempts.inc();
+    try {
+      return await this.authService.login(loginDto);
+    } catch (error) {
+      loginFailures.inc();
+      throw error;
+    }
   }
 
   @Post('register')

@@ -19,10 +19,10 @@ rule_files:
 # Scrape configurations
 scrape_configs:
   # Backend NestJS - Prometheus metrics
-  - job_name: 'backend'
+  - job_name: 'api'
     static_configs:
-      - targets: ['backend:3000']
-    metrics_path: '/bi/metrics'
+      - targets: ['api-service.default.svc.cluster.local:3000']
+    metrics_path: '/metrics'
     scrape_interval: 30s
     scrape_timeout: 10s
 
