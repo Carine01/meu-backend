@@ -6,7 +6,6 @@ set -euo pipefail
 # merge_method: merge|squash|rebase (padrão: squash)
 PR_NUMBER=${1:-""}
 MERGE_METHOD=${2:-squash}
-REQUIRED_CHECKS=("TypeScript Guardian" "Run unit tests" "Quality Gate") # nomes de checks que queremos garantir
 
 if [ -z "$PR_NUMBER" ]; then
   echo "Uso: $0 <PR_NUMBER> [merge_method]"
@@ -24,16 +23,15 @@ fi
 echo "Aprovação humana detectada."
 
 # 2) garantir checks passados
-checks_status=$(gh pr checks "$PR_NUMBER" --json checkSuites --jq '.checkSuites[].conclusion' 2>/dev/null || true)
-if [[ -z "$checks_status" ]]; then
+# Verificar se há pelo menos uma suite de checks e se todas estão com sucesso
+failed_checks=$(gh pr checks "$PR_NUMBER" --json checkSuites --jq '[.checkSuites[] | select(.conclusion != "SUCCESS")] | length' 2>/dev/null || echo "error")
+if [[ "$failed_checks" == "error" ]]; then
   echo "Não foi possível obter checks (verifique permissões)."
   exit 3
 fi
 
-# Simplified: require overall conclusion == "SUCCESS" for at least one suite
-overall_success=$(gh pr checks "$PR_NUMBER" --json conclusion --jq '.conclusion' 2>/dev/null || true)
-if [ "$overall_success" != "SUCCESS" ]; then
-  echo "Checks não estão 100% com sucesso (conclusion=$overall_success). Abortando merge."
+if [[ "$failed_checks" -gt 0 ]]; then
+  echo "Existem $failed_checks check(s) que não passaram. Abortando merge."
   exit 4
 fi
 

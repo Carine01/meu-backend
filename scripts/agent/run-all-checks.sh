@@ -24,7 +24,8 @@ for wf in "${WORKFLOWS[@]}"; do
     sleep 8
     status=$(gh run view "$run_id" --json status,conclusion --jq '.status + "|" + (.conclusion // "")')
     echo "   status=$status"
-    if [[ "$status" =~ "completed|failure|cancelled|timed_out" ]]; then
+    run_status=$(echo "$status" | cut -d'|' -f1)
+    if [[ "$run_status" == "completed" ]]; then
       conclusion=$(echo "$status" | cut -d'|' -f2)
       echo "   Conclusão: $conclusion"
       break

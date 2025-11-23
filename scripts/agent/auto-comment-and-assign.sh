@@ -26,7 +26,8 @@ EOF
 
 # Detect PR number if not informado
 if [ -z "$PR_NUMBER" ]; then
-  PR_NUMBER=$(gh pr list --state open --json number,headRefName --jq ".[] | select(.headRefName==\"$(git rev-parse --abbrev-ref HEAD)\") | .number" || true)
+  current_branch=$(git rev-parse --abbrev-ref HEAD)
+  PR_NUMBER=$(gh pr list --state open --json number,headRefName --jq ".[] | select(.headRefName==\"$current_branch\") | .number" || true)
   if [ -z "$PR_NUMBER" ]; then
     echo "PR_NUMBER não fornecido e não foi possível detectar PR da branch atual."
     exit 1
