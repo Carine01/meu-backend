@@ -1,0 +1,22 @@
+name: Auto Healing Elevare
+
+on:
+  schedule:
+    - cron: "*/10 * * * *"
+
+jobs:
+  autoheal:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Auto-restart backend e fila se travarem
+        run: |
+          ssh -o StrictHostKeyChecking=no ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_IP }} "
+          if ! curl -s http://localhost:3000/health | grep -q ok; then
+              docker compose restart backend
+          fi
+
+          if ! curl -s http://localhost:3000/whatsapp/health | grep -q ok; then
+              docker compose restart queue
+          fi
+          "
