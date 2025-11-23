@@ -226,20 +226,18 @@ perform_merge() {
     echo -e "${BLUE}[Merge]${NC} Attempting to merge PR #${pr_num}..."
     echo ""
     
-    local merge_command="gh pr merge \"$pr_num\" --$MERGE_METHOD"
+    # Build merge command arguments safely
+    local -a merge_args=("$pr_num" "--$MERGE_METHOD" "--delete-branch")
     
     if [ "$use_admin" = "true" ]; then
-        merge_command="$merge_command --admin"
+        merge_args+=(--admin)
         echo -e "${YELLOW}⚠${NC} Using admin override"
     fi
     
-    # Add auto-delete flag for branch cleanup
-    merge_command="$merge_command --delete-branch"
-    
-    echo -e "${BLUE}Executing:${NC} $merge_command"
+    echo -e "${BLUE}Executing:${NC} gh pr merge ${merge_args[*]}"
     echo ""
     
-    if eval "$merge_command"; then
+    if gh pr merge "${merge_args[@]}"; then
         echo ""
         echo -e "${GREEN}✓ PR #${pr_num} merged successfully!${NC}"
         return 0
@@ -348,8 +346,9 @@ main() {
     echo ""
     echo -e "Next steps:"
     echo -e "1. Monitor deployment workflow: ${BLUE}gh run list --workflow='Deploy'${NC}"
-    echo -e "2. Check production health: ${BLUE}curl https://staging.elevare.com/health${NC}"
-    echo -e "3. Verify in production logs if needed"
+    echo -e "2. Check staging health: ${BLUE}curl https://staging.elevare.com/health${NC}"
+    echo -e "3. Check production health: ${BLUE}curl https://production.elevare.com/health${NC} (if applicable)"
+    echo -e "4. Verify in production logs if needed"
     echo ""
 }
 

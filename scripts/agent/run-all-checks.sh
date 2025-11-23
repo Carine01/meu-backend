@@ -15,8 +15,16 @@ BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
 # Configuration
-BRANCH="${1:-feat/whatsapp-clinicid-filters}"
+BRANCH="${1:-}"
 PR_NUMBER="${2:-}"
+
+# Validate required parameters
+if [ -z "$BRANCH" ]; then
+    echo -e "${RED}Error: Branch name is required${NC}"
+    echo "Usage: $0 <BRANCH_NAME> [PR_NUMBER]"
+    echo "Example: $0 feat/my-feature 42"
+    exit 1
+fi
 MAX_WAIT_TIME=600  # 10 minutes max wait per workflow
 POLL_INTERVAL=10   # Check status every 10 seconds
 

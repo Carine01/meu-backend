@@ -136,12 +136,13 @@ add_labels() {
     
     echo -e "${BLUE}[Labels]${NC} Adding labels to PR #${pr_num}..."
     
-    local label_args=""
+    # Build label arguments array safely
+    local -a label_args=()
     for label in "${DEFAULT_LABELS[@]}"; do
-        label_args="$label_args --add-label \"$label\""
+        label_args+=(--add-label "$label")
     done
     
-    if eval gh pr edit "$pr_num" $label_args 2>/dev/null; then
+    if gh pr edit "$pr_num" "${label_args[@]}" 2>/dev/null; then
         echo -e "${GREEN}✓${NC} Labels added: ${DEFAULT_LABELS[*]}"
         return 0
     else

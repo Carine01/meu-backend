@@ -259,7 +259,7 @@ Track these metrics for agent performance:
 - **Scripts Location**: `/scripts/agent/`
 - **Detailed Docs**: `/scripts/agent/README.md`
 - **Workflow Files**: `/.github/workflows/`
-- **Actions Dashboard**: `https://github.com/Carine01/meu-backend/actions`
+- **Actions Dashboard**: `https://github.com/<OWNER>/<REPO>/actions` (replace with your repo)
 
 ---
 
