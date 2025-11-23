@@ -32,8 +32,12 @@ jobs:
         docker compose logs
         exit 1
 
-    - name: Testar resposta simulada
+    - name: Testar endpoint WhatsApp
       run: |
         RESPONSE=$(curl -s "http://localhost:3000/whatsapp/test-bot")
         echo "Resposta: $RESPONSE"
-        [[ "$RESPONSE" == *"ok"* ]] || exit 1
+        echo "$RESPONSE" | jq -e '.status == "ok"' > /dev/null || exit 1
+
+    - name: Cleanup
+      if: always()
+      run: docker compose down
