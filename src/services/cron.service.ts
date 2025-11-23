@@ -1,6 +1,6 @@
 // src/services/cron.service.ts
-import cron from 'node-cron';
-import pRetry from 'p-retry';
+// import cron from 'node-cron';
+// import pRetry from 'p-retry';
 import { getLogger } from '../lib/logger';
 
 type TaskFn = () => Promise<void>;
@@ -21,6 +21,9 @@ export function registerCronTask(t: CronTask) {
 }
 
 export function startCron() {
+  // TODO: Install node-cron and p-retry dependencies to enable cron functionality
+  baseLogger.warn('Cron functionality disabled - node-cron and p-retry not installed');
+  /* 
   tasks.forEach((t) => {
     cron.schedule(
       t.schedule,
@@ -41,7 +44,7 @@ export function startCron() {
 
         try {
           await pRetry(runner, {
-            onFailedAttempt: (error) => {
+            onFailedAttempt: (error: any) => {
               logger.warn({ attempts: error.attemptNumber, retriesLeft: error.retriesLeft }, 'retrying cron task');
             },
             retries: t.retry?.retries ?? 2,
@@ -56,4 +59,5 @@ export function startCron() {
     );
     baseLogger.debug({ task: t.name }, 'cron scheduled');
   });
+  */
 }

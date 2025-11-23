@@ -81,5 +81,30 @@ export class WhatsAppController {
     const hasWhatsApp = await this.whatsappService.isWhatsAppNumber(phoneNumber);
     return { phoneNumber, hasWhatsApp };
   }
+
+  /**
+   * Health check endpoint for WhatsApp service
+   * 🔓 PÚBLICO - Não requer autenticação
+   * 
+   * @returns Status OK e timestamp
+   * 
+   * @example
+   * GET /whatsapp/health
+   * 
+   * Response:
+   * {
+   *   "status": "ok",
+   *   "service": "whatsapp",
+   *   "timestamp": "2025-11-23T20:45:00.000Z"
+   * }
+   */
+  @Get('health')
+  health() {
+    return {
+      status: 'ok',
+      service: 'whatsapp',
+      timestamp: new Date().toISOString()
+    };
+  }
 }
 

@@ -28,31 +28,28 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-      target: ${NODE_ENV:-development}
     container_name: elevare-backend
     restart: unless-stopped
     depends_on:
       postgres:
         condition: service_healthy
     environment:
-      NODE_ENV: ${NODE_ENV:-development}
-      PORT: ${PORT:-3000}
+      NODE_ENV: ${NODE_ENV:-production}
+      PORT: 3000
       DATABASE_HOST: postgres
       DATABASE_PORT: 5432
       DATABASE_USER: ${DATABASE_USER:-postgres}
       DATABASE_PASSWORD: ${DATABASE_PASSWORD:-postgres}
       DATABASE_NAME: ${DATABASE_NAME:-elevare_iara}
-      FIREBASE_PROJECT_ID: ${FIREBASE_PROJECT_ID}
-      FIREBASE_CLIENT_EMAIL: ${FIREBASE_CLIENT_EMAIL}
+      FIREBASE_PROJECT_ID: ${FIREBASE_PROJECT_ID:-test-project}
+      FIREBASE_CLIENT_EMAIL: ${FIREBASE_CLIENT_EMAIL:-test@test.iam.gserviceaccount.com}
       FIREBASE_PRIVATE_KEY: ${FIREBASE_PRIVATE_KEY}
       MAKE_WEBHOOK_URL: ${MAKE_WEBHOOK_URL}
       ZAPIER_WEBHOOK_URL: ${ZAPIER_WEBHOOK_URL}
-    volumes:
-      # Apenas em dev: sincroniza código
-      - .:/app
-      - /app/node_modules
+      JWT_SECRET: ${JWT_SECRET:-test-jwt-secret}
+      WHATSAPP_PROVIDER: ${WHATSAPP_PROVIDER:-baileys}
     ports:
-      - "${PORT:-3000}:3000"
+      - "3000:3000"
     networks:
       - elevare-network
     healthcheck:
@@ -61,7 +58,6 @@ services:
       timeout: 10s
       retries: 3
       start_period: 40s
-    command: ${DOCKER_COMMAND:-npm run start:dev}
 
   # Prometheus - Métricas
   prometheus:
