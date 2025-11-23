@@ -4,14 +4,14 @@ import { WhatsAppService } from './whatsapp.service';
 
 describe('WhatsAppController', () => {
   let controller: WhatsAppController;
-  let mockWhatsAppService: jest.Mocked<WhatsAppService>;
+  let mockWhatsAppService: Partial<jest.Mocked<WhatsAppService>>;
 
   beforeEach(async () => {
     // Mock do WhatsAppService
     mockWhatsAppService = {
       sendTextMessage: jest.fn(),
       isWhatsAppNumber: jest.fn(),
-    } as any;
+    };
 
     const module: TestingModule = await Test.createTestingModule({
       controllers: [WhatsAppController],
