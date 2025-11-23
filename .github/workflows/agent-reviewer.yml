@@ -1,0 +1,35 @@
+name: Agent Reviewer - request reviewers & comment
+
+on:
+  pull_request:
+    types: [opened, reopened, synchronize, labeled]
+
+permissions:
+  pull-requests: write
+  contents: read
+
+jobs:
+  request-review:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Add PR checklist comment
+        uses: peter-evans/create-or-update-comment@v4
+        with:
+          issue-number: ${{ github.event.pull_request.number }}
+          body: |
+            🔎 **Checklist Automático de Revisão**
+            - [ ] TypeScript Guardian (build+tests) ✅
+            - [ ] Quality Gate (sem console.log / secrets) ✅
+            - [ ] register-fallback aplicado (quando aplicável) ✅
+            - [ ] Docker build ok (quando aplicável) ✅
+            - [ ] Revisão humana (1 aprovador) ✅
+
+      - name: Request reviewers if label present
+        if: contains(github.event.pull_request.labels.*.name, 'needs-review')
+        uses: dawidd6/action-request-review@v1
+        with:
+          reviewers: |
+            devuser1,devuser2
