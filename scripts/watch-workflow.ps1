@@ -23,7 +23,7 @@ function Test-GhInstalled {
 function Test-GhAuthenticated {
     try {
         $null = gh auth status 2>&1
-        return $?
+        return $LASTEXITCODE -eq 0
     } catch {
         return $false
     }
