@@ -1,8 +1,15 @@
 import React, { useEffect, useState } from 'react';
 import { fetchPacientes } from '../../api/pacientes';
 
+interface Paciente {
+  id: string;
+  nome: string;
+  telefone?: string;
+  email?: string;
+}
+
 export function PacientesList({ clinicId }: { clinicId: string }) {
-  const [pacientes, setPacientes] = useState<any[]>([]);
+  const [pacientes, setPacientes] = useState<Paciente[]>([]);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
