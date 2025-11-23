@@ -119,5 +119,38 @@ export class WhatsAppController {
     const hasWhatsApp = await this.whatsappService.isWhatsAppNumber(phoneNumber);
     return { phoneNumber, hasWhatsApp };
   }
+
+  /**
+   * Endpoint de simulação para testes de produção
+   * 
+   * ⚠️ ATENÇÃO: Este endpoint NÃO tem autenticação para permitir testes automatizados
+   * 
+   * @param body - Corpo da requisição com mensagem de teste
+   * @returns Resposta de sucesso com status "ok"
+   * 
+   * @example
+   * POST /whatsapp/simulate
+   * {
+   *   "message": "Oi"
+   * }
+   * 
+   * Response:
+   * {
+   *   "status": "ok",
+   *   "message": "Simulação executada com sucesso",
+   *   "timestamp": "2025-11-23T18:07:29.680Z"
+   * }
+   */
+  @Post('simulate')
+  async simulate(@Body() body: { message?: string }) {
+    this.logger.log(`🧪 Simulação de teste recebida: ${body.message || 'sem mensagem'}`);
+    
+    return {
+      status: 'ok',
+      message: 'Simulação executada com sucesso',
+      receivedMessage: body.message || null,
+      timestamp: new Date().toISOString()
+    };
+  }
 }
 
