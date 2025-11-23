@@ -1,6 +1,7 @@
-import { Controller, Get, Header, UseGuards, Query, Headers } from '@nestjs/common';
+import { Controller, Get, Header, UseGuards, Query } from '@nestjs/common';
 import { BiService } from './bi.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { ClinicId } from '../../shared/decorators/clinic-id.decorator';
 
 /**
  * Controller de Business Intelligence e Métricas
@@ -36,7 +37,7 @@ export class BiController {
    * }
    */
   @Get('dashboard')
-  async getDashboard(@Headers('x-clinic-id') clinicId: string) {
+  async getDashboard(@ClinicId() clinicId: string) {
     return this.biService.getDashboardMetrics(clinicId);
   }
 
@@ -65,7 +66,7 @@ export class BiController {
    */
   @Get('metrics')
   @Header('Content-Type', 'text/plain; version=0.0.4')
-  async getMetrics(@Headers('x-clinic-id') clinicId: string) {
+  async getMetrics(@ClinicId() clinicId: string) {
     return this.biService.getPrometheusMetrics(clinicId);
   }
 
@@ -88,7 +89,7 @@ export class BiController {
    * }
    */
   @Get('funil')
-  async getFunil(@Headers('x-clinic-id') clinicId: string) {
+  async getFunil(@ClinicId() clinicId: string) {
     return this.biService.getAnaliseFunil(clinicId);
   }
 
@@ -112,7 +113,7 @@ export class BiController {
    */
   @Get('etiquetas')
   async getTopEtiquetas(
-    @Headers('x-clinic-id') clinicId: string,
+    @ClinicId() clinicId: string,
     @Query('limit') limit?: string,
   ) {
     const limitNum = limit ? parseInt(limit, 10) : 10;
@@ -135,7 +136,7 @@ export class BiController {
    * ]
    */
   @Get('origens')
-  async getPerformancePorOrigem(@Headers('x-clinic-id') clinicId: string) {
+  async getPerformancePorOrigem(@ClinicId() clinicId: string) {
     return this.biService.getPerformancePorOrigem(clinicId);
   }
 }

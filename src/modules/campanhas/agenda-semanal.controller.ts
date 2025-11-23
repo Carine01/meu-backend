@@ -1,5 +1,6 @@
-import { Controller, Post, Get, Query, Headers } from '@nestjs/common';
+import { Controller, Post, Get, Query } from '@nestjs/common';
 import { AgendaSemanalService } from './agenda-semanal.service';
+import { ClinicId } from '../../shared/decorators/clinic-id.decorator';
 
 @Controller('campanhas')
 export class AgendaSemanalController {
@@ -7,7 +8,7 @@ export class AgendaSemanalController {
 
   @Post('executar-agenda')
   async executarAgenda(
-    @Headers('x-clinic-id') clinicId: string,
+    @ClinicId() clinicId: string,
     @Query('dia') dia?: string,
   ) {
     return this.agendaSemanalService.executarAgendaDoDia(clinicId);

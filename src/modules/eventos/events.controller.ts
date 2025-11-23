@@ -1,7 +1,8 @@
-import { Controller, Get, Query, Param, UseGuards, Headers } from '@nestjs/common';
+import { Controller, Get, Query, Param, UseGuards } from '@nestjs/common';
 import { EventsService, EventQueryDto } from './events.service';
 import { EventType } from './entities/event.entity';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { ClinicId } from '../../shared/decorators/clinic-id.decorator';
 
 @Controller('eventos')
 @UseGuards(JwtAuthGuard)
@@ -14,7 +15,7 @@ export class EventsController {
    */
   @Get('timeline/:leadId')
   async getLeadTimeline(
-    @Headers('x-clinic-id') clinicId: string,
+    @ClinicId() clinicId: string,
     @Param('leadId') leadId: string,
     @Query('limit') limit?: string,
   ) {
@@ -37,7 +38,7 @@ export class EventsController {
    */
   @Get('search')
   async searchEvents(
-    @Headers('x-clinic-id') clinicId: string,
+    @ClinicId() clinicId: string,
     @Query('leadId') leadId?: string,
     @Query('eventType') eventType?: EventType,
     @Query('startDate') startDate?: string,
@@ -68,7 +69,7 @@ export class EventsController {
    */
   @Get('stats')
   async getStats(
-    @Headers('x-clinic-id') clinicId: string,
+    @ClinicId() clinicId: string,
     @Query('startDate') startDate?: string,
     @Query('endDate') endDate?: string,
   ) {
@@ -89,7 +90,7 @@ export class EventsController {
    */
   @Get('recent')
   async getRecent(
-    @Headers('x-clinic-id') clinicId: string,
+    @ClinicId() clinicId: string,
     @Query('limit') limit?: string,
   ) {
     const events = await this.eventsService.getRecentEvents(
@@ -109,7 +110,7 @@ export class EventsController {
    */
   @Get('stage-changes/:leadId')
   async getStageChanges(
-    @Headers('x-clinic-id') clinicId: string,
+    @ClinicId() clinicId: string,
     @Param('leadId') leadId: string,
   ) {
     const changes = await this.eventsService.getStageChanges(clinicId, leadId);
@@ -127,7 +128,7 @@ export class EventsController {
    */
   @Get('messages/:leadId')
   async getMessageHistory(
-    @Headers('x-clinic-id') clinicId: string,
+    @ClinicId() clinicId: string,
     @Param('leadId') leadId: string,
   ) {
     const messages = await this.eventsService.getMessageHistory(clinicId, leadId);
