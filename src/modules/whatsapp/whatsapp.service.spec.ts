@@ -2,11 +2,14 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { WhatsAppService } from './whatsapp.service';
 import { ConfigService } from '@nestjs/config';
 import { WhatsAppProvider, MessageStatus } from './whatsapp-provider.interface';
+import { getRepositoryToken } from '@nestjs/typeorm';
+import { WhatsappMessage } from './entities/whatsapp-message.entity';
 
 describe('WhatsAppService', () => {
   let service: WhatsAppService;
   let mockProvider: jest.Mocked<WhatsAppProvider>;
   let mockConfigService: jest.Mocked<ConfigService>;
+  let mockRepository: any;
 
   beforeEach(async () => {
     // Mock do provider
@@ -23,6 +26,14 @@ describe('WhatsAppService', () => {
       get: jest.fn().mockReturnValue('baileys'),
     } as any;
 
+    // Mock do Repository
+    mockRepository = {
+      save: jest.fn(),
+      find: jest.fn(),
+      findOne: jest.fn(),
+      create: jest.fn(),
+    };
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         WhatsAppService,
@@ -33,6 +44,10 @@ describe('WhatsAppService', () => {
         {
           provide: ConfigService,
           useValue: mockConfigService,
+        },
+        {
+          provide: getRepositoryToken(WhatsappMessage),
+          useValue: mockRepository,
         },
       ],
     }).compile();
