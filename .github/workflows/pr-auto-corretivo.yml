@@ -1,0 +1,30 @@
+name: PR Auto-Corretivo
+
+on:
+  pull_request:
+
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Configurar Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+
+    - name: Instalar dependências
+      run: npm ci
+
+    - name: Corrigir problemas automaticamente
+      run: npx eslint src/ --fix || true
+
+    - name: Enviar correções
+      uses: stefanzweifel/git-auto-commit-action@v5
+      with:
+        commit_message: "Correções automáticas no PR"
