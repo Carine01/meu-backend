@@ -57,4 +57,26 @@ describe('MensagensController', () => {
     await controller.findAll('CLINICA_1');
     expect(serviceMock.findAllByClinic).toHaveBeenCalledWith('CLINICA_1');
   });
+
+  it('should accept valid clinicId with alphanumeric, underscore and hyphen', async () => {
+    await controller.findAll('CLINIC_123-ABC');
+    expect(serviceMock.findAllByClinic).toHaveBeenCalledWith('CLINIC_123-ABC');
+  });
+
+  it('should throw BadRequestException for clinicId with special characters', async () => {
+    await expect(controller.findAll('CLINIC@123')).rejects.toThrow(BadRequestException);
+    await expect(controller.findAll('CLINIC@123')).rejects.toThrow('formato inválido');
+  });
+
+  it('should throw BadRequestException for clinicId exceeding 50 characters', async () => {
+    const longClinicId = 'A'.repeat(51);
+    await expect(controller.findAll(longClinicId)).rejects.toThrow(BadRequestException);
+    await expect(controller.findAll(longClinicId)).rejects.toThrow('formato inválido');
+  });
+
+  it('should accept clinicId with exactly 50 characters', async () => {
+    const maxLengthClinicId = 'A'.repeat(50);
+    await controller.findAll(maxLengthClinicId);
+    expect(serviceMock.findAllByClinic).toHaveBeenCalledWith(maxLengthClinicId);
+  });
 });

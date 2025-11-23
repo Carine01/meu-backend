@@ -27,7 +27,10 @@ export class PrometheusService {
    * @param clinicId - ID da clínica para dimensionar a métrica
    */
   incrementMensagensRequests(clinicId: string): void {
-    this.mensagensRequests.inc({ clinicId });
+    // Sanitize clinicId para prevenir cardinality explosion
+    // Remove caracteres especiais, mantém apenas alphanumeric, underscore e hyphen
+    const sanitizedClinicId = clinicId.replace(/[^a-zA-Z0-9_-]/g, '_');
+    this.mensagensRequests.inc({ clinicId: sanitizedClinicId });
   }
 
   /**
