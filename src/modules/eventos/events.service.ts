@@ -96,10 +96,12 @@ export class EventsService {
       where.createdAt = Between(query.startDate, query.endDate);
     }
 
+    // Performance: Cache frequently accessed event queries
     return this.eventsRepository.find({
       where,
       order: { createdAt: 'DESC' },
       take: query.limit || 100,
+      cache: 30000, // 30 seconds cache
     });
   }
 
@@ -107,10 +109,12 @@ export class EventsService {
    * Busca timeline completa de um lead
    */
   async getLeadTimeline(leadId: string, limit = 50): Promise<Event[]> {
+    // Performance: Cache lead timelines for 30 seconds
     return this.eventsRepository.find({
       where: { leadId },
       order: { createdAt: 'DESC' },
       take: limit,
+      cache: 30000,
     });
   }
 
@@ -166,12 +170,14 @@ export class EventsService {
     const oneDayAgo = new Date();
     oneDayAgo.setDate(oneDayAgo.getDate() - 1);
 
+    // Performance: Cache recent events for 30 seconds
     return this.eventsRepository.find({
       where: {
         createdAt: Between(oneDayAgo, new Date()),
       },
       order: { createdAt: 'DESC' },
       take: limit,
+      cache: 30000,
     });
   }
 

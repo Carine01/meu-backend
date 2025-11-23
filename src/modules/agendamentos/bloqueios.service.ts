@@ -25,8 +25,11 @@ export class BloqueiosService {
 
   /**
    * Bloquear horário de almoço (12h-14h) nos próximos 30 dias
+   * Performance: Use batch insert instead of individual saves
    */
   async bloquearAlmoco(clinicId: string): Promise<void> {
+    const bloqueios: Bloqueio[] = [];
+    
     for (let i = 0; i < 30; i++) {
       const data = new Date();
       data.setDate(data.getDate() + i);
@@ -44,17 +47,23 @@ export class BloqueiosService {
           recorrente: false,
         });
 
-        await this.bloqueioRepo.save(bloqueio);
+        bloqueios.push(bloqueio);
       }
     }
+
+    // Batch insert for better performance
+    await this.bloqueioRepo.save(bloqueios);
 
     this.logger.log(`🍽️ Bloqueios de almoço criados para ${clinicId}`);
   }
 
   /**
    * Bloquear sábados (apenas manhã funciona, tarde bloqueada)
+   * Performance: Use batch insert instead of individual saves
    */
   async bloquearSabados(clinicId: string): Promise<void> {
+    const bloqueios: Bloqueio[] = [];
+    
     for (let i = 0; i < 8; i++) {
       const data = new Date();
       data.setDate(data.getDate() + (i * 7)); // Próximos 8 sábados
@@ -75,16 +84,22 @@ export class BloqueiosService {
         recorrente: false,
       });
 
-      await this.bloqueioRepo.save(bloqueio);
+      bloqueios.push(bloqueio);
     }
+
+    // Batch insert for better performance
+    await this.bloqueioRepo.save(bloqueios);
 
     this.logger.log(`🗓️ Bloqueios de sábado criados para ${clinicId}`);
   }
 
   /**
    * Bloquear feriados nacionais
+   * Performance: Use batch insert instead of individual saves
    */
   async bloquearFeriados(clinicId: string): Promise<void> {
+    const bloqueios: Bloqueio[] = [];
+    
     for (const feriado of this.FERIADOS_NACIONAIS) {
       const bloqueio = this.bloqueioRepo.create({
         clinicId,
@@ -97,8 +112,11 @@ export class BloqueiosService {
         ateData: '2026-01-01',
       });
 
-      await this.bloqueioRepo.save(bloqueio);
+      bloqueios.push(bloqueio);
     }
+
+    // Batch insert for better performance
+    await this.bloqueioRepo.save(bloqueios);
 
     this.logger.log(`🏖️ Bloqueios de feriados nacionais criados para ${clinicId}`);
   }
@@ -117,12 +135,13 @@ export class BloqueiosService {
     const inicioMinutos = hora * 60 + minuto;
     const fimMinutos = inicioMinutos + duracaoMinutos;
 
-    // Buscar bloqueios para esta data
+    // Buscar bloqueios para esta data (with caching for performance)
     const bloqueios = await this.bloqueioRepo.find({
       where: {
         clinicId,
         data,
       },
+      cache: 60000, // Cache for 60 seconds - bloqueios don't change frequently
     });
 
     // Verificar sobreposição de horários
@@ -187,9 +206,11 @@ export class BloqueiosService {
    * Listar todos os bloqueios de uma clínica
    */
   async listarBloqueios(clinicId: string): Promise<Bloqueio[]> {
+    // Performance: Cache bloqueios list for 60 seconds
     return this.bloqueioRepo.find({
       where: { clinicId },
       order: { data: 'ASC' },
+      cache: 60000,
     });
   }
 
