@@ -34,17 +34,17 @@ describe('MensagemResolverService', () => {
     expect(service).toBeDefined();
   });
 
-  it('deve resolver template de mensagem', async () => {
+  it('deve resolver template de mensagem', () => {
     const template = 'Olá {{nome}}, bem-vindo!';
     const vars = { nome: 'João' };
-    const resultado = await service.resolverTemplate(template, vars);
+    const resultado = service.resolverMensagem(template, vars);
     expect(resultado).toBe('Olá João, bem-vindo!');
   });
 
-  it('deve lidar com variáveis faltantes', async () => {
+  it('deve lidar com variáveis faltantes', () => {
     const template = 'Olá {{nome}}, seu pedido {{pedidoId}}';
     const vars = { nome: 'Maria' };
-    const resultado = await service.resolverTemplate(template, vars);
+    const resultado = service.resolverMensagem(template, vars);
     expect(resultado).toContain('Maria');
     expect(resultado).toContain('{{pedidoId}}'); // Mantém se não encontrar
   });
