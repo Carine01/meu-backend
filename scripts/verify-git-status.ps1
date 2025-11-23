@@ -45,24 +45,20 @@ Write-Host ""
 
 # Compare with remote
 Write-Host "🔍 Comparing with remote branch..." -ForegroundColor Yellow
-try {
-    $LOCAL = git rev-parse "@" 2>$null
-    $REMOTE = git rev-parse "@{u}" 2>$null
-    $BASE = git merge-base "@" "@{u}" 2>$null
+$LOCAL = git rev-parse "@" 2>$null
+$REMOTE = git rev-parse "@{u}" 2>$null
+$BASE = git merge-base "@" "@{u}" 2>$null
 
-    if ([string]::IsNullOrEmpty($LOCAL) -or [string]::IsNullOrEmpty($REMOTE)) {
-        Write-Host "⚠️  Cannot compare - not tracking a remote branch or no remote configured" -ForegroundColor Red
-    } elseif ($LOCAL -eq $REMOTE) {
-        Write-Host "✅ Repository is up-to-date with remote" -ForegroundColor Green
-    } elseif ($LOCAL -eq $BASE) {
-        Write-Host "⬇️  Need to pull - remote has new commits" -ForegroundColor Yellow
-    } elseif ($REMOTE -eq $BASE) {
-        Write-Host "⬆️  Need to push - local has new commits" -ForegroundColor Yellow
-    } else {
-        Write-Host "🔀 Branches have diverged - may need to merge or rebase" -ForegroundColor Yellow
-    }
-} catch {
-    Write-Host "⚠️  Could not compare with remote (possibly not tracking a remote branch)" -ForegroundColor Red
+if ([string]::IsNullOrEmpty($LOCAL) -or [string]::IsNullOrEmpty($REMOTE)) {
+    Write-Host "⚠️  Cannot compare - not tracking a remote branch or no remote configured" -ForegroundColor Red
+} elseif ($LOCAL -eq $REMOTE) {
+    Write-Host "✅ Repository is up-to-date with remote" -ForegroundColor Green
+} elseif ($LOCAL -eq $BASE) {
+    Write-Host "⬇️  Need to pull - remote has new commits" -ForegroundColor Yellow
+} elseif ($REMOTE -eq $BASE) {
+    Write-Host "⬆️  Need to push - local has new commits" -ForegroundColor Yellow
+} else {
+    Write-Host "🔀 Branches have diverged - may need to merge or rebase" -ForegroundColor Yellow
 }
 
 Write-Host ""

@@ -1,6 +1,5 @@
 # 🔄 Git Pull - Guia de Uso
 
-**Última atualização:** 2025-11-23  
 **Propósito:** Documentação sobre como usar git pull neste repositório
 
 ---
