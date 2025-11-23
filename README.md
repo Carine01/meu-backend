@@ -28,6 +28,18 @@ Veja o arquivo `.env.example` para todas as variáveis necessárias (Firebase, U
 ## Documentação
 - [NestJS](https://docs.nestjs.com/)
 - [Firebase](https://firebase.google.com/docs)
+- [Sistema Orquestrador de PRs](docs/ORCHESTRATOR.md) - Automação inteligente para Pull Requests
+
+## 🤖 Automação de PRs
+
+Este repositório possui um **Sistema Orquestrador** que automaticamente comenta e gerencia Pull Requests. Quando você abre um PR, o sistema:
+
+- ✅ Posta um comentário informativo sobre o orquestrador
+- 🏷️ Aplica labels automaticamente
+- 👥 Pode solicitar revisores específicos
+- 🔄 Pode habilitar auto-merge quando configurado
+
+Para mais detalhes, veja a [documentação completa do orquestrador](docs/ORCHESTRATOR.md).
 
 ---
 
