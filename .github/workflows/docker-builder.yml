@@ -43,3 +43,70 @@ jobs:
 
       - name: Show Image Info
         run: docker image inspect ${{ env.IMAGE_NAME }}
+
+      - name: Run Smoke Tests
+        continue-on-error: true
+        run: |
+          echo "🧪 Running smoke tests..."
+          
+          # Start container for testing
+          docker run -d --name test-container \
+            -p 3000:3000 \
+            -e NODE_ENV=test \
+            ${{ env.IMAGE_NAME }}
+          
+          # Wait for container to be ready
+          echo "Waiting for container to start..."
+          sleep 10
+          
+          # Check if container is running
+          if docker ps | grep test-container; then
+            echo "✅ Container is running"
+            
+            # Test health endpoint if available
+            if curl -f http://localhost:3000/health 2>/dev/null; then
+              echo "✅ Health endpoint responding"
+            else
+              echo "⚠️  Health endpoint not available"
+            fi
+          else
+            echo "❌ Container failed to start"
+            docker logs test-container
+            exit 1
+          fi
+          
+          # Cleanup
+          docker stop test-container
+          docker rm test-container
+
+      - name: Create Incident Issue on Failure
+        if: failure()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const title = '🐳 Docker Build/Smoke Test Failed - ' + context.ref;
+            const body = `## Docker Build Failure
+            
+            **Branch:** ${context.ref}
+            **Workflow Run:** [View Logs](https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId})
+            **Commit:** ${context.sha}
+            
+            ### Actions Required
+            - [ ] Review build logs
+            - [ ] Check Dockerfile for issues
+            - [ ] Verify dependencies
+            - [ ] Test locally with \`docker build .\`
+            
+            ### Priority
+            **HIGH** - Docker build is critical for deployment
+            
+            ---
+            *This issue was created automatically by Docker Builder*`;
+            
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: title,
+              body: body,
+              labels: ['incident', 'priority/high', 'docker', 'automated']
+            });
