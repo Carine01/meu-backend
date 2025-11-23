@@ -1,6 +1,8 @@
-import { Controller, Post, Body, Get, Param, Logger, UseGuards } from '@nestjs/common';
+import { Controller, Post, Body, Get, Param, Logger, UseGuards, Query, ParseIntPipe } from '@nestjs/common';
 import { WhatsAppService } from './whatsapp.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { SendMessageDto } from './dto/send-message.dto';
+import { ClinicId, RequireClinicId } from '../../common/decorators/clinic-id.decorator';
 
 @Controller('whatsapp')
 export class WhatsAppController {
@@ -103,10 +105,10 @@ export class WhatsAppController {
    * }
    */
   @Post('send')
-  @UseGuards(JwtAuthGuard)
-  async sendMessage(@Body() body: { to: string; message: string }) {
-    const result = await this.whatsappService.sendTextMessage(body.to, body.message);
-    return result;
+  @RequireClinicId()
+  async sendMessage(@Body() dto: SendMessageDto, @ClinicId() clinicId: string) {
+    // Pass clinicId as a separate parameter instead of mutating DTO
+    return this.whatsappService.sendMessage(dto, clinicId);
   }
 
   /**
@@ -118,6 +120,18 @@ export class WhatsAppController {
   async checkNumber(@Param('phoneNumber') phoneNumber: string) {
     const hasWhatsApp = await this.whatsappService.isWhatsAppNumber(phoneNumber);
     return { phoneNumber, hasWhatsApp };
+  }
+
+  /**
+   * List messages with clinic filter
+   */
+  @Get('messages')
+  @RequireClinicId()
+  listMessages(
+    @Query('limit', new ParseIntPipe({ optional: true })) limit: number = 50,
+    @ClinicId() clinicId: string,
+  ) {
+    return this.whatsappService.listMessages(limit, clinicId);
   }
 }
 
