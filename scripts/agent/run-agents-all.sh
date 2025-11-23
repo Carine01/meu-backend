@@ -53,7 +53,8 @@ for wf in "${WORKFLOWS[@]}"; do
     if [[ "$status" =~ "completed" ]]; then
       conclusion=$(echo "$status" | cut -d'|' -f2)
       echo "  conclusão: $conclusion"
-      if [[ "$conclusion" != "SUCCESS" && "$conclusion" != "success" ]]; then
+      # Case-insensitive comparison for success status
+      if [[ "${conclusion,,}" != "success" ]]; then
         echo "  ⚠️ Workflow $wf concluiu com: $conclusion"
       fi
       break

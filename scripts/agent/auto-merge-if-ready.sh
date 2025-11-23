@@ -19,13 +19,14 @@ fi
 
 # Verificar se PR tem aprovações necessárias
 reviews=$(gh pr view "$PR_NUMBER" --json reviewDecision --jq '.reviewDecision' 2>/dev/null || echo "")
-if [ "$reviews" != "APPROVED" ]; then
+# Case-insensitive comparison for approval status
+if [[ "${reviews,,}" != "approved" ]]; then
   echo "PR #$PR_NUMBER não tem aprovação necessária (reviewDecision: $reviews). Abortando."
   exit 1
 fi
 
 # Verificar se checks estão passando
-checks=$(gh pr view "$PR_NUMBER" --json statusCheckRollup --jq '.statusCheckRollup[] | select(.conclusion != "SUCCESS" and .conclusion != "SKIPPED" and .conclusion != "NEUTRAL") | .name' 2>/dev/null || echo "")
+checks=$(gh pr view "$PR_NUMBER" --json statusCheckRollup --jq '.statusCheckRollup[] | select((.conclusion | ascii_downcase) != "success" and (.conclusion | ascii_downcase) != "skipped" and (.conclusion | ascii_downcase) != "neutral") | .name' 2>/dev/null || echo "")
 if [ -n "$checks" ]; then
   echo "PR #$PR_NUMBER tem checks falhando:"
   echo "$checks"
