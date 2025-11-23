@@ -40,12 +40,17 @@ module.exports = [
       '@typescript-eslint': tseslint,
     },
     rules: {
+      // Apply recommended TypeScript rules
       ...tseslint.configs.recommended.rules,
+      // Override specific rules for this project
       '@typescript-eslint/interface-name-prefix': 'off',
       '@typescript-eslint/explicit-function-return-type': 'off',
       '@typescript-eslint/explicit-module-boundary-types': 'off',
       '@typescript-eslint/no-explicit-any': 'off',
-      '@typescript-eslint/no-unused-vars': ['warn', { argsIgnorePattern: '^_' }],
+      '@typescript-eslint/no-unused-vars': [
+        'warn',
+        { argsIgnorePattern: '^_', varsIgnorePattern: '^_' }
+      ],
     },
   },
 ];
