@@ -41,7 +41,7 @@ export function startCron() {
 
         try {
           await pRetry(runner, {
-            onFailedAttempt: (error) => {
+            onFailedAttempt: (error: any) => {
               logger.warn({ attempts: error.attemptNumber, retriesLeft: error.retriesLeft }, 'retrying cron task');
             },
             retries: t.retry?.retries ?? 2,
