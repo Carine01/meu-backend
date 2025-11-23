@@ -1,9 +1,9 @@
 diff --git a/.github/workflows/agent-orchestrator.yml b/.github/workflows/agent-orchestrator.yml
 new file mode 100644
-index 0000000..69ab01e
+index 0000000..9983316
 --- /dev/null
 +++ b/.github/workflows/agent-orchestrator.yml
-@@ -0,0 +1,123 @@
+@@ -0,0 +1,125 @@
 +name: Agent Orchestrator - run agent scripts in sequence (robust)
 +
 +on:
@@ -41,8 +41,10 @@ index 0000000..69ab01e
 +      - name: Install dependencies
 +        run: |
 +          echo "📦 Installing dependencies..."
-+          npm ci --no-audit --prefer-offline --progress=false || npm install --no-audit --progress=false
++          npm ci --no-audit --prefer-offline --progress=false
 +      
++      # Optional scripts that may not exist in all branches
++      # These use continue-on-error to allow workflow completion even if scripts are missing
 +      - name: Run fix-entities script
 +        continue-on-error: true
 +        run: |
@@ -68,10 +70,7 @@ index 0000000..69ab01e
 +      - name: Build TypeScript
 +        run: |
 +          echo "🔨 Building TypeScript..."
-+          npm run build || {
-+            echo "❌ Build failed, but continuing..."
-+            exit 0
-+          }
++          npm run build
 +      
 +      - name: Run tests
 +        continue-on-error: true
@@ -86,10 +85,13 @@ index 0000000..69ab01e
 +        continue-on-error: true
 +        run: |
 +          echo "🏥 Running health check..."
-+          if [ -f "scripts/health-check.ps1" ]; then
-+            echo "Health check script found (PowerShell)"
++          # Check if any health check scripts exist
++          if [ -f "scripts/health-check.sh" ]; then
++            bash scripts/health-check.sh
++            echo "✅ Health check completed"
++          else
++            echo "⚠️  No health check script found, skipping"
 +          fi
-+          echo "✅ Health check step completed"
 +      
 +      - name: Generate report
 +        if: always()
