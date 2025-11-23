@@ -84,17 +84,21 @@ export class BloqueiosService {
       const bloqueios: Bloqueio[] = [];
       
       // Find next Saturday first
-      const data = new Date();
-      while (data.getDay() !== 6) {
-        data.setDate(data.getDate() + 1);
+      let currentDate = new Date();
+      while (currentDate.getDay() !== 6) {
+        currentDate.setDate(currentDate.getDate() + 1);
       }
 
       // Create blocks for next 8 Saturdays
       for (let i = 0; i < 8; i++) {
+        // Create a new Date object for each iteration to avoid mutation issues
+        const sabadoData = new Date(currentDate);
+        sabadoData.setDate(currentDate.getDate() + (i * 7));
+        
         // Bloquear tarde (apenas 8h-14h funciona)
         const bloqueio = this.bloqueioRepo.create({
           clinicId,
-          data: data.toISOString().split('T')[0],
+          data: sabadoData.toISOString().split('T')[0],
           startTime: '14:00',
           endTime: '23:59',
           tipo: 'sabado',
@@ -103,9 +107,6 @@ export class BloqueiosService {
         });
 
         bloqueios.push(bloqueio);
-        
-        // Move to next Saturday
-        data.setDate(data.getDate() + 7);
       }
 
       // Batch insert with transaction for better performance and consistency
