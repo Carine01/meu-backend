@@ -90,32 +90,7 @@ export class BiController {
   @Get('funil')
   async getFunil(@Req() req: any) {
     const clinicId = req.user?.clinicId || 'ELEVARE_MAIN';
-    // Use getReportForClinic to get clinic-specific data
-    const metrics = await this.biService.getReportForClinic(clinicId);
-    
-    const etapas = [
-      {
-        etapa: '1. Lead Captado',
-        quantidade: metrics.leads30d,
-        percentual: 100,
-      },
-      {
-        etapa: '2. Agendamento Criado',
-        quantidade: metrics.agendados30d,
-        percentual: metrics.leads30d > 0 ? Math.round((metrics.agendados30d / metrics.leads30d) * 100) : 0,
-      },
-      {
-        etapa: '3. Compareceu',
-        quantidade: metrics.compareceu30d,
-        percentual: metrics.leads30d > 0 ? Math.round((metrics.compareceu30d / metrics.leads30d) * 100) : 0,
-      },
-    ];
-
-    const taxaConversaoGeral = metrics.leads30d > 0 
-      ? Math.round((metrics.compareceu30d / metrics.leads30d) * 100) 
-      : 0;
-
-    return { etapas, taxaConversaoGeral };
+    return this.biService.getAnaliseFunil(clinicId);
   }
 
   /**
@@ -137,7 +112,7 @@ export class BiController {
    * ]
    */
   @Get('etiquetas')
-  async getTopEtiquetas(@Query('limit') limit?: string, @Req() req?: any) {
+  async getTopEtiquetas(@Query('limit') limit?: string, @Req() req: any) {
     const limitNum = limit ? parseInt(limit, 10) : 10;
     const clinicId = req.user?.clinicId || 'ELEVARE_MAIN';
     return this.biService.getTopEtiquetas(limitNum, clinicId);

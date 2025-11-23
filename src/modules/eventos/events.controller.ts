@@ -43,7 +43,7 @@ export class EventsController {
   async getLeadTimeline(
     @Param('leadId') leadId: string,
     @Query('limit') limit?: string,
-    @Req() req?: any,
+    @Req() req: any,
   ) {
     const clinicId = req.user?.clinicId || 'ELEVARE_MAIN';
     const events = await this.eventsService.getLeadTimeline(
@@ -70,7 +70,7 @@ export class EventsController {
     @Query('startDate') startDate?: string,
     @Query('endDate') endDate?: string,
     @Query('limit') limit?: string,
-    @Req() req?: any,
+    @Req() req: any,
   ) {
     const clinicId = req.user?.clinicId || 'ELEVARE_MAIN';
     const query: EventQueryDto = {
@@ -122,7 +122,7 @@ export class EventsController {
   async getStats(
     @Query('startDate') startDate?: string,
     @Query('endDate') endDate?: string,
-    @Req() req?: any,
+    @Req() req: any,
   ) {
     const clinicId = req.user?.clinicId || 'ELEVARE_MAIN';
     const start = startDate ? new Date(startDate) : new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
@@ -141,7 +141,7 @@ export class EventsController {
    * Eventos recentes (últimas 24h)
    */
   @Get('recent')
-  async getRecent(@Query('limit') limit?: string, @Req() req?: any) {
+  async getRecent(@Query('limit') limit?: string, @Req() req: any) {
     const clinicId = req.user?.clinicId || 'ELEVARE_MAIN';
     const events = await this.eventsService.getRecentEvents(
       clinicId,
@@ -159,7 +159,7 @@ export class EventsController {
    * Histórico de mudanças de stage
    */
   @Get('stage-changes/:leadId')
-  async getStageChanges(@Param('leadId') leadId: string, @Req() req?: any) {
+  async getStageChanges(@Param('leadId') leadId: string, @Req() req: any) {
     const clinicId = req.user?.clinicId || 'ELEVARE_MAIN';
     const changes = await this.eventsService.getStageChanges(leadId, clinicId);
 
@@ -175,7 +175,7 @@ export class EventsController {
    * Histórico de mensagens
    */
   @Get('messages/:leadId')
-  async getMessageHistory(@Param('leadId') leadId: string, @Req() req?: any) {
+  async getMessageHistory(@Param('leadId') leadId: string, @Req() req: any) {
     const clinicId = req.user?.clinicId || 'ELEVARE_MAIN';
     const messages = await this.eventsService.getMessageHistory(leadId, clinicId);
 

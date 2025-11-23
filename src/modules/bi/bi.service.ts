@@ -421,11 +421,13 @@ elevare_leads_por_stage{stage="frio"} ${metrics.percentualFrio}
    * Retorna análise de funil de conversão
    * Útil para identificar gargalos no processo
    */
-  async getAnaliseFunil(): Promise<{
+  async getAnaliseFunil(clinicId?: string): Promise<{
     etapas: Array<{ etapa: string; quantidade: number; percentual: number }>;
     taxaConversaoGeral: number;
   }> {
-    const metrics = await this.getDashboardMetrics();
+    const metrics = clinicId 
+      ? await this.getReportForClinic(clinicId) 
+      : await this.getDashboardMetrics();
 
     const etapas = [
       {
