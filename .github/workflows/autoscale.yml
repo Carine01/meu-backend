@@ -7,6 +7,8 @@ on:
 jobs:
   autoscale:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
 
     steps:
       - name: Aumentar capacidade se CPU passar de 80%
