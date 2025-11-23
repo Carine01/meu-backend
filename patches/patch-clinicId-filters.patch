@@ -1,0 +1,378 @@
+*** Begin Patch
+*** Update File: src/services/mensagens.service.ts
+@@
+-import { Injectable } from '@nestjs/common';
+-import { Repository } from 'typeorm';
+-import { InjectRepository } from '@nestjs/typeorm';
+-import { Mensagem } from '../entities/mensagem.entity';
+-
+-@Injectable()
+-export class MensagensService {
+-  constructor(
+-    @InjectRepository(Mensagem)
+-    private repo: Repository<Mensagem>,
+-  ) {}
+-
+-  async findAll() {
+-    return this.repo.find({ order: { createdAt: 'DESC' }});
+-  }
+-
+-  async create(entity: Partial<Mensagem>) {
+-    return this.repo.save(this.repo.create(entity));
+-  }
+-}
++import { Injectable } from '@nestjs/common';
++import { Repository, SelectQueryBuilder } from 'typeorm';
++import { InjectRepository } from '@nestjs/typeorm';
++import { Mensagem } from '../entities/mensagem.entity';
++import { applyClinicIdFilter } from '../lib/tenant';
++
++@Injectable()
++export class MensagensService {
++  constructor(
++    @InjectRepository(Mensagem)
++    private repo: Repository<Mensagem>,
++  ) {}
++
++  // retorna mensagens apenas do clinicId informado
++  async findAllForClinic(clinicId: string) {
++    const qb = this.repo.createQueryBuilder('m').orderBy('m.createdAt', 'DESC');
++    applyClinicIdFilter(qb as SelectQueryBuilder<Mensagem>, clinicId);
++    return qb.getMany();
++  }
++
++  async createForClinic(data: Partial<Mensagem>, clinicId: string) {
++    const entity = this.repo.create({ ...data, clinicId });
++    return this.repo.save(entity);
++  }
++}
+*** End Patch
+*** Begin Patch
+*** Add File: src/services/__tests__/mensagens.service.spec.ts
++import { MensagensService } from '../mensagens.service';
++
++describe('MensagensService (clinicId filter)', () => {
++  it('applies clinicId filter via QueryBuilder', async () => {
++    const getMany = jest.fn().mockResolvedValue([{ id: 'm1', clinicId: 'C1' }]);
++    const qb = {
++      orderBy: jest.fn().mockReturnThis(),
++      andWhere: jest.fn().mockReturnThis(),
++      getMany,
++      expressionMap: { mainAlias: { name: 'm' } }
++    };
++    const repo: any = { createQueryBuilder: jest.fn().mockReturnValue(qb) };
++    const svc = new MensagensService(repo);
++    const res = await svc.findAllForClinic('C1');
++    expect(getMany).toHaveBeenCalled();
++    expect(res[0].clinicId).toBe('C1');
++  });
++});
++
+*** End Patch
+*** Begin Patch
+*** Update File: src/services/campanhas.service.ts
+@@
+-import { Injectable } from '@nestjs/common';
+-import { Repository } from 'typeorm';
+-import { InjectRepository } from '@nestjs/typeorm';
+-import { Campanha } from '../entities/campanha.entity';
+-
+-@Injectable()
+-export class CampanhasService {
+-  constructor(
+-    @InjectRepository(Campanha)
+-    private repo: Repository<Campanha>,
+-  ) {}
+-
+-  async findActive() {
+-    return this.repo.find({ where: { active: true }});
+-  }
+-}
++import { Injectable } from '@nestjs/common';
++import { Repository } from 'typeorm';
++import { InjectRepository } from '@nestjs/typeorm';
++import { Campanha } from '../entities/campanha.entity';
++
++@Injectable()
++export class CampanhasService {
++  constructor(
++    @InjectRepository(Campanha)
++    private repo: Repository<Campanha>,
++  ) {}
++
++  async findActiveForClinic(clinicId: string) {
++    return this.repo.find({ where: { active: true, clinicId }, order: { createdAt: 'DESC' }});
++  }
++}
++
+*** End Patch
+*** Begin Patch
+*** Add File: src/services/__tests__/campanhas.service.spec.ts
++import { CampanhasService } from '../campanhas.service';
++
++describe('CampanhasService (clinicId)', () => {
++  it('fetches only campanhas for clinic', async () => {
++    const find = jest.fn().mockResolvedValue([{ id: 'c1', clinicId: 'C1' }]);
++    const repo: any = { find };
++    const svc = new CampanhasService(repo);
++    const res = await svc.findActiveForClinic('C1');
++    expect(find).toHaveBeenCalledWith(expect.objectContaining({ where: { active: true, clinicId: 'C1' } }));
++    expect(res[0].clinicId).toBe('C1');
++  });
++});
++
+*** End Patch
+*** Begin Patch
+*** Update File: src/services/eventos.service.ts
+@@
+-import { Injectable } from '@nestjs/common';
+-import { Repository } from 'typeorm';
+-import { InjectRepository } from '@nestjs/typeorm';
+-import { Evento } from '../entities/evento.entity';
+-
+-@Injectable()
+-export class EventosService {
+-  constructor(
+-    @InjectRepository(Evento)
+-    private repo: Repository<Evento>,
+-  ) {}
+-
+-  async listAll() {
+-    return this.repo.find({ order: { createdAt: 'DESC' }});
+-  }
+-}
++import { Injectable } from '@nestjs/common';
++import { Repository, SelectQueryBuilder } from 'typeorm';
++import { InjectRepository } from '@nestjs/typeorm';
++import { Evento } from '../entities/evento.entity';
++import { applyClinicIdFilter } from '../lib/tenant';
++
++@Injectable()
++export class EventosService {
++  constructor(
++    @InjectRepository(Evento)
++    private repo: Repository<Evento>,
++  ) {}
++
++  async listByClinic(clinicId: string) {
++    const qb = this.repo.createQueryBuilder('e').orderBy('e.createdAt', 'DESC');
++    applyClinicIdFilter(qb as SelectQueryBuilder<Evento>, clinicId);
++    return qb.getMany();
++  }
++}
++
+*** End Patch
+*** Begin Patch
+*** Add File: src/services/__tests__/eventos.service.spec.ts
++import { EventosService } from '../eventos.service';
++
++describe('EventosService (clinicId)', () => {
++  it('applies clinicId filter', async () => {
++    const getMany = jest.fn().mockResolvedValue([{ id: 'e1', clinicId: 'C1' }]);
++    const qb = { orderBy: jest.fn().mockReturnThis(), andWhere: jest.fn().mockReturnThis(), getMany, expressionMap: { mainAlias: { name: 'e' } } };
++    const repo: any = { createQueryBuilder: jest.fn().mockReturnValue(qb) };
++    const svc = new EventosService(repo);
++    const res = await svc.listByClinic('C1');
++    expect(getMany).toHaveBeenCalled();
++    expect(res[0].clinicId).toBe('C1');
++  });
++});
++
+*** End Patch
+*** Begin Patch
+*** Update File: src/services/auth.service.ts
+@@
+-import { Injectable } from '@nestjs/common';
+-import { JwtService } from '@nestjs/jwt';
+-
+-@Injectable()
+-export class AuthService {
+-  constructor(private jwtService: JwtService) {}
+-
+-  async login(user: any) {
+-    const payload = { sub: user.id, username: user.username };
+-    return { access_token: this.jwtService.sign(payload) };
+-  }
+-}
++import { Injectable, UnauthorizedException } from '@nestjs/common';
++import { JwtService } from '@nestjs/jwt';
++
++@Injectable()
++export class AuthService {
++  constructor(private jwtService: JwtService) {}
++
++  // login agora recebe clinicId e injeta no payload
++  async login(user: any, clinicId?: string) {
++    const payload: any = { sub: user.id, username: user.username };
++    if (clinicId) payload.clinicId = clinicId;
++    return { access_token: this.jwtService.sign(payload) };
++  }
++
++  // valida token e checa clinicId se necessário (exemplo simplificado)
++  validateToken(token: string, expectedClinicId?: string) {
++    try {
++      const decoded: any = this.jwtService.verify(token);
++      if (expectedClinicId && decoded.clinicId !== expectedClinicId) {
++        throw new UnauthorizedException('clinicId mismatch');
++      }
++      return decoded;
++    } catch (e) {
++      throw new UnauthorizedException('Invalid token');
++    }
++  }
++}
++
+*** End Patch
+*** Begin Patch
+*** Add File: src/services/__tests__/auth.service.spec.ts
++import { AuthService } from '../auth.service';
++describe('AuthService clinicId in JWT', () => {
++  it('includes clinicId in token payload when provided (mocked sign)', async () => {
++    const jwt: any = { sign: jest.fn().mockReturnValue('token123'), verify: jest.fn().mockReturnValue({ sub: 'u1', clinicId: 'C1' }) };
++    const svc = new AuthService(jwt);
++    const res = await svc.login({ id: 'u1', username: 'u' }, 'C1');
++    expect(res.access_token).toBe('token123');
++    const decoded = svc.validateToken('token123', 'C1');
++    expect(decoded.clinicId).toBe('C1');
++  });
++});
++
+*** End Patch
+*** Begin Patch
+*** Update File: src/services/bi.service.ts
+@@
+-import { Injectable } from '@nestjs/common';
+-import { Repository } from 'typeorm';
+-import { InjectRepository } from '@nestjs/typeorm';
+-import { Metric } from '../entities/metric.entity';
+-
+-@Injectable()
+-export class BiService {
+-  constructor(@InjectRepository(Metric) private repo: Repository<Metric>) {}
+-
+-  async getReport() {
+-    return this.repo.find();
+-  }
+-}
++import { Injectable } from '@nestjs/common';
++import { Repository } from 'typeorm';
++import { InjectRepository } from '@nestjs/typeorm';
++import { Metric } from '../entities/metric.entity';
++
++@Injectable()
++export class BiService {
++  constructor(@InjectRepository(Metric) private repo: Repository<Metric>) {}
++
++  async getReportForClinic(clinicId: string) {
++    return this.repo.find({ where: { clinicId }});
++  }
++}
++
+*** End Patch
+*** Begin Patch
+*** Add File: src/services/__tests__/bi.service.spec.ts
++import { BiService } from '../bi.service';
++describe('BiService clinic isolation', () => {
++  it('queries metrics for given clinicId', async () => {
++    const find = jest.fn().mockResolvedValue([{ id: 'm1', clinicId: 'C1' }]);
++    const repo: any = { find };
++    const svc = new BiService(repo);
++    const res = await svc.getReportForClinic('C1');
++    expect(find).toHaveBeenCalledWith({ where: { clinicId: 'C1' }});
++    expect(res[0].clinicId).toBe('C1');
++  });
++});
++
+*** End Patch
+*** Begin Patch
+*** Update File: src/services/bloqueios.service.ts
+@@
+-import { Injectable } from '@nestjs/common';
+-import { Repository } from 'typeorm';
+-import { InjectRepository } from '@nestjs/typeorm';
+-import { Bloqueio } from '../entities/bloqueio.entity';
+-
+-@Injectable()
+-export class BloqueiosService {
+-  constructor(@InjectRepository(Bloqueio) private repo: Repository<Bloqueio>) {}
+-
+-  async listAll() {
+-    return this.repo.find();
+-  }
+-}
++import { Injectable } from '@nestjs/common';
++import { Repository } from 'typeorm';
++import { InjectRepository } from '@nestjs/typeorm';
++import { Bloqueio } from '../entities/bloqueio.entity';
++
++@Injectable()
++export class BloqueiosService {
++  constructor(@InjectRepository(Bloqueio) private repo: Repository<Bloqueio>) {}
++
++  async listForClinic(clinicId: string) {
++    return this.repo.find({ where: { clinicId }});
++  }
++}
++
+*** End Patch
+*** Begin Patch
+*** Add File: src/services/__tests__/bloqueios.service.spec.ts
++import { BloqueiosService } from '../bloqueios.service';
++describe('BloqueiosService clinic filter', () => {
++  it('returns bloqueios only for clinic', async () => {
++    const find = jest.fn().mockResolvedValue([{ id: 'b1', clinicId: 'C1' }]);
++    const repo: any = { find };
++    const svc = new BloqueiosService(repo);
++    const res = await svc.listForClinic('C1');
++    expect(find).toHaveBeenCalledWith({ where: { clinicId: 'C1' }});
++    expect(res[0].clinicId).toBe('C1');
++  });
++});
++
+*** End Patch
+*** Begin Patch
+*** Update File: src/services/payments.service.ts
+@@
+-import { Injectable } from '@nestjs/common';
+-import { Repository } from 'typeorm';
+-import { InjectRepository } from '@nestjs/typeorm';
+-import { Order } from '../entities/order.entity';
+-
+-@Injectable()
+-export class PaymentsService {
+-  constructor(@InjectRepository(Order) private repo: Repository<Order>) {}
+-
+-  async listOrders() {
+-    return this.repo.find({ order: { createdAt: 'DESC' }});
+-  }
+-}
++import { Injectable } from '@nestjs/common';
++import { Repository } from 'typeorm';
++import { InjectRepository } from '@nestjs/typeorm';
++import { Order } from '../entities/order.entity';
++
++@Injectable()
++export class PaymentsService {
++  constructor(@InjectRepository(Order) private repo: Repository<Order>) {}
++
++  async listOrdersForClinic(clinicId: string) {
++    return this.repo.find({ where: { clinicId }, order: { createdAt: 'DESC' }});
++  }
++}
++
+*** End Patch
+*** Begin Patch
+*** Add File: src/services/__tests__/payments.service.spec.ts
++import { PaymentsService } from '../payments.service';
++describe('PaymentsService clinic filter', () => {
++  it('returns only orders for clinic', async () => {
++    const find = jest.fn().mockResolvedValue([{ id: 'o1', clinicId: 'C1' }]);
++    const repo: any = { find };
++    const svc = new PaymentsService(repo);
++    const res = await svc.listOrdersForClinic('C1');
++    expect(find).toHaveBeenCalledWith({ where: { clinicId: 'C1' }, order: { createdAt: 'DESC' }});
++    expect(res[0].clinicId).toBe('C1');
++  });
++});
++
+*** End Patch
