@@ -24,6 +24,11 @@ jobs:
   orchestrate:
     name: Run Agent Orchestrator
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      actions: write
+      issues: write
+      pull-requests: write
     
     steps:
       - name: Checkout code
