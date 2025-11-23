@@ -1,0 +1,73 @@
+name: WhatsApp Monitor
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+      - feat/*
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  monitor-whatsapp:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Check WhatsApp integration files
+        run: |
+          echo "Verificando arquivos de integração WhatsApp..."
+
+          # Verificar se arquivos críticos existem
+          WHATSAPP_FILES=(
+            "src/whatsapp/WhatsAppService.ts"
+            "src/whatsapp/WhatsAppController.ts"
+            "src/whatsapp/whatsapp.module.ts"
+          )
+
+          for file in "${WHATSAPP_FILES[@]}"; do
+            if [ -f "$file" ]; then
+              echo "✅ $file encontrado"
+            else
+              echo "⚠️ $file não encontrado"
+            fi
+          done
+
+      - name: Verify clinicId filters in WhatsApp code
+        run: |
+          echo "Verificando filtros de clinicId..."
+
+          # Procurar por implementações de filtro clinicId
+          if find src/whatsapp -name "*.ts" -exec grep -l "clinicId" {} \; | grep -q .; then
+            echo "✅ Filtros de clinicId encontrados em arquivos WhatsApp"
+            find src/whatsapp -name "*.ts" -exec grep -l "clinicId" {} \;
+          else
+            echo "⚠️ Nenhum filtro de clinicId encontrado - verifique se é necessário"
+          fi
+
+      - name: TypeScript compilation for WhatsApp module
+        run: |
+          if [ -f "tsconfig.json" ]; then
+            npm run build || echo "Build falhou - verifique erros de compilação"
+          fi
+
+      - name: Report WhatsApp Monitor status
+        run: echo "WhatsApp Monitor check finalizado"

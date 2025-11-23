@@ -1,0 +1,67 @@
+name: TypeScript Guardian
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+      - feat/*
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: TypeScript compilation check
+        run: npm run build
+
+      - name: Run tests
+        run: npm run test
+
+      - name: Quality Gate - Check for console.log
+        run: |
+          if grep -rn "console\.log" src/ --include="*.ts" --exclude-dir=node_modules; then
+            echo "❌ console.log encontrado no código. Remova antes de fazer merge."
+            exit 1
+          else
+            echo "✅ Nenhum console.log encontrado"
+          fi
+
+      - name: Quality Gate - Check for hardcoded secrets
+        run: |
+          # Procura por padrões de secrets hardcoded
+          if grep -rE "(password|secret|api[_-]?key|token)\s*=\s*['\"][^'\"]+['\"]" src/ --include="*.ts" --exclude-dir=node_modules; then
+            echo "⚠️ Possível secret hardcoded encontrado. Revise o código."
+            exit 1
+          else
+            echo "✅ Nenhum secret hardcoded detectado"
+          fi
+
+      - name: Upload build artifacts
+        if: success()
+        uses: actions/upload-artifact@v3
+        with:
+          name: typescript-build
+          path: dist/
+          retention-days: 7
