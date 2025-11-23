@@ -1,0 +1,9 @@
+# Placeholder patch for agent workflows
+# This is an optional patch file for GitHub Actions workflow configurations.
+# 
+# To use this patch:
+# 1. Add your workflow changes using git diff
+# 2. Save the diff output to this file
+# 3. The automation script will apply it automatically
+#
+# If you don't need workflow patches, the script will safely skip this step.
