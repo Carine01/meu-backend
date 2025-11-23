@@ -1,7 +1,11 @@
 const tsPlugin = require('@typescript-eslint/eslint-plugin');
 const tsParser = require('@typescript-eslint/parser');
+const globals = require('globals');
 
 module.exports = [
+  {
+    ignores: ['dist/**', 'node_modules/**', 'eslint.config.js', 'apps/**', '**/*.spec.ts', '**/*.test.ts'],
+  },
   {
     files: ['src/**/*.ts', 'test/**/*.ts'],
     languageOptions: {
@@ -12,8 +16,8 @@ module.exports = [
         sourceType: 'module',
       },
       globals: {
-        node: true,
-        jest: true,
+        ...globals.node,
+        ...globals.jest,
       },
     },
     plugins: {
@@ -27,8 +31,5 @@ module.exports = [
       '@typescript-eslint/no-explicit-any': 'warn',
       '@typescript-eslint/no-unused-vars': ['warn', { argsIgnorePattern: '^_' }],
     },
-  },
-  {
-    ignores: ['dist/**', 'node_modules/**', 'eslint.config.js', 'apps/**', '**/*.spec.ts', '**/*.test.ts'],
   },
 ];

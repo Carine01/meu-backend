@@ -22,7 +22,8 @@ jobs:
       run: npm ci
 
     - name: Corrigir problemas automaticamente
-      run: npm run lint:fix || true
+      run: npm run lint:fix
+      continue-on-error: true
 
     - name: Enviar correções
       uses: stefanzweifel/git-auto-commit-action@v5
