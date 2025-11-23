@@ -41,7 +41,7 @@ export class MensagensService {
    * @returns Array de mensagens filtradas por clinicId
    */
   async findAllByClinic(clinicId: string): Promise<Mensagem[]> {
-    this.prometheus.incrementMensagensRequests();
+    this.prometheus.incrementMensagensRequests(clinicId);
     return this.repo.findAllByClinic(clinicId);
   }
 }

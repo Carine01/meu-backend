@@ -1,4 +1,4 @@
-import { Controller, Get, Headers } from '@nestjs/common';
+import { Controller, Get, Headers, BadRequestException } from '@nestjs/common';
 import { MensagensService } from './mensagens.service';
 
 /**
@@ -15,9 +15,13 @@ export class MensagensController {
    * 
    * @param clinicId - ID da clínica vindo do header x-clinic-id
    * @returns Array de mensagens da clínica
+   * @throws BadRequestException se clinicId não for fornecido
    */
   @Get()
   async findAll(@Headers('x-clinic-id') clinicId: string) {
+    if (!clinicId || clinicId.trim() === '') {
+      throw new BadRequestException('Header x-clinic-id é obrigatório');
+    }
     return this.service.findAllByClinic(clinicId);
   }
 }

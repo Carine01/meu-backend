@@ -23,7 +23,7 @@ describe('MensagensService', () => {
   it('should only return data for the correct clinicId', async () => {
     const data = await service.findAllByClinic('CLINICA_1');
     expect(data.every(d => d.clinicId === 'CLINICA_1')).toBe(true);
-    expect(prometheusMock.incrementMensagensRequests).toHaveBeenCalled();
+    expect(prometheusMock.incrementMensagensRequests).toHaveBeenCalledWith('CLINICA_1');
   });
 
   it('should call repository with correct clinicId', async () => {
@@ -34,13 +34,14 @@ describe('MensagensService', () => {
   it('should increment Prometheus counter on each request', async () => {
     await service.findAllByClinic('CLINICA_1');
     expect(prometheusMock.incrementMensagensRequests).toHaveBeenCalledTimes(1);
+    expect(prometheusMock.incrementMensagensRequests).toHaveBeenCalledWith('CLINICA_1');
   });
 
   it('should return empty array when no messages exist', async () => {
     repoMock.findAllByClinic.mockResolvedValue([]);
     const data = await service.findAllByClinic('CLINICA_2');
     expect(data).toEqual([]);
-    expect(prometheusMock.incrementMensagensRequests).toHaveBeenCalled();
+    expect(prometheusMock.incrementMensagensRequests).toHaveBeenCalledWith('CLINICA_2');
   });
 
   it('should isolate data by clinicId', async () => {
@@ -57,6 +58,6 @@ describe('MensagensService', () => {
     repoMock.findAllByClinic.mockRejectedValue(new Error('Database error'));
     
     await expect(service.findAllByClinic('CLINICA_1')).rejects.toThrow('Database error');
-    expect(prometheusMock.incrementMensagensRequests).toHaveBeenCalled();
+    expect(prometheusMock.incrementMensagensRequests).toHaveBeenCalledWith('CLINICA_1');
   });
 });
