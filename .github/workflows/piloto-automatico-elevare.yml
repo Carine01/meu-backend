@@ -9,6 +9,8 @@ on:
 jobs:
   build-test-deploy:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
 
     steps:
     - name: Checkout
