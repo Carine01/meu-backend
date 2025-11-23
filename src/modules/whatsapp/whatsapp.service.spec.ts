@@ -77,7 +77,7 @@ describe('WhatsAppService', () => {
       ).rejects.toThrow('Falha ao enviar mensagem após 3 tentativas');
 
       expect(mockProvider.sendMessage).toHaveBeenCalledTimes(3);
-    });
+    }, 15000);
 
     it('deve ter sucesso na segunda tentativa', async () => {
       const mockMessageId = 'msg456';

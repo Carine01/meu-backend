@@ -3,16 +3,16 @@ import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn } from 'typeor
 @Entity('whatsapp_messages')
 export class WhatsAppMessage {
   @PrimaryGeneratedColumn('uuid')
-  id: string;
+  id!: string;
 
   @Column()
-  phone: string;
+  phone!: string;
 
   @Column('text')
-  message: string;
+  message!: string;
 
   @Column({ default: 'pending' })
-  status: 'pending' | 'sent' | 'delivered' | 'failed' | 'responded';
+  status!: 'pending' | 'sent' | 'delivered' | 'failed' | 'responded';
 
   @Column({ nullable: true })
   providerMessageId?: string;
@@ -21,5 +21,5 @@ export class WhatsAppMessage {
   clinicId?: string;
 
   @CreateDateColumn()
-  createdAt: Date;
+  createdAt!: Date;
 }

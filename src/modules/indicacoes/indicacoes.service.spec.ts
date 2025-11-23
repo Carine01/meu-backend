@@ -138,13 +138,20 @@ describe('IndicacoesService', () => {
 
       const novaRecompensa = {
         leadId: 'lead789',
-        pontosAcumulados: 1,
+        pontosAcumulados: 0,
         sessoesGratisDisponiveis: 0,
-        historicoIndicacoes: ['ind789'],
+        historicoIndicacoes: [],
+        clinicId: 'clinic-01',
+        createdAt: new Date(),
+        updatedAt: new Date(),
       } as Recompensa;
 
       recompensaRepo.create.mockReturnValue(novaRecompensa);
-      recompensaRepo.save.mockResolvedValue(novaRecompensa);
+      recompensaRepo.save.mockResolvedValue({
+        ...novaRecompensa,
+        pontosAcumulados: 1,
+        historicoIndicacoes: ['ind789'],
+      });
 
       const result = await service.registrarIndicacao('lead789', {
         nome: 'Pedro Santos',
