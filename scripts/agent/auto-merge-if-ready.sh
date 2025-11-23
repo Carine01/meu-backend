@@ -45,6 +45,8 @@ fi
 
 PR_NUMBER="$1"
 FORCE_MERGE="${2:-}"
+# Use admin flag only if MERGE_ADMIN env variable is set to 'true'
+USE_ADMIN_FLAG="${MERGE_ADMIN:-false}"
 
 echo -e "${BLUE}========================================${NC}"
 echo -e "${BLUE}🤖 Agent: Auto-Merge If Ready${NC}"
@@ -239,28 +241,34 @@ echo -e "${YELLOW}Executing merge...${NC}"
 # Execute merge based on method
 case $MERGE_METHOD in
     "squash")
-        if gh pr merge "$PR_NUMBER" --squash --admin; then
-            echo -e "${GREEN}✅ PR merged successfully (squash)${NC}"
+        if [ "$USE_ADMIN_FLAG" = "true" ]; then
+            gh pr merge "$PR_NUMBER" --squash --admin
         else
+            gh pr merge "$PR_NUMBER" --squash
+        fi && echo -e "${GREEN}✅ PR merged successfully (squash)${NC}" || {
             echo -e "${RED}❌ Merge failed${NC}"
             exit 1
-        fi
+        }
         ;;
     "rebase")
-        if gh pr merge "$PR_NUMBER" --rebase --admin; then
-            echo -e "${GREEN}✅ PR merged successfully (rebase)${NC}"
+        if [ "$USE_ADMIN_FLAG" = "true" ]; then
+            gh pr merge "$PR_NUMBER" --rebase --admin
         else
+            gh pr merge "$PR_NUMBER" --rebase
+        fi && echo -e "${GREEN}✅ PR merged successfully (rebase)${NC}" || {
             echo -e "${RED}❌ Merge failed${NC}"
             exit 1
-        fi
+        }
         ;;
     *)
-        if gh pr merge "$PR_NUMBER" --merge --admin; then
-            echo -e "${GREEN}✅ PR merged successfully (merge commit)${NC}"
+        if [ "$USE_ADMIN_FLAG" = "true" ]; then
+            gh pr merge "$PR_NUMBER" --merge --admin
         else
+            gh pr merge "$PR_NUMBER" --merge
+        fi && echo -e "${GREEN}✅ PR merged successfully (merge commit)${NC}" || {
             echo -e "${RED}❌ Merge failed${NC}"
             exit 1
-        fi
+        }
         ;;
 esac
 

@@ -33,7 +33,7 @@ jobs:
           echo "" >> $GITHUB_STEP_SUMMARY
           
           # Find console.log in TypeScript files (excluding test files and node_modules)
-          CONSOLE_LOGS=$(grep -r "console\.log" src/ --include="*.ts" --exclude="*.spec.ts" --exclude="*.test.ts" || true)
+          CONSOLE_LOGS=$(grep -r "console\\.log" src/ --include="*.ts" --exclude="*.spec.ts" --exclude="*.test.ts" || true)
           
           if [ -n "$CONSOLE_LOGS" ]; then
             echo "❌ Found console.log statements in source files:" >> $GITHUB_STEP_SUMMARY
@@ -123,7 +123,7 @@ jobs:
           echo "" >> $GITHUB_STEP_SUMMARY
           
           # Check for .find() without clinicId in services
-          MISSING_FILTERS=$(grep -rE "\.find\([\s]*\{" src/modules --include="*.service.ts" | grep -v "clinicId" || true)
+          MISSING_FILTERS=$(grep -rE "\\.find\\s*\\(\\s*\\{" src/modules --include="*.service.ts" | grep -v "clinicId" || true)
           
           if [ -n "$MISSING_FILTERS" ]; then
             echo "⚠️  Potential missing clinicId filters:" >> $GITHUB_STEP_SUMMARY

@@ -33,6 +33,8 @@ fi
 
 PR_NUMBER="$1"
 REVIEWERS="${2:-}"
+# Repository owner - can be configured via environment variable
+REPO_OWNER="${REPO_OWNER:-Carine01}"
 
 echo -e "${BLUE}========================================${NC}"
 echo -e "${BLUE}🤖 Agent: Auto-Comment and Assign${NC}"
@@ -114,11 +116,11 @@ echo -e "${BLUE}========================================${NC}"
 echo ""
 
 # Assign repository owner as default
-echo -e "${YELLOW}👤 Assigning repository owner (Carine01)...${NC}"
-if gh pr edit "$PR_NUMBER" --add-assignee "Carine01" 2>/dev/null; then
-    echo -e "${GREEN}✅ Assigned to: Carine01${NC}"
+echo -e "${YELLOW}👤 Assigning repository owner ($REPO_OWNER)...${NC}"
+if gh pr edit "$PR_NUMBER" --add-assignee "$REPO_OWNER" 2>/dev/null; then
+    echo -e "${GREEN}✅ Assigned to: $REPO_OWNER${NC}"
 else
-    echo -e "${YELLOW}⚠️  Could not assign to Carine01${NC}"
+    echo -e "${YELLOW}⚠️  Could not assign to $REPO_OWNER${NC}"
 fi
 echo ""
 
@@ -132,7 +134,7 @@ if [ -n "$REVIEWERS" ]; then
     fi
 else
     echo -e "${YELLOW}💡 No reviewers specified. Assigning repository owner as reviewer...${NC}"
-    gh pr edit "$PR_NUMBER" --add-reviewer "Carine01" 2>/dev/null && echo -e "${GREEN}✅ Reviewer added: Carine01${NC}" || echo -e "${YELLOW}⚠️  Could not add reviewer${NC}"
+    gh pr edit "$PR_NUMBER" --add-reviewer "$REPO_OWNER" 2>/dev/null && echo -e "${GREEN}✅ Reviewer added: $REPO_OWNER${NC}" || echo -e "${YELLOW}⚠️  Could not add reviewer${NC}"
 fi
 echo ""
 

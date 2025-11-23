@@ -45,6 +45,38 @@ winget install --id GitHub.cli
 gh auth login
 ```
 
+## ⚙️ Configuration
+
+### Environment Variables
+
+The scripts support configuration through environment variables:
+
+#### auto-comment-and-assign.sh
+- `REPO_OWNER`: Repository owner username (default: `Carine01`)
+  ```bash
+  export REPO_OWNER="your-username"
+  ./scripts/agent/auto-comment-and-assign.sh 42
+  ```
+
+#### auto-merge-if-ready.sh
+- `MERGE_METHOD`: Merge strategy - `merge`, `squash`, or `rebase` (default: `merge`)
+  ```bash
+  export MERGE_METHOD=squash
+  ./scripts/agent/auto-merge-if-ready.sh 42
+  ```
+
+- `MERGE_ADMIN`: Use admin privileges to bypass branch protection (default: `false`)
+  ```bash
+  export MERGE_ADMIN=true
+  ./scripts/agent/auto-merge-if-ready.sh 42
+  ```
+
+#### whatsapp-monitor.yml workflow
+- `HEALTH_ENDPOINT_STAGING`: Staging health endpoint URL (default: `https://staging.elevare.com/health`)
+- `HEALTH_ENDPOINT_WHATSAPP`: WhatsApp health endpoint URL (default: `https://staging.elevare.com/whatsapp/health`)
+
+To configure these, add repository variables in GitHub Settings → Secrets and variables → Variables.
+
 ## 📖 Script Documentation
 
 ### 1. run-all-checks.sh
