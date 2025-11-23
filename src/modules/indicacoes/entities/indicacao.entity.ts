@@ -3,6 +3,7 @@ import { Entity, PrimaryColumn, Column, CreateDateColumn, UpdateDateColumn, Inde
 @Entity('indicacoes')
 @Index(['indicadorId']) // Index for indicador lookups
 @Index(['clinicId', 'status']) // Composite index for clinic + status filtering
+@Index(['clinicId', 'indicadorId']) // Composite index for clinic + indicador queries
 @Index(['agendamentoId']) // Index for agendamento association
 export class Indicacao {
   @PrimaryColumn('uuid')

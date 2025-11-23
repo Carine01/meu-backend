@@ -40,7 +40,6 @@ import { AuthModule } from './modules/auth/auth.module';
         synchronize: config.get('DB_SYNCHRONIZE', 'false') === 'true',
         logging: config.get('DB_LOGGING', 'false') === 'true',
         // Performance optimizations
-        poolSize: 20, // Connection pool size
         extra: {
           max: 20, // Maximum connections
           min: 5,  // Minimum connections
