@@ -63,8 +63,8 @@ export class EventsService {
   /**
    * Busca eventos com filtros
    */
-  async findEvents(query: EventQueryDto): Promise<Event[]> {
-    const where: FindOptionsWhere<Event> = {};
+  async findEvents(query: EventQueryDto, clinicId: string): Promise<Event[]> {
+    const where: FindOptionsWhere<Event> = { clinicId };
 
     if (query.leadId) {
       where.leadId = query.leadId;
@@ -93,9 +93,9 @@ export class EventsService {
   /**
    * Busca timeline completa de um lead
    */
-  async getLeadTimeline(leadId: string, limit = 50): Promise<Event[]> {
+  async getLeadTimeline(leadId: string, clinicId: string, limit = 50): Promise<Event[]> {
     return this.eventsRepository.find({
-      where: { leadId },
+      where: { leadId, clinicId },
       order: { createdAt: 'DESC' },
       take: limit,
     });
@@ -106,10 +106,11 @@ export class EventsService {
    */
   async getEventsByType(
     eventType: EventType,
+    clinicId: string,
     startDate?: Date,
     endDate?: Date,
   ): Promise<Event[]> {
-    const where: FindOptionsWhere<Event> = { eventType };
+    const where: FindOptionsWhere<Event> = { eventType, clinicId };
 
     if (startDate && endDate) {
       where.createdAt = Between(startDate, endDate);
@@ -125,7 +126,7 @@ export class EventsService {
   /**
    * Estatísticas de eventos por tipo
    */
-  async getEventStats(startDate: Date, endDate: Date): Promise<Record<string, number>> {
+  async getEventStats(startDate: Date, endDate: Date, clinicId: string): Promise<Record<string, number>> {
     const query = this.eventsRepository
       .createQueryBuilder('event')
       .select('event.eventType', 'eventType')
@@ -134,6 +135,7 @@ export class EventsService {
         startDate,
         endDate,
       })
+      .andWhere('event.clinicId = :clinicId', { clinicId })
       .groupBy('event.eventType');
 
     const results = await query.getRawMany();
@@ -149,12 +151,13 @@ export class EventsService {
   /**
    * Eventos recentes do sistema (últimas 24h)
    */
-  async getRecentEvents(limit = 100): Promise<Event[]> {
+  async getRecentEvents(limit = 100, clinicId: string): Promise<Event[]> {
     const oneDayAgo = new Date();
     oneDayAgo.setDate(oneDayAgo.getDate() - 1);
 
     return this.eventsRepository.find({
       where: {
+        clinicId,
         createdAt: Between(oneDayAgo, new Date()),
       },
       order: { createdAt: 'DESC' },
@@ -168,9 +171,10 @@ export class EventsService {
   async countEventsByLeadAndType(
     leadId: string,
     eventType: EventType,
+    clinicId: string,
   ): Promise<number> {
     return this.eventsRepository.count({
-      where: { leadId, eventType },
+      where: { leadId, eventType, clinicId },
     });
   }
 
@@ -215,10 +219,11 @@ export class EventsService {
   /**
    * Busca mudanças de stage de um lead
    */
-  async getStageChanges(leadId: string): Promise<Event[]> {
+  async getStageChanges(leadId: string, clinicId: string): Promise<Event[]> {
     return this.eventsRepository.find({
       where: {
         leadId,
+        clinicId,
         eventType: EventType.STAGE_CHANGED,
       },
       order: { createdAt: 'DESC' },
@@ -228,7 +233,7 @@ export class EventsService {
   /**
    * Busca histórico de mensagens enviadas para um lead
    */
-  async getMessageHistory(leadId: string): Promise<Event[]> {
+  async getMessageHistory(leadId: string, clinicId: string): Promise<Event[]> {
     const messageTypes = [
       EventType.MESSAGE_SENT,
       EventType.MESSAGE_DELIVERED,
@@ -239,6 +244,7 @@ export class EventsService {
     return this.eventsRepository
       .createQueryBuilder('event')
       .where('event.leadId = :leadId', { leadId })
+      .andWhere('event.clinicId = :clinicId', { clinicId })
       .andWhere('event.eventType IN (:...types)', { types: messageTypes })
       .orderBy('event.createdAt', 'DESC')
       .getMany();

@@ -1,4 +1,4 @@
-import { Controller, Get, Header, UseGuards, Query } from '@nestjs/common';
+import { Controller, Get, Header, UseGuards, Query, Req } from '@nestjs/common';
 import { BiService } from './bi.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 
@@ -35,8 +35,9 @@ export class BiController {
    * }
    */
   @Get('dashboard')
-  async getDashboard() {
-    return this.biService.getDashboardMetrics();
+  async getDashboard(@Req() req: any) {
+    const clinicId = req.user.clinicId;
+    return this.biService.getDashboardMetrics(clinicId);
   }
 
   /**
@@ -63,8 +64,9 @@ export class BiController {
    */
   @Get('metrics')
   @Header('Content-Type', 'text/plain; version=0.0.4')
-  async getMetrics() {
-    return this.biService.getPrometheusMetrics();
+  async getMetrics(@Req() req: any) {
+    const clinicId = req.user.clinicId;
+    return this.biService.getPrometheusMetrics(clinicId);
   }
 
   /**
@@ -85,8 +87,9 @@ export class BiController {
    * }
    */
   @Get('funil')
-  async getFunil() {
-    return this.biService.getAnaliseFunil();
+  async getFunil(@Req() req: any) {
+    const clinicId = req.user.clinicId;
+    return this.biService.getAnaliseFunil(clinicId);
   }
 
   /**
@@ -107,9 +110,10 @@ export class BiController {
    * ]
    */
   @Get('etiquetas')
-  async getTopEtiquetas(@Query('limit') limit?: string) {
+  async getTopEtiquetas(@Query('limit') limit?: string, @Req() req?: any) {
+    const clinicId = req.user.clinicId;
     const limitNum = limit ? parseInt(limit, 10) : 10;
-    return this.biService.getTopEtiquetas(limitNum);
+    return this.biService.getTopEtiquetas(limitNum, clinicId);
   }
 
   /**
@@ -127,8 +131,9 @@ export class BiController {
    * ]
    */
   @Get('origens')
-  async getPerformancePorOrigem() {
-    return this.biService.getPerformancePorOrigem();
+  async getPerformancePorOrigem(@Req() req: any) {
+    const clinicId = req.user.clinicId;
+    return this.biService.getPerformancePorOrigem(clinicId);
   }
 }
 

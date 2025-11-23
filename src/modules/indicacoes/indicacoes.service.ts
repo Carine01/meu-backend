@@ -29,11 +29,13 @@ export class IndicacoesService {
    */
   async registrarIndicacao(
     indicadorId: string,
+    clinicId: string,
     dados: DadosIndicacao,
   ): Promise<{ indicacao: Indicacao; recompensa: Recompensa }> {
     // Criar indicação
     const indicacao = this.indicacaoRepo.create({
       indicadorId,
+      clinicId,
       nomeIndicado: dados.nome,
       telefoneIndicado: dados.telefone,
       emailIndicado: dados.email,
@@ -45,12 +47,13 @@ export class IndicacoesService {
 
     // Atualizar recompensa do indicador
     let recompensa = await this.recompensaRepo.findOne({
-      where: { leadId: indicadorId },
+      where: { leadId: indicadorId, clinicId },
     });
 
     if (!recompensa) {
       recompensa = this.recompensaRepo.create({
         leadId: indicadorId,
+        clinicId,
         pontosAcumulados: 0,
         sessoesGratisDisponiveis: 0,
         historicoIndicacoes: [],
@@ -84,9 +87,9 @@ export class IndicacoesService {
    * Marcar que indicado agendou
    * Bônus: +0 pontos (apenas tracking)
    */
-  async indicadoAgendou(indicacaoId: string, agendamentoId: string): Promise<void> {
+  async indicadoAgendou(indicacaoId: string, agendamentoId: string, clinicId: string): Promise<void> {
     const indicacao = await this.indicacaoRepo.findOne({
-      where: { id: indicacaoId },
+      where: { id: indicacaoId, clinicId },
     });
 
     if (!indicacao) {
@@ -105,9 +108,9 @@ export class IndicacoesService {
    * Marcar que indicado compareceu
    * Bônus: +2 pontos extras
    */
-  async indicadoCompareceu(indicacaoId: string): Promise<void> {
+  async indicadoCompareceu(indicacaoId: string, clinicId: string): Promise<void> {
     const indicacao = await this.indicacaoRepo.findOne({
-      where: { id: indicacaoId },
+      where: { id: indicacaoId, clinicId },
     });
 
     if (!indicacao) {
@@ -121,7 +124,7 @@ export class IndicacoesService {
 
     // Bônus extra por comparecimento
     const recompensa = await this.recompensaRepo.findOne({
-      where: { leadId: indicacao.indicadorId },
+      where: { leadId: indicacao.indicadorId, clinicId },
     });
 
     if (recompensa) {
@@ -146,9 +149,9 @@ export class IndicacoesService {
   /**
    * Resgatar sessão grátis
    */
-  async resgatarSessao(leadId: string): Promise<{ sucesso: boolean; mensagem: string }> {
+  async resgatarSessao(leadId: string, clinicId: string): Promise<{ sucesso: boolean; mensagem: string }> {
     const recompensa = await this.recompensaRepo.findOne({
-      where: { leadId },
+      where: { leadId, clinicId },
     });
 
     if (!recompensa || recompensa.sessoesGratisDisponiveis <= 0) {
@@ -175,9 +178,9 @@ export class IndicacoesService {
   /**
    * Buscar indicações de um lead
    */
-  async getIndicacoes(indicadorId: string): Promise<Indicacao[]> {
+  async getIndicacoes(indicadorId: string, clinicId: string): Promise<Indicacao[]> {
     return this.indicacaoRepo.find({
-      where: { indicadorId },
+      where: { indicadorId, clinicId },
       order: { createdAt: 'DESC' },
     });
   }
@@ -185,14 +188,15 @@ export class IndicacoesService {
   /**
    * Buscar recompensa (gamificação)
    */
-  async getRecompensa(leadId: string): Promise<Recompensa> {
+  async getRecompensa(leadId: string, clinicId: string): Promise<Recompensa> {
     let recompensa = await this.recompensaRepo.findOne({
-      where: { leadId },
+      where: { leadId, clinicId },
     });
 
     if (!recompensa) {
       recompensa = this.recompensaRepo.create({
         leadId,
+        clinicId,
         pontosAcumulados: 0,
         sessoesGratisDisponiveis: 0,
         historicoIndicacoes: [],

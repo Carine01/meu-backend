@@ -1,4 +1,4 @@
-import { Controller, Post, Get, Param, Body, Put, UseGuards } from '@nestjs/common';
+import { Controller, Post, Get, Param, Body, Put, UseGuards, Req } from '@nestjs/common';
 import { IndicacoesService } from './indicacoes.service';
 import { Indicacao } from './entities/indicacao.entity';
 import { Recompensa } from './entities/recompensa.entity';
@@ -16,8 +16,10 @@ export class IndicacoesController {
   @Post()
   async criarIndicacao(
     @Body() dados: { indicadorId: string; nome: string; telefone: string; email?: string },
+    @Req() req: any,
   ): Promise<{ indicacao: Indicacao; recompensa: Recompensa }> {
-    return this.indicacoesService.registrarIndicacao(dados.indicadorId, {
+    const clinicId = req.user.clinicId;
+    return this.indicacoesService.registrarIndicacao(dados.indicadorId, clinicId, {
       nome: dados.nome,
       telefone: dados.telefone,
       email: dados.email,
@@ -29,8 +31,9 @@ export class IndicacoesController {
    * Listar indicações de um lead
    */
   @Get(':leadId')
-  async listarIndicacoes(@Param('leadId') leadId: string): Promise<Indicacao[]> {
-    return this.indicacoesService.getIndicacoes(leadId);
+  async listarIndicacoes(@Param('leadId') leadId: string, @Req() req: any): Promise<Indicacao[]> {
+    const clinicId = req.user.clinicId;
+    return this.indicacoesService.getIndicacoes(leadId, clinicId);
   }
 
   /**
@@ -38,8 +41,9 @@ export class IndicacoesController {
    * Ver recompensa/gamificação
    */
   @Get('recompensa/:leadId')
-  async verRecompensa(@Param('leadId') leadId: string): Promise<Recompensa> {
-    return this.indicacoesService.getRecompensa(leadId);
+  async verRecompensa(@Param('leadId') leadId: string, @Req() req: any): Promise<Recompensa> {
+    const clinicId = req.user.clinicId;
+    return this.indicacoesService.getRecompensa(leadId, clinicId);
   }
 
   /**
@@ -49,8 +53,10 @@ export class IndicacoesController {
   @Post('resgatar/:leadId')
   async resgatarSessao(
     @Param('leadId') leadId: string,
+    @Req() req: any,
   ): Promise<{ sucesso: boolean; mensagem: string }> {
-    return this.indicacoesService.resgatarSessao(leadId);
+    const clinicId = req.user.clinicId;
+    return this.indicacoesService.resgatarSessao(leadId, clinicId);
   }
 
   /**
@@ -61,8 +67,10 @@ export class IndicacoesController {
   async indicadoAgendou(
     @Param('indicacaoId') indicacaoId: string,
     @Body('agendamentoId') agendamentoId: string,
+    @Req() req: any,
   ): Promise<void> {
-    return this.indicacoesService.indicadoAgendou(indicacaoId, agendamentoId);
+    const clinicId = req.user.clinicId;
+    return this.indicacoesService.indicadoAgendou(indicacaoId, agendamentoId, clinicId);
   }
 
   /**
@@ -70,8 +78,9 @@ export class IndicacoesController {
    * Marcar que indicado compareceu
    */
   @Put('compareceu/:indicacaoId')
-  async indicadoCompareceu(@Param('indicacaoId') indicacaoId: string): Promise<void> {
-    return this.indicacoesService.indicadoCompareceu(indicacaoId);
+  async indicadoCompareceu(@Param('indicacaoId') indicacaoId: string, @Req() req: any): Promise<void> {
+    const clinicId = req.user.clinicId;
+    return this.indicacoesService.indicadoCompareceu(indicacaoId, clinicId);
   }
 }
 
