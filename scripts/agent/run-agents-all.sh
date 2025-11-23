@@ -88,11 +88,12 @@ trigger_workflow() {
     # Trigger the workflow
     gh workflow run "$workflow_file" --ref "$BRANCH" -f branch="$BRANCH" 2>&1
     
-    # Wait a bit for the workflow to be created
-    sleep 5
+    # Wait a bit longer for the workflow to be created
+    sleep 10
     
-    # Get the most recent run ID for this workflow
-    local run_id=$(gh run list --workflow="$workflow_file" --branch="$BRANCH" --limit 1 --json databaseId --jq '.[0].databaseId')
+    # Get the most recent run ID for this workflow, with timestamp filter
+    # This helps avoid race conditions by getting runs created in the last 60 seconds
+    local run_id=$(gh run list --workflow="$workflow_file" --branch="$BRANCH" --limit 5 --json databaseId,createdAt --jq '[.[] | select(.createdAt | fromdateiso8601 > (now - 60))][0].databaseId')
     
     if [ -z "$run_id" ] || [ "$run_id" = "null" ]; then
         log_warning "Could not get run ID for $workflow_name, will check status later"
@@ -272,12 +273,17 @@ fi
 if [ "$AUTO_MERGE" = "true" ] && [ "$failed_count" -eq 0 ] && [ -n "$PR_NUMBER" ]; then
     log_info "Auto-merge enabled and all checks passed. Checking merge eligibility..."
     
-    # Check if PR is mergeable
-    pr_mergeable=$(gh pr view "$PR_NUMBER" --json mergeable --jq '.mergeable')
-    pr_state=$(gh pr view "$PR_NUMBER" --json state --jq '.state')
+    # Check if PR is mergeable and get detailed status
+    pr_info=$(gh pr view "$PR_NUMBER" --json mergeable,mergeStateStatus,state)
+    pr_mergeable=$(echo "$pr_info" | jq -r '.mergeable')
+    pr_state=$(echo "$pr_info" | jq -r '.state')
+    pr_merge_state=$(echo "$pr_info" | jq -r '.mergeStateStatus')
+    
+    log_info "PR Status: state=$pr_state, mergeable=$pr_mergeable, mergeStateStatus=$pr_merge_state"
     
     if [ "$pr_state" = "OPEN" ] && [ "$pr_mergeable" = "MERGEABLE" ]; then
         log_info "Attempting auto-merge (squash)..."
+        log_warning "Note: PR must meet all branch protection requirements (approvals, status checks, etc.)"
         
         if gh pr merge "$PR_NUMBER" --squash --auto; then
             log_success "Auto-merge enabled for PR #$PR_NUMBER"
@@ -286,7 +292,7 @@ if [ "$AUTO_MERGE" = "true" ] && [ "$failed_count" -eq 0 ] && [ -n "$PR_NUMBER" 
             log_warning "Failed to enable auto-merge. Check PR requirements (approvals, branch protection, etc.)"
         fi
     else
-        log_warning "PR is not in a mergeable state (state: $pr_state, mergeable: $pr_mergeable)"
+        log_warning "PR is not in a mergeable state (state: $pr_state, mergeable: $pr_mergeable, mergeStateStatus: $pr_merge_state)"
         log_info "Manual merge required"
     fi
 elif [ "$AUTO_MERGE" = "true" ] && [ "$failed_count" -gt 0 ]; then

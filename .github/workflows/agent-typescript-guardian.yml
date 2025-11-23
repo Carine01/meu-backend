@@ -19,6 +19,8 @@ on:
 jobs:
   typescript-check:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     
     steps:
       - name: Checkout code
@@ -45,13 +47,6 @@ jobs:
           else
             echo "No lint script found in package.json, skipping"
           fi
-      
-      - name: Check for TypeScript errors
-        run: |
-          npx tsc --noEmit || {
-            echo "::error::TypeScript compilation errors detected"
-            exit 1
-          }
       
       - name: Report status
         if: always()

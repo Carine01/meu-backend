@@ -17,6 +17,8 @@ on:
 jobs:
   whatsapp-health-check:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     
     steps:
       - name: Checkout code
@@ -49,7 +51,16 @@ jobs:
       - name: Check for clinicId filters in WhatsApp code
         run: |
           echo "Checking for clinicId filters in WhatsApp code..."
-          grep -r "clinicId" src/modules/whatsapp/ || echo "⚠️  No clinicId filters found"
+          if [ -d "src/modules/whatsapp/" ]; then
+            # Look for actual filter implementations (where clauses with clinicId)
+            if grep -r "where.*clinicId\|clinicId.*where\|find.*clinicId" src/modules/whatsapp/ > /dev/null 2>&1; then
+              echo "✅ clinicId filters found in WhatsApp code"
+            else
+              echo "⚠️  No clinicId filter implementations found"
+            fi
+          else
+            echo "⚠️  WhatsApp module directory not found"
+          fi
       
       - name: Report status
         if: always()
