@@ -56,8 +56,8 @@ export class EventsService {
       return saved;
     } catch (error: any) {
       this.logger.error(`Failed to log event: ${error.message}`, error.stack);
-      // Não lança erro para não quebrar o fluxo principal
-      return undefined as any;
+      // Re-throw to let caller handle appropriately
+      throw error;
     }
   }
 
@@ -75,8 +75,7 @@ export class EventsService {
 
     if (query.eventType) {
       if (Array.isArray(query.eventType)) {
-        // @ts-ignore - TypeORM aceita array para IN query
-        where.eventType = query.eventType;
+        where.eventType = In(query.eventType);
       } else {
         where.eventType = query.eventType;
       }
