@@ -366,17 +366,26 @@ export class FilaService {
    * Busca itens da fila por status
    * 
    * @param status - Status a filtrar (pending, sent, failed, cancelled)
+   * @param clinicId - ID da clínica (opcional)
    * @param limit - Quantidade máxima de resultados (padrão: 50)
    * @returns Array de itens da fila
    */
   async listarPorStatus(
     status: FilaEnvio['status'],
+    clinicId?: string,
     limit: number = 50,
   ): Promise<FilaEnvio[]> {
     try {
-      const snapshot = await this.firestore
+      let query = this.firestore
         .collection(this.COLLECTION_NAME)
-        .where('status', '==', status)
+        .where('status', '==', status);
+      
+      // Apply clinicId filter if provided
+      if (clinicId) {
+        query = query.where('clinicId', '==', clinicId);
+      }
+      
+      const snapshot = await query
         .orderBy('createdAt', 'desc')
         .limit(limit)
         .get();
@@ -395,11 +404,19 @@ export class FilaService {
   /**
    * Estatísticas da fila de envio
    * 
+   * @param clinicId - ID da clínica (opcional)
    * @returns Contadores por status
    */
-  async getEstatisticas(): Promise<Record<FilaEnvio['status'], number>> {
+  async getEstatisticas(clinicId?: string): Promise<Record<FilaEnvio['status'], number>> {
     try {
-      const snapshot = await this.firestore.collection(this.COLLECTION_NAME).get();
+      let query = this.firestore.collection(this.COLLECTION_NAME);
+      
+      // Apply clinicId filter if provided
+      if (clinicId) {
+        query = query.where('clinicId', '==', clinicId) as any;
+      }
+      
+      const snapshot = await query.get();
 
       const stats: Record<FilaEnvio['status'], number> = {
         pending: 0,

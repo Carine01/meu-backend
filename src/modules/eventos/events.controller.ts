@@ -1,4 +1,4 @@
-import { Controller, Get, Query, Param, UseGuards } from '@nestjs/common';
+import { Controller, Get, Query, Param, UseGuards, Req } from '@nestjs/common';
 import { EventsService, EventQueryDto } from './events.service';
 import { EventType } from './entities/event.entity';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
@@ -43,9 +43,12 @@ export class EventsController {
   async getLeadTimeline(
     @Param('leadId') leadId: string,
     @Query('limit') limit?: string,
+    @Req() req?: any,
   ) {
+    const clinicId = req.user?.clinicId || 'ELEVARE_MAIN';
     const events = await this.eventsService.getLeadTimeline(
       leadId,
+      clinicId,
       limit ? parseInt(limit, 10) : 50,
     );
 
@@ -67,9 +70,12 @@ export class EventsController {
     @Query('startDate') startDate?: string,
     @Query('endDate') endDate?: string,
     @Query('limit') limit?: string,
+    @Req() req?: any,
   ) {
+    const clinicId = req.user?.clinicId || 'ELEVARE_MAIN';
     const query: EventQueryDto = {
       leadId,
+      clinicId,
       eventType,
       startDate: startDate ? new Date(startDate) : undefined,
       endDate: endDate ? new Date(endDate) : undefined,
@@ -116,11 +122,13 @@ export class EventsController {
   async getStats(
     @Query('startDate') startDate?: string,
     @Query('endDate') endDate?: string,
+    @Req() req?: any,
   ) {
+    const clinicId = req.user?.clinicId || 'ELEVARE_MAIN';
     const start = startDate ? new Date(startDate) : new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
     const end = endDate ? new Date(endDate) : new Date();
 
-    const stats = await this.eventsService.getEventStats(start, end);
+    const stats = await this.eventsService.getEventStats(start, end, clinicId);
 
     return {
       period: { start, end },
@@ -133,8 +141,10 @@ export class EventsController {
    * Eventos recentes (últimas 24h)
    */
   @Get('recent')
-  async getRecent(@Query('limit') limit?: string) {
+  async getRecent(@Query('limit') limit?: string, @Req() req?: any) {
+    const clinicId = req.user?.clinicId || 'ELEVARE_MAIN';
     const events = await this.eventsService.getRecentEvents(
+      clinicId,
       limit ? parseInt(limit, 10) : 100,
     );
 
@@ -149,8 +159,9 @@ export class EventsController {
    * Histórico de mudanças de stage
    */
   @Get('stage-changes/:leadId')
-  async getStageChanges(@Param('leadId') leadId: string) {
-    const changes = await this.eventsService.getStageChanges(leadId);
+  async getStageChanges(@Param('leadId') leadId: string, @Req() req?: any) {
+    const clinicId = req.user?.clinicId || 'ELEVARE_MAIN';
+    const changes = await this.eventsService.getStageChanges(leadId, clinicId);
 
     return {
       leadId,
@@ -164,8 +175,9 @@ export class EventsController {
    * Histórico de mensagens
    */
   @Get('messages/:leadId')
-  async getMessageHistory(@Param('leadId') leadId: string) {
-    const messages = await this.eventsService.getMessageHistory(leadId);
+  async getMessageHistory(@Param('leadId') leadId: string, @Req() req?: any) {
+    const clinicId = req.user?.clinicId || 'ELEVARE_MAIN';
+    const messages = await this.eventsService.getMessageHistory(leadId, clinicId);
 
     return {
       leadId,
