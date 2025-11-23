@@ -49,6 +49,9 @@ import { AuthModule } from './modules/auth/auth.module';
         cache: {
           type: 'database',
           duration: 30000, // Cache query results for 30 seconds
+          // Note: Using 'database' cache for simplicity. For production with high load,
+          // consider using Redis cache for better performance isolation:
+          // type: 'redis', options: { host: 'localhost', port: 6379 }
         },
         maxQueryExecutionTime: 1000, // Log slow queries (>1s)
       }),
