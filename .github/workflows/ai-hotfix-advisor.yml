@@ -3,21 +3,17 @@ name: IA Hotfix Advisor
 on:
   workflow_run:
     workflows: ["Testes Automáticos", "Deploy Automático Elevare"]
-    types: [completed]
+    types: ["completed"]
 
 jobs:
   ai-analyze:
     if: ${{ github.event.workflow_run.conclusion == 'failure' }}
     runs-on: ubuntu-latest
-    permissions:
-      issues: write
 
     steps:
       - uses: actions/checkout@v4
       
       - name: Analisar logs com IA
-        env:
-          GH_TOKEN: ${{ github.token }}
         run: |
           gh api \
             -X POST \
