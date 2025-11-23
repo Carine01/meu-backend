@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { PacientesService } from './pacientes.service';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { Paciente } from './entities/paciente.entity';
+import { BadRequestException } from '@nestjs/common';
 
 describe('PacientesService', () => {
   let service: PacientesService;
@@ -30,5 +31,13 @@ describe('PacientesService', () => {
     ]);
     const data = await service.findAllByClinic('CLINICA_1');
     expect(data.every(d => d.clinicId === 'CLINICA_1')).toBe(true);
+  });
+
+  it('should throw BadRequestException if clinicId is empty', async () => {
+    await expect(service.findAllByClinic('')).rejects.toThrow(BadRequestException);
+  });
+
+  it('should throw BadRequestException if clinicId is whitespace', async () => {
+    await expect(service.findAllByClinic('   ')).rejects.toThrow(BadRequestException);
   });
 });
