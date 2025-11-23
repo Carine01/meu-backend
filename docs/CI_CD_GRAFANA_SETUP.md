@@ -146,6 +146,11 @@ histogram_quantile(0.95, sum(rate(http_request_duration_ms_bucket{route=~"/admin
 ```
 **Visualização**: Gráfico mostrando percentil 95 de latência para rotas admin
 
+**Nota**: O padrão de rota `/admin.*` é configurável. Para monitorar diferentes padrões de rotas:
+- Rotas de autenticação: `{route=~"/auth.*"}`
+- Múltiplos padrões: `{route=~"/admin.*|/protected.*"}`
+- Todas as rotas: remova o filtro `route`
+
 **Alertas sugeridos**:
 - p95 > 1000ms (1 segundo)
 - Indica degradação de performance
@@ -197,6 +202,20 @@ providers:
 ```
 
 Copie o arquivo JSON para o diretório de provisioning.
+
+### Customização do Dashboard
+
+Para adaptar o dashboard às suas necessidades:
+
+1. **Modificar padrões de rota**: Edite os filtros `route=~"/admin.*"` no painel de latência
+2. **Adicionar novos painéis**: Use os existentes como template
+3. **Ajustar intervalos de tempo**: Modifique `[5m]`, `[10m]` nas queries
+4. **Alterar labels**: Adicione labels como `by (user, clinic_id)` para mais granularidade
+
+**Exemplo - Monitorar rotas por clínica**:
+```promql
+histogram_quantile(0.95, sum(rate(http_request_duration_ms_bucket{route=~"/admin.*"}[5m])) by (le, route, clinic_id))
+```
 
 ### Configuração do Prometheus
 

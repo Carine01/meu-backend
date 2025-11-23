@@ -24,6 +24,7 @@ jobs:
         run: npm install
         working-directory: apps/frontend
 
+      # Lint API - continue-on-error até ESLint ser configurado
       - name: Lint API
         run: npm run lint
         continue-on-error: true
@@ -32,12 +33,15 @@ jobs:
         run: npm run lint
         working-directory: apps/frontend
 
+      # Test API - continue-on-error devido a falhas pré-existentes (19 suites falhando)
+      # TODO: Remover continue-on-error após corrigir testes quebrados
       - name: Test API (NestJS RBAC)
         run: npm run test:cov
         env:
           NODE_ENV: test
         continue-on-error: true
 
+      # Test Web - continue-on-error até Jest/Vitest ser configurado
       - name: Test Web (React hooks)
         run: npm run test
         working-directory: apps/frontend
