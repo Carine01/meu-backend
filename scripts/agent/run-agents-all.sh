@@ -56,12 +56,18 @@ echo "🚀 Disparando workflows..."
 echo ""
 
 # Array de workflows para executar
-declare -a WORKFLOWS=(
-    "TypeScript Guardian"
-    "Register Fila Fallback (AST)"
-    "Docker Builder"
-    "WhatsApp Monitor"
-)
+# Nota: Pode ser sobrescrito via variável de ambiente WORKFLOWS
+if [ -z "$WORKFLOWS" ]; then
+    declare -a WORKFLOWS=(
+        "TypeScript Guardian"
+        "Register Fila Fallback (AST)"
+        "Docker Builder"
+        "WhatsApp Monitor"
+    )
+else
+    # Converter string separada por vírgula em array
+    IFS=',' read -ra WORKFLOWS <<< "$WORKFLOWS"
+fi
 
 # Contador de workflows disparados
 DISPATCHED=0
@@ -79,8 +85,8 @@ for workflow in "${WORKFLOWS[@]}"; do
         ((FAILED++))
     fi
     
-    # Pequeno delay entre disparos
-    sleep 2
+    # Pequeno delay entre disparos (configurável via WORKFLOW_DELAY)
+    sleep "${WORKFLOW_DELAY:-1}"
 done
 
 echo ""

@@ -27,6 +27,11 @@ echo "✅ GitHub CLI autenticado"
 echo ""
 
 # Função para configurar um secret
+# Parâmetros:
+#   $1 - secret_name: Nome do secret no GitHub
+#   $2 - secret_description: Descrição do secret para o usuário
+#   $3 - default_value: Valor padrão sugerido (opcional)
+# Retorna: 0 se configurado com sucesso, 1 se pulado
 configure_secret() {
     local secret_name=$1
     local secret_description=$2
@@ -44,7 +49,19 @@ configure_secret() {
         echo ""
     fi
     
+    # Validação básica para secrets críticos
     if [ -n "$secret_value" ]; then
+        # Validar comprimento mínimo para JWT_SECRET
+        if [ "$secret_name" = "JWT_SECRET" ] && [ ${#secret_value} -lt 32 ]; then
+            echo "   ⚠️  Aviso: JWT_SECRET deve ter pelo menos 32 caracteres para segurança"
+            read -p "   Continuar mesmo assim? (s/N): " -n 1 -r
+            echo ""
+            if [[ ! $REPLY =~ ^[Ss]$ ]]; then
+                echo "   ⚠️  Secret '$secret_name' pulado"
+                return 1
+            fi
+        fi
+        
         echo "$secret_value" | gh secret set "$secret_name" --body -
         echo "   ✅ Secret '$secret_name' configurado com sucesso"
     else

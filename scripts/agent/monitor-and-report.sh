@@ -34,10 +34,22 @@ echo ""
 
 # Listar runs recentes
 echo "📋 Buscando runs recentes..."
-RUNS_JSON=$(gh run list --branch "$BRANCH" --limit 10 --json databaseId,status,conclusion,name,workflowName,createdAt)
+RUNS_JSON=$(gh run list --branch "$BRANCH" --limit 10 --json databaseId,status,conclusion,name,workflowName,createdAt 2>/dev/null || echo "[]")
+
+# Validar que retornou JSON válido
+if ! echo "$RUNS_JSON" | jq empty 2>/dev/null; then
+    echo "❌ Erro ao buscar runs ou JSON inválido"
+    echo "   Tentando novamente..."
+    sleep 5
+    RUNS_JSON=$(gh run list --branch "$BRANCH" --limit 10 --json databaseId,status,conclusion,name,workflowName,createdAt 2>/dev/null || echo "[]")
+    if ! echo "$RUNS_JSON" | jq empty 2>/dev/null; then
+        echo "❌ Falha ao obter lista de runs"
+        exit 1
+    fi
+fi
 
 # Verificar se há falhas
-FAILED_RUNS=$(echo "$RUNS_JSON" | jq -r '.[] | select(.conclusion == "failure") | "\(.databaseId)|\(.workflowName)"')
+FAILED_RUNS=$(echo "$RUNS_JSON" | jq -r '.[] | select(.conclusion == "failure") | "\(.databaseId)|\(.workflowName)"' 2>/dev/null || echo "")
 
 if [ -z "$FAILED_RUNS" ]; then
     echo "✅ Nenhuma falha detectada nos últimos 10 runs"

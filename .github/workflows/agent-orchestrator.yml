@@ -31,15 +31,31 @@ jobs:
       
       - name: Setup GitHub CLI
         run: |
-          type -p gh &>/dev/null || {
-            echo "Installing GitHub CLI..."
-            type -p curl >/dev/null || sudo apt update && sudo apt install curl -y
-            curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | sudo dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg
-            sudo chmod go+r /usr/share/keyrings/githubcli-archive-keyring.gpg
-            echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | sudo tee /etc/apt/sources.list.d/github-cli.list > /dev/null
-            sudo apt update
-            sudo apt install gh -y
-          }
+          # Check if gh is already installed
+          if type -p gh &>/dev/null; then
+            echo "GitHub CLI already installed"
+            gh --version
+            exit 0
+          fi
+          
+          # Install GitHub CLI using official method
+          echo "Installing GitHub CLI..."
+          type -p curl >/dev/null || sudo apt update && sudo apt install curl -y
+          
+          # Download and verify keyring
+          curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | \
+            sudo dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg
+          sudo chmod go+r /usr/share/keyrings/githubcli-archive-keyring.gpg
+          
+          # Add repository
+          echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | \
+            sudo tee /etc/apt/sources.list.d/github-cli.list > /dev/null
+          
+          # Install
+          sudo apt update
+          sudo apt install gh -y
+          
+          # Verify installation
           gh --version
       
       - name: Authenticate GitHub CLI

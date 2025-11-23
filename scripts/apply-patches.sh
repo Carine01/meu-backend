@@ -24,13 +24,20 @@ apply_patch() {
     
     echo "📄 Aplicando patch: $patch_file"
     
-    # Verificar se patch já foi aplicado
+    # Verificar se patch já foi aplicado (reverse check)
+    if git apply --reverse --check "$patch_file" 2>/dev/null; then
+        echo "   ℹ️  Patch já aplicado: $patch_file"
+        return 2
+    fi
+    
+    # Tentar aplicar o patch
     if git apply --check "$patch_file" 2>/dev/null; then
         git apply "$patch_file"
         echo "   ✅ Patch aplicado com sucesso: $patch_file"
         return 0
     else
-        echo "   ℹ️  Patch já aplicado ou não é necessário: $patch_file"
+        echo "   ⚠️  Não é possível aplicar patch (conflitos ou já aplicado): $patch_file"
+        echo "   💡 Para mais detalhes: git apply --check $patch_file"
         return 2
     fi
 }
