@@ -156,7 +156,7 @@ for wf in "${WORKFLOWS[@]}"; do
   else
     SUMMARY+="- $wf : $concl\n"
     # considerar failed/timed_out/cancelled como crítica
-    if [[ "$concl" =~ "failure|cancelled|timed_out|action_required" ]]; then
+    if [[ "$concl" =~ "failed|failure|cancelled|timed_out|action_required" ]]; then
       CRITICAL_FAILURE=true
     fi
   fi
@@ -173,7 +173,11 @@ fi
 # 8) Se falha crítica: criar issue automática com artefato de aviso
 if [ "$CRITICAL_FAILURE" = "true" ]; then
   ISSUE_TITLE="INCIDENT: workflows falharam para $BRANCH"
-  ISSUE_BODY="Orquestrador automático detectou falha em pelo menos um workflow para branch \`$BRANCH\`.\n\nResumo:\n$SUMMARY\n\nAção sugerida: abrir PR #$PR_NUMBER para investigação e anexar logs do run (Actions → run → logs)."
+  if [ -n "$PR_NUMBER" ]; then
+    ISSUE_BODY="Orquestrador automático detectou falha em pelo menos um workflow para branch \`$BRANCH\`.\n\nResumo:\n$SUMMARY\n\nAção sugerida: abrir PR #$PR_NUMBER para investigação e anexar logs do run (Actions → run → logs)."
+  else
+    ISSUE_BODY="Orquestrador automático detectou falha em pelo menos um workflow para branch \`$BRANCH\`.\n\nResumo:\n$SUMMARY\n\nAção sugerida: investigar e anexar logs do run (Actions → run → logs)."
+  fi
   echo "Falha crítica detectada. Criando issue de incidente..."
   gh issue create --title "$ISSUE_TITLE" --body "$ISSUE_BODY" --label "incident,priority/high" || echo "Falha ao criar issue (verifique permissões)"
 fi
@@ -187,12 +191,12 @@ if [ "$AUTO_MERGE" = "true" ] && [ -n "$PR_NUMBER" ]; then
     echo "Nenhuma aprovação humana detectada. Abortando auto-merge."
   else
     # checar checks conclusion global (simplified)
-    conclusion=$(gh pr checks "$PR_NUMBER" --json conclusion --jq '.conclusion' 2>/dev/null || true)
-    if [ "$conclusion" = "SUCCESS" ] || [ "$conclusion" = "success" ]; then
+    checks_status=$(gh pr view "$PR_NUMBER" --json statusCheckRollup --jq '.statusCheckRollup[].conclusion' 2>/dev/null | sort -u | head -1 || true)
+    if [ "$checks_status" = "SUCCESS" ] || [ "$checks_status" = "success" ]; then
       echo "Checks OK e aprovação presente — realizando merge squash e deletando branch..."
       gh pr merge "$PR_NUMBER" --squash --delete-branch || echo "Falha no merge automático"
     else
-      echo "Checks não estão com conclusão SUCCESS ($conclusion). Abortando auto-merge."
+      echo "Checks não estão com conclusão SUCCESS ($checks_status). Abortando auto-merge."
     fi
   fi
 fi
