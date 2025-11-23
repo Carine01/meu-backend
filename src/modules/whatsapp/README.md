@@ -2,6 +2,35 @@
 
 Integração completa com WhatsApp Business API (Meta) para envio de mensagens.
 
+## 🧪 Providers Disponíveis
+
+### Mock Provider (Padrão para Testes)
+**Configuração:** `WHATSAPP_PROVIDER=mock`
+
+- ✅ Simula envio de mensagens sem conexão real
+- ✅ Ideal para desenvolvimento e testes automatizados
+- ✅ Não requer credenciais ou conectividade externa
+- ✅ Loga todas as mensagens no console
+
+```env
+# .env para testes
+WHATSAPP_PROVIDER=mock
+```
+
+### Baileys Provider (MVP)
+**Configuração:** `WHATSAPP_PROVIDER=baileys`
+
+- Usa biblioteca @whiskeysockets/baileys
+- Requer escaneamento de QR code
+- Requer conectividade com web.whatsapp.com
+
+### Official Provider (Produção)
+**Configuração:** `WHATSAPP_PROVIDER=official`
+
+- Usa WhatsApp Business API oficial do Meta
+- Requer token de acesso e configuração completa
+- Mais confiável e profissional
+
 ---
 
 ## 📋 Funcionalidades
@@ -56,12 +85,20 @@ Response: CHALLENGE
 ### POST `/whatsapp/send`
 Enviar mensagem manualmente
 
-```typescript
-POST /whatsapp/send
-Authorization: Bearer <token>
+**⚠️ NOTA**: Este endpoint NÃO requer autenticação JWT para facilitar integrações externas e automação.  
+Para produção, considere adicionar validação de IP ou token específico.
+
+```bash
+# Exemplo de uso
+curl -X POST http://localhost:3000/whatsapp/send \
+  -H "Content-Type: application/json" \
+  -d '{"to": "5511999999999", "message": "Teste automação Elevare"}'
+
+# Response
 {
-  "to": "+5511999999999",
-  "message": "Olá! Seu agendamento foi confirmado."
+  "messageId": "mock_msg_1763920621665_1",
+  "status": "sent",
+  "timestamp": "2025-11-23T17:57:01.665Z"
 }
 ```
 
