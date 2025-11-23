@@ -51,7 +51,9 @@ try {
     $REMOTE = git rev-parse "@{u}" 2>$null
     $BASE = git merge-base "@" "@{u}" 2>$null
 
-    if ($LOCAL -eq $REMOTE) {
+    if ([string]::IsNullOrEmpty($LOCAL) -or [string]::IsNullOrEmpty($REMOTE)) {
+        Write-Host "⚠️  Cannot compare - not tracking a remote branch or no remote configured" -ForegroundColor Red
+    } elseif ($LOCAL -eq $REMOTE) {
         Write-Host "✅ Repository is up-to-date with remote" -ForegroundColor Green
     } elseif ($LOCAL -eq $BASE) {
         Write-Host "⬇️  Need to pull - remote has new commits" -ForegroundColor Yellow

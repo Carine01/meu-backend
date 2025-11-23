@@ -53,7 +53,7 @@ git pull origin feat/sua-branch
 
 ```powershell
 # Ir para a pasta do projeto
-cd C:\caminho\para\meu-backend
+cd C:\caminho\para\seu-projeto
 
 # Executar pull
 git pull

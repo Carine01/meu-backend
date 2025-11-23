@@ -38,11 +38,13 @@ echo ""
 
 # Compare with remote
 echo "🔍 Comparing with remote branch..."
-LOCAL=$(git rev-parse @)
+LOCAL=$(git rev-parse @ 2>/dev/null)
 REMOTE=$(git rev-parse @{u} 2>/dev/null)
 BASE=$(git merge-base @ @{u} 2>/dev/null)
 
-if [ "$LOCAL" = "$REMOTE" ]; then
+if [ -z "$LOCAL" ] || [ -z "$REMOTE" ]; then
+    echo "⚠️  Cannot compare - not tracking a remote branch or no remote configured"
+elif [ "$LOCAL" = "$REMOTE" ]; then
     echo "✅ Repository is up-to-date with remote"
 elif [ "$LOCAL" = "$BASE" ]; then
     echo "⬇️  Need to pull - remote has new commits"
