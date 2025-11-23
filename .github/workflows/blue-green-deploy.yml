@@ -11,8 +11,14 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Setup SSH
+        run: |
+          mkdir -p ~/.ssh
+          ssh-keyscan -H ${{ secrets.SERVER_IP }} >> ~/.ssh/known_hosts
+
       - name: Deploy versão green
         run: ssh ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_IP }} "
+          set -e
           cd /var/www/elevare-green &&
           git pull &&
           docker compose up -d --build
@@ -26,7 +32,9 @@ jobs:
 
       - name: Trocar tráfego para green
         run: ssh ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_IP }} "
+          set -e
           ln -sfn /var/www/elevare-green /var/www/elevare &&
+          cd /var/www/elevare &&
           docker compose down &&
           docker compose up -d --build
         "
