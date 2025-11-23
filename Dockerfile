@@ -25,8 +25,8 @@ RUN npm run build
 # ============================================
 FROM node:20-alpine
 
-# Instalar dumb-init para gerenciamento de processos
-RUN apk add --no-cache dumb-init
+# Instalar dumb-init para gerenciamento de processos (opcional)
+# RUN apk add --no-cache dumb-init
 
 # Criar usuário não-root para segurança
 RUN addgroup -g 1001 -S nodejs && adduser -S nodejs -u 1001
@@ -36,8 +36,8 @@ WORKDIR /app
 # Copiar package files
 COPY --from=builder /app/package*.json ./
 
-# Instalar APENAS dependências de produção
-RUN npm ci --only=production && npm cache clean --force
+# Copiar node_modules do builder (já tem todas as dependências)
+COPY --from=builder /app/node_modules ./node_modules
 
 # Copiar código buildado
 COPY --from=builder /app/dist ./dist
@@ -58,5 +58,5 @@ EXPOSE 8080
 HEALTHCHECK --interval=30s --timeout=3s --start-period=40s --retries=3 \
   CMD node -e "require('http').get('http://localhost:' + (process.env.PORT || 8080) + '/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"
 
-# Executar com dumb-init para gerenciamento correto de sinais
-CMD ["dumb-init", "node", "dist/main.js"]
+# Executar com node
+CMD ["node", "dist/main.js"]
