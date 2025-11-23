@@ -133,6 +133,8 @@ fi
 # Função para aguardar e coletar conclusão de um workflow
 wait_for_workflow_run() {
   local wf_name="$1"
+  local max_wait=1800  # 30 minutos timeout
+  local elapsed=0
   echo "Procurando run para workflow: $wf_name (branch $BRANCH)"
   run_id=$(gh run list --workflow "$wf_name" --branch "$BRANCH" --limit 20 --json databaseId,headBranch,status,conclusion --jq '.[] | select(.headBranch=="'"$BRANCH"'") | .databaseId' 2>/dev/null | head -n1 || true)
   if [ -z "$run_id" ]; then
@@ -141,8 +143,9 @@ wait_for_workflow_run() {
     return
   fi
   echo "Run encontrado: $run_id — aguardando conclusão..."
-  while true; do
+  while [ $elapsed -lt $max_wait ]; do
     sleep 6
+    elapsed=$((elapsed + 6))
     status="$(gh run view "$run_id" --json status,conclusion --jq '.status + "|" + (.conclusion // "")' 2>/dev/null || true)"
     if [ -z "$status" ]; then
       echo "Não foi possível obter status do run $run_id. Repetindo..."
@@ -156,6 +159,8 @@ wait_for_workflow_run() {
       return
     fi
   done
+  echo "Timeout aguardando workflow $wf_name após $max_wait segundos"
+  echo "timed_out"
 }
 
 # Aguardar todos os workflows críticos
@@ -199,7 +204,9 @@ if [ "${AUTO_MERGE}" = "true" ] && [ -n "${PR_NUMBER:-}" ]; then
     echo "Nenhuma aprovação humana detectada. Abortando auto-merge."
   else
     conclusion=$(gh pr checks "$PR_NUMBER" --json conclusion --jq '.conclusion' 2>/dev/null || true)
-    if [ "$conclusion" = "SUCCESS" ] || [ "$conclusion" = "success" ]; then
+    # Converter para lowercase para comparação case-insensitive
+    conclusion_lower=$(echo "$conclusion" | tr '[:upper:]' '[:lower:]')
+    if [ "$conclusion_lower" = "success" ]; then
       echo "Checks OK e aprovação presente. Realizando merge (squash) e deletando branch..."
       gh pr merge "$PR_NUMBER" --squash --delete-branch || echo "Falha no merge automático"
     else
