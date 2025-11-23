@@ -25,9 +25,9 @@ jobs:
           node-version: '18'
 
       - name: Run docs generation script (if exists)
+        id: check_docs_script
         run: |
           if [ -x "./scripts/generate-docs.sh" ]; then
-            chmod +x ./scripts/generate-docs.sh
             ./scripts/generate-docs.sh
             git config user.name "github-actions"
             git config user.email "actions@github.com"
@@ -38,12 +38,14 @@ jobs:
             else
               echo "No docs changes generated."
             fi
+            echo "script_exists=true" >> $GITHUB_OUTPUT
           else
             echo "No docs generation script found; skipping."
+            echo "script_exists=false" >> $GITHUB_OUTPUT
           fi
 
       - name: Create issue if docs generation missing
-        if: ${{ !exists('./scripts/generate-docs.sh') }}
+        if: steps.check_docs_script.outputs.script_exists == 'false'
         uses: peter-evans/create-issue@v4
         with:
           title: 'Docs generator missing'
