@@ -56,18 +56,18 @@ jobs:
           chmod +x ./scripts/agent/auto-comment-and-assign.sh || true
           chmod +x ./scripts/agent/auto-merge-if-ready.sh || true
 
-      - name: Run all checks (dispara workflows)
+      - name: Run all checks (triggers workflows)
         id: runchecks
         run: |
-          echo "Executando run-all-checks.sh (dispara workflows principais)..."
-          ./scripts/agent/run-all-checks.sh "${{ github.head_ref || github.ref }}" || echo "run-all-checks retornou não-zero; continuando"
+          echo "Executing run-all-checks.sh (triggers main workflows)..."
+          ./scripts/agent/run-all-checks.sh "${{ github.head_ref || github.ref }}" || echo "run-all-checks returned non-zero; continuing"
 
       - name: Detect PR number if missing
         id: detect_pr
         run: |
           PR_NUMBER="${{ github.event.pull_request.number || '' }}"
           if [ -z "$PR_NUMBER" ]; then
-            echo "PR number não presente no evento; tentando detectar pela branch..."
+            echo "PR number not present in event; trying to detect by branch..."
             PR_NUMBER=$(gh pr list --head "${{ github.head_ref }}" --state open --json number --jq '.[0].number' || true)
           fi
           if [ -z "$PR_NUMBER" ]; then
@@ -77,7 +77,7 @@ jobs:
           fi
 
       - name: Post comment, labels and request reviewers (if PR detected)
-        if: steps.detect_pr.outputs.PR_NUMBER != 'true'
+        if: steps.detect_pr.outputs.PR_NUMBER_NOT_FOUND != 'true'
         run: |
           PR_NUMBER=${{ steps.detect_pr.outputs.PR_NUMBER }}
           echo "PR_NUMBER detected: $PR_NUMBER"
@@ -87,11 +87,11 @@ jobs:
           ./scripts/agent/auto-comment-and-assign.sh "$PR_NUMBER" "$REVIEWERS" "$LABELS"
 
       - name: Optionally attempt auto-merge (guarded)
-        if: env.AUTO_MERGE == 'true' && steps.detect_pr.outputs.PR_NUMBER != 'true'
+        if: env.AUTO_MERGE == 'true' && steps.detect_pr.outputs.PR_NUMBER_NOT_FOUND != 'true'
         run: |
           PR_NUMBER=${{ steps.detect_pr.outputs.PR_NUMBER }}
           echo "AUTO_MERGE enabled. Attempting auto-merge for PR #${PR_NUMBER}"
-          ./scripts/agent/auto-merge-if-ready.sh "$PR_NUMBER" "squash" || echo "Auto-merge não autorizado ou falhou; revisar manualmente."
+          ./scripts/agent/auto-merge-if-ready.sh "$PR_NUMBER" "squash" || echo "Auto-merge not authorized or failed; review manually."
 
       - name: Final status note
-        run: echo "Agent Orchestrator run finalizada. AUTO_MERGE=${{ env.AUTO_MERGE }}, REVIEWERS='${{ env.REVIEWERS_INPUT }}', LABELS='${{ env.LABELS_INPUT }}'"
+        run: echo "Agent Orchestrator run completed. AUTO_MERGE=${{ env.AUTO_MERGE }}, REVIEWERS='${{ env.REVIEWERS_INPUT }}', LABELS='${{ env.LABELS_INPUT }}'"
