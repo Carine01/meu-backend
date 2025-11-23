@@ -1,9 +1,9 @@
 diff --git a/.github/workflows/agent-orchestrator.yml b/.github/workflows/agent-orchestrator.yml
 new file mode 100644
-index 0000000..9983316
+index 0000000..5b65d3f
 --- /dev/null
 +++ b/.github/workflows/agent-orchestrator.yml
-@@ -0,0 +1,125 @@
+@@ -0,0 +1,129 @@
 +name: Agent Orchestrator - run agent scripts in sequence (robust)
 +
 +on:
@@ -25,6 +25,10 @@ index 0000000..9983316
 +  run-agent-scripts:
 +    name: Run Agent Scripts in Sequence
 +    runs-on: ubuntu-latest
++    
++    permissions:
++      contents: read
++      actions: write
 +    
 +    steps:
 +      - name: Checkout code
