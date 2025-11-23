@@ -1,0 +1,246 @@
+name: WhatsApp Monitor
+
+on:
+  schedule:
+    # Run every 5 minutes
+    - cron: '*/5 * * * *'
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+
+jobs:
+  health-check:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Check WhatsApp Health Endpoint
+        id: health_check
+        continue-on-error: true
+        run: |
+          echo "### WhatsApp Monitor Health Check" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Timestamp:** $(date -u '+%Y-%m-%d %H:%M:%S UTC')" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          # Define endpoints to check
+          ENDPOINTS=(
+            "https://staging.elevare.com/whatsapp/health"
+            "https://staging.elevare.com/health"
+          )
+          
+          ALL_HEALTHY=true
+          
+          for endpoint in "${ENDPOINTS[@]}"; do
+            echo "Checking: $endpoint" >> $GITHUB_STEP_SUMMARY
+            
+            # Make HTTP request with timeout
+            HTTP_CODE=$(curl -s -o /tmp/response.json -w "%{http_code}" --connect-timeout 10 --max-time 30 "$endpoint" || echo "000")
+            
+            if [ "$HTTP_CODE" = "200" ]; then
+              echo "✅ **Status:** Healthy (HTTP $HTTP_CODE)" >> $GITHUB_STEP_SUMMARY
+              
+              # Try to parse JSON response if available
+              if [ -f /tmp/response.json ]; then
+                if command -v jq &> /dev/null; then
+                  echo "" >> $GITHUB_STEP_SUMMARY
+                  echo "<details>" >> $GITHUB_STEP_SUMMARY
+                  echo "<summary>Response Details</summary>" >> $GITHUB_STEP_SUMMARY
+                  echo "" >> $GITHUB_STEP_SUMMARY
+                  echo "\`\`\`json" >> $GITHUB_STEP_SUMMARY
+                  jq '.' /tmp/response.json >> $GITHUB_STEP_SUMMARY || cat /tmp/response.json >> $GITHUB_STEP_SUMMARY
+                  echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+                  echo "</details>" >> $GITHUB_STEP_SUMMARY
+                fi
+              fi
+            else
+              echo "❌ **Status:** Unhealthy (HTTP $HTTP_CODE)" >> $GITHUB_STEP_SUMMARY
+              ALL_HEALTHY=false
+              
+              if [ -f /tmp/response.json ]; then
+                echo "" >> $GITHUB_STEP_SUMMARY
+                echo "<details>" >> $GITHUB_STEP_SUMMARY
+                echo "<summary>Error Response</summary>" >> $GITHUB_STEP_SUMMARY
+                echo "" >> $GITHUB_STEP_SUMMARY
+                echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+                cat /tmp/response.json >> $GITHUB_STEP_SUMMARY
+                echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+                echo "</details>" >> $GITHUB_STEP_SUMMARY
+              fi
+            fi
+            
+            echo "" >> $GITHUB_STEP_SUMMARY
+            rm -f /tmp/response.json
+          done
+          
+          if [ "$ALL_HEALTHY" = false ]; then
+            echo "health_status=unhealthy" >> $GITHUB_OUTPUT
+          else
+            echo "health_status=healthy" >> $GITHUB_OUTPUT
+          fi
+      
+      - name: Check WhatsApp Connection Status
+        id: connection_check
+        continue-on-error: true
+        run: |
+          echo "### WhatsApp Connection Status" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          # Check if WhatsApp service is authenticated
+          # This would typically call a custom endpoint that checks connection status
+          CONNECTION_ENDPOINT="https://staging.elevare.com/whatsapp/status"
+          
+          HTTP_CODE=$(curl -s -o /tmp/connection.json -w "%{http_code}" --connect-timeout 10 --max-time 30 "$CONNECTION_ENDPOINT" || echo "000")
+          
+          if [ "$HTTP_CODE" = "200" ]; then
+            echo "✅ WhatsApp service is reachable" >> $GITHUB_STEP_SUMMARY
+            
+            if [ -f /tmp/connection.json ] && command -v jq &> /dev/null; then
+              CONNECTED=$(jq -r '.connected // "unknown"' /tmp/connection.json 2>/dev/null || echo "unknown")
+              
+              if [ "$CONNECTED" = "true" ]; then
+                echo "✅ WhatsApp is connected and authenticated" >> $GITHUB_STEP_SUMMARY
+                echo "connection_status=connected" >> $GITHUB_OUTPUT
+              else
+                echo "⚠️  WhatsApp may require QR code scan" >> $GITHUB_STEP_SUMMARY
+                echo "connection_status=disconnected" >> $GITHUB_OUTPUT
+              fi
+            fi
+          else
+            echo "⚠️  Could not check WhatsApp connection status (HTTP $HTTP_CODE)" >> $GITHUB_STEP_SUMMARY
+            echo "connection_status=unknown" >> $GITHUB_OUTPUT
+          fi
+          
+          rm -f /tmp/connection.json
+          echo "" >> $GITHUB_STEP_SUMMARY
+      
+      - name: Create incident issue if health check fails
+        if: steps.health_check.outputs.health_status == 'unhealthy'
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const timestamp = new Date().toISOString();
+            const issueTitle = `🚨 WhatsApp Health Check Failed - ${timestamp}`;
+            const issueBody = `
+            ## WhatsApp Service Health Check Failure
+            
+            **Timestamp:** ${timestamp}
+            **Workflow Run:** ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+            
+            ### Status
+            - Health Status: ❌ Unhealthy
+            - Connection Status: ${{ steps.connection_check.outputs.connection_status }}
+            
+            ### Next Steps
+            1. Check application logs in Cloud Run or local environment
+            2. Verify WhatsApp service is running
+            3. If disconnected, scan QR code to re-authenticate
+            4. Check database connectivity
+            5. Verify environment variables are set correctly
+            
+            ### Health Endpoints
+            - \`https://staging.elevare.com/whatsapp/health\`
+            - \`https://staging.elevare.com/health\`
+            
+            ### Logs Access
+            \`\`\`bash
+            # View recent logs
+            gh run view ${{ github.run_id }} --log
+            
+            # Check Cloud Run logs (if deployed)
+            gcloud logging read "resource.type=cloud_run_revision AND resource.labels.service_name=elevare-backend" --limit 50
+            \`\`\`
+            
+            ---
+            *This issue was automatically created by WhatsApp Monitor workflow.*
+            `;
+            
+            // Check if there's already an open incident issue
+            const { data: existingIssues } = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              labels: 'incident,whatsapp',
+              per_page: 1
+            });
+            
+            if (existingIssues.length === 0) {
+              // Create new incident issue
+              await github.rest.issues.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title: issueTitle,
+                body: issueBody,
+                labels: ['incident', 'whatsapp', 'monitoring']
+              });
+              console.log('Created new incident issue');
+            } else {
+              // Update existing issue with comment
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: existingIssues[0].number,
+                body: `### Another health check failure detected\n\n${issueBody}`
+              });
+              console.log('Updated existing incident issue');
+            }
+      
+      - name: Close incident issues if health restored
+        if: steps.health_check.outputs.health_status == 'healthy'
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const timestamp = new Date().toISOString();
+            
+            // Find open incident issues
+            const { data: openIssues } = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              labels: 'incident,whatsapp'
+            });
+            
+            // Close all open incident issues
+            for (const issue of openIssues) {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issue.number,
+                body: `✅ **Health Restored**\n\nWhatsApp service health check passed at ${timestamp}.\n\nClosing this incident automatically.`
+              });
+              
+              await github.rest.issues.update({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issue.number,
+                state: 'closed'
+              });
+              
+              console.log(`Closed incident issue #${issue.number}`);
+            }
+            
+            if (openIssues.length === 0) {
+              console.log('No open incident issues to close');
+            }
+      
+      - name: Summary
+        run: |
+          echo "---" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          if [ "${{ steps.health_check.outputs.health_status }}" = "healthy" ]; then
+            echo "### ✅ All Systems Operational" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "WhatsApp service is healthy and operational." >> $GITHUB_STEP_SUMMARY
+          else
+            echo "### ❌ System Health Degraded" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "WhatsApp service health check failed. An incident issue has been created." >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "**Action Required:** Investigate and resolve the health check failure." >> $GITHUB_STEP_SUMMARY
+          fi

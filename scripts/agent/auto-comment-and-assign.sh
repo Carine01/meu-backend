@@ -48,10 +48,11 @@ A automação disparou os checks obrigatórios para este PR.
 
 ### 📋 QA Checklist (automated)
 
-- [ ] **TypeScript Guardian** → Build + Tests passando
-- [ ] **Docker Builder** → Imagem construída e smoke test OK
+- [ ] **CI (TypeScript Guardian)** → Build + Tests passando
 - [ ] **Quality Gate** → Sem console.log em arquivos alterados
-- [ ] **register-fallback** → Aplicado (verificar mudanças no módulo)
+- [ ] **Docker Builder** → Imagem construída e smoke test OK
+- [ ] **Register Fallback** → AST transformations aplicadas
+- [ ] **WhatsApp Monitor** → Health check passando (opcional em staging)
 - [ ] **Unit Tests** → Todos passando (coverage >= required)
 - [ ] **Secrets Configured** → WHATSAPP_AUTH_PATH, DB_URL
 - [ ] **Review Humano** → Aprovado por pelo menos 1 reviewer

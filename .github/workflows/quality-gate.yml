@@ -1,0 +1,186 @@
+name: Quality Gate
+
+on:
+  pull_request:
+    branches:
+      - main
+  push:
+    branches:
+      - main
+      - develop
+      - feat/*
+  workflow_dispatch:
+
+jobs:
+  quality-check:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Full history for better analysis
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+      
+      - name: Check for console.log statements
+        id: console_check
+        run: |
+          echo "### Quality Gate: Console.log Detection" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          # Find console.log in TypeScript files (excluding test files and node_modules)
+          CONSOLE_LOGS=$(grep -r "console\.log" src/ --include="*.ts" --exclude="*.spec.ts" --exclude="*.test.ts" || true)
+          
+          if [ -n "$CONSOLE_LOGS" ]; then
+            echo "❌ Found console.log statements in source files:" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+            echo "$CONSOLE_LOGS" >> $GITHUB_STEP_SUMMARY
+            echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "::error::console.log statements found in source files"
+            echo "has_console_logs=true" >> $GITHUB_OUTPUT
+          else
+            echo "✅ No console.log statements found in source files" >> $GITHUB_STEP_SUMMARY
+            echo "has_console_logs=false" >> $GITHUB_OUTPUT
+          fi
+      
+      - name: Check for sensitive strings
+        id: secrets_check
+        run: |
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Quality Gate: Sensitive Data Detection" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          # Patterns to check for (expand as needed)
+          PATTERNS=(
+            "password\s*=\s*['\"][^'\"]{1,}"
+            "api[_-]?key\s*=\s*['\"][^'\"]{1,}"
+            "secret\s*=\s*['\"][^'\"]{1,}"
+            "token\s*=\s*['\"][^'\"]{1,}"
+            "jdbc:postgresql://.*:[^@]*@"
+          )
+          
+          FOUND_SECRETS=false
+          
+          for pattern in "${PATTERNS[@]}"; do
+            MATCHES=$(grep -riE "$pattern" src/ --include="*.ts" --exclude="*.spec.ts" || true)
+            if [ -n "$MATCHES" ]; then
+              if [ "$FOUND_SECRETS" = false ]; then
+                echo "❌ Found potential sensitive data:" >> $GITHUB_STEP_SUMMARY
+                echo "" >> $GITHUB_STEP_SUMMARY
+                FOUND_SECRETS=true
+              fi
+              echo "**Pattern: $pattern**" >> $GITHUB_STEP_SUMMARY
+              echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+              echo "$MATCHES" >> $GITHUB_STEP_SUMMARY
+              echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+              echo "" >> $GITHUB_STEP_SUMMARY
+            fi
+          done
+          
+          if [ "$FOUND_SECRETS" = false ]; then
+            echo "✅ No sensitive strings detected" >> $GITHUB_STEP_SUMMARY
+            echo "has_secrets=false" >> $GITHUB_OUTPUT
+          else
+            echo "::warning::Potential sensitive data detected"
+            echo "has_secrets=true" >> $GITHUB_OUTPUT
+          fi
+      
+      - name: Check for TODO/FIXME comments
+        id: todo_check
+        run: |
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Quality Gate: TODO/FIXME Comments" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          TODO_COUNT=$(grep -riE "(TODO|FIXME|XXX|HACK)" src/ --include="*.ts" --exclude="*.spec.ts" | wc -l || true)
+          
+          if [ "$TODO_COUNT" -gt 0 ]; then
+            echo "⚠️  Found $TODO_COUNT TODO/FIXME comments" >> $GITHUB_STEP_SUMMARY
+            TODOS=$(grep -riE "(TODO|FIXME|XXX|HACK)" src/ --include="*.ts" --exclude="*.spec.ts" || true)
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "<details>" >> $GITHUB_STEP_SUMMARY
+            echo "<summary>View TODO comments</summary>" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+            echo "$TODOS" >> $GITHUB_STEP_SUMMARY
+            echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+            echo "</details>" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "✅ No TODO/FIXME comments" >> $GITHUB_STEP_SUMMARY
+          fi
+      
+      - name: Check clinicId filters
+        id: clinicid_check
+        run: |
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Quality Gate: clinicId Filters" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          # Check for .find() without clinicId in services
+          MISSING_FILTERS=$(grep -rE "\.find\([\s]*\{" src/modules --include="*.service.ts" | grep -v "clinicId" || true)
+          
+          if [ -n "$MISSING_FILTERS" ]; then
+            echo "⚠️  Potential missing clinicId filters:" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+            echo "$MISSING_FILTERS" >> $GITHUB_STEP_SUMMARY
+            echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "::warning::Some queries may be missing clinicId filters"
+          else
+            echo "✅ All queries appear to have clinicId filters" >> $GITHUB_STEP_SUMMARY
+          fi
+      
+      - name: Check for Swagger documentation
+        id: swagger_check
+        run: |
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Quality Gate: Swagger Documentation" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          # Check for DTOs without @ApiProperty
+          if [ -d "src/modules" ]; then
+            MISSING_SWAGGER=$(find src/modules -name "*.dto.ts" -exec grep -L "@ApiProperty" {} \; || true)
+            
+            if [ -n "$MISSING_SWAGGER" ]; then
+              echo "⚠️  DTOs missing @ApiProperty decorators:" >> $GITHUB_STEP_SUMMARY
+              echo "" >> $GITHUB_STEP_SUMMARY
+              echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+              echo "$MISSING_SWAGGER" >> $GITHUB_STEP_SUMMARY
+              echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+            else
+              echo "✅ All DTOs have Swagger documentation" >> $GITHUB_STEP_SUMMARY
+            fi
+          else
+            echo "⚠️  No modules directory found" >> $GITHUB_STEP_SUMMARY
+          fi
+      
+      - name: Final Quality Gate Decision
+        run: |
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "---" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          if [ "${{ steps.console_check.outputs.has_console_logs }}" = "true" ]; then
+            echo "### ❌ Quality Gate FAILED" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "**Reason:** console.log statements found in source code" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "Please remove all console.log statements and use proper logging (this.logger)" >> $GITHUB_STEP_SUMMARY
+            exit 1
+          else
+            echo "### ✅ Quality Gate PASSED" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "All quality checks passed successfully!" >> $GITHUB_STEP_SUMMARY
+            
+            if [ "${{ steps.secrets_check.outputs.has_secrets }}" = "true" ]; then
+              echo "" >> $GITHUB_STEP_SUMMARY
+              echo "⚠️  **Warning:** Potential sensitive data detected (review required)" >> $GITHUB_STEP_SUMMARY
+            fi
+          fi

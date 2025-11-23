@@ -84,16 +84,25 @@ echo -e "${YELLOW}2. Docker Builder${NC}"
 trigger_workflow "Docker Builder" "docker-builder.yml"
 echo ""
 
-# 3. Deploy (only if configured with workflow_dispatch)
-echo -e "${YELLOW}3. Deploy Workflow (optional)${NC}"
-trigger_workflow "Deploy to Cloud Run" "deploy.yml"
+# 3. Quality Gate (console.log detection)
+echo -e "${YELLOW}3. Quality Gate${NC}"
+trigger_workflow "Quality Gate" "quality-gate.yml"
 echo ""
 
-# Note: register-fallback and other custom workflows would be added here if they exist
-# Example:
-# trigger_workflow "Register Fila Fallback (AST)" "register-fallback.yml"
-# trigger_workflow "Quality Gate" "quality-gate.yml"
-# trigger_workflow "WhatsApp Monitor" "whatsapp-monitor.yml"
+# 4. Register Fila Fallback (AST script)
+echo -e "${YELLOW}4. Register Fila Fallback (AST)${NC}"
+trigger_workflow "Register Fila Fallback (AST)" "register-fallback.yml"
+echo ""
+
+# 5. WhatsApp Monitor (optional health check)
+echo -e "${YELLOW}5. WhatsApp Monitor${NC}"
+trigger_workflow "WhatsApp Monitor" "whatsapp-monitor.yml"
+echo ""
+
+# 6. Deploy (only if configured with workflow_dispatch)
+echo -e "${YELLOW}6. Deploy Workflow (optional)${NC}"
+trigger_workflow "Deploy to Cloud Run" "deploy.yml"
+echo ""
 
 echo -e "${BLUE}========================================${NC}"
 echo -e "${BLUE}Step 2: Monitoring Workflow Status${NC}"
@@ -110,6 +119,12 @@ echo ""
 check_workflow_status "CI"
 echo ""
 check_workflow_status "Docker Builder"
+echo ""
+check_workflow_status "Quality Gate"
+echo ""
+check_workflow_status "Register Fila Fallback (AST)"
+echo ""
+check_workflow_status "WhatsApp Monitor"
 echo ""
 
 echo -e "${BLUE}========================================${NC}"
