@@ -11,6 +11,9 @@ jobs:
     name: Generate TypeScript Documentation
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    permissions:
+      contents: write
+      pages: write
 
     steps:
       - name: Checkout Repository

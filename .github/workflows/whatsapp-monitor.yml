@@ -11,6 +11,9 @@ jobs:
     name: WhatsApp Health Check
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    permissions:
+      contents: read
+      issues: write
 
     steps:
       - name: Checkout Repository

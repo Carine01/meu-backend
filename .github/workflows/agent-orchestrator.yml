@@ -25,6 +25,11 @@ jobs:
     name: Run Agent Scripts in Sequence
     runs-on: ubuntu-latest
     timeout-minutes: 45
+    permissions:
+      contents: write
+      pull-requests: write
+      issues: write
+      actions: write
 
     steps:
       - name: Checkout Repository
