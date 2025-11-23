@@ -1,0 +1,15 @@
+{
+  "entryPointStrategy": "expand",
+  "entryPoints": ["src"],
+  "exclude": [
+    "**/*.spec.ts",
+    "**/*.test.ts",
+    "**/test/**",
+    "**/firebaseConfig.ts"
+  ],
+  "skipErrorChecking": true,
+  "excludeExternals": true,
+  "excludePrivate": false,
+  "excludeProtected": false,
+  "out": "docs"
+}

@@ -11,3 +11,15 @@ dist/
 service-account.json
 *.firebase-admin.json
 *.credentials.json
+# TypeDoc generated files
+docs/.nojekyll
+docs/assets/
+docs/classes/
+docs/enums/
+docs/functions/
+docs/hierarchy.html
+docs/index.html
+docs/interfaces/
+docs/modules/
+docs/modules.html
+docs/variables/
