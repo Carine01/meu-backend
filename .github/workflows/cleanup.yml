@@ -24,4 +24,4 @@ jobs:
     - name: Apagar branches já mergidas
       run: |
         git fetch --prune
-        git branch -r --merged | grep -v "main" | sed 's/origin\///' | xargs -r -n 1 git push origin --delete
+        git branch -r --merged | grep -v "main" | grep -v "HEAD" | sed 's/origin\///' | xargs -r -n 1 git push origin --delete || true
