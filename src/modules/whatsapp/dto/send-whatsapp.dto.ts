@@ -5,12 +5,12 @@ export class SendWhatsAppDto {
   @ApiProperty({ example: '5511999999999' })
   @IsString()
   @IsNotEmpty()
-  phone: string;
+  phone!: string;
 
   @ApiProperty({ example: 'Olá, tenho interesse...' })
   @IsString()
   @IsNotEmpty()
-  message: string;
+  message!: string;
 
   @ApiProperty({ example: 'CLINIC_01', required: false })
   @IsString()
