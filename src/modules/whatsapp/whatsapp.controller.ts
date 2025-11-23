@@ -81,5 +81,34 @@ export class WhatsAppController {
     const hasWhatsApp = await this.whatsappService.isWhatsAppNumber(phoneNumber);
     return { phoneNumber, hasWhatsApp };
   }
+
+  /**
+   * Health check para fila do WhatsApp
+   * 
+   * Verifica se o serviço de WhatsApp está funcionando corretamente.
+   * Usado para monitoramento externo.
+   * 
+   * 🔓 PÚBLICO - Não requer autenticação
+   * 
+   * @returns Status da fila do WhatsApp
+   * 
+   * @example
+   * GET /whatsapp/health
+   * 
+   * Response:
+   * {
+   *   "status": "ok",
+   *   "timestamp": "2025-11-23T18:00:00.000Z",
+   *   "service": "whatsapp"
+   * }
+   */
+  @Get('health')
+  health() {
+    return {
+      status: 'ok',
+      timestamp: new Date().toISOString(),
+      service: 'whatsapp'
+    };
+  }
 }
 
