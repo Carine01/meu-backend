@@ -19,6 +19,7 @@ export interface CreateEventDto {
 }
 
 export interface EventQueryDto {
+  clinicId: string;
   leadId?: string;
   eventType?: EventType | EventType[];
   startDate?: Date;
@@ -55,8 +56,8 @@ export class EventsService {
       return saved;
     } catch (error: any) {
       this.logger.error(`Failed to log event: ${error.message}`, error.stack);
-      // Não lança erro para não quebrar o fluxo principal
-      return undefined as any;
+      // Re-throw to let caller handle appropriately
+      throw error;
     }
   }
 
@@ -64,7 +65,9 @@ export class EventsService {
    * Busca eventos com filtros
    */
   async findEvents(query: EventQueryDto): Promise<Event[]> {
-    const where: FindOptionsWhere<Event> = {};
+    const where: FindOptionsWhere<Event> = {
+      clinicId: query.clinicId,
+    };
 
     if (query.leadId) {
       where.leadId = query.leadId;
@@ -72,8 +75,7 @@ export class EventsService {
 
     if (query.eventType) {
       if (Array.isArray(query.eventType)) {
-        // @ts-ignore - TypeORM aceita array para IN query
-        where.eventType = query.eventType;
+        where.eventType = In(query.eventType);
       } else {
         where.eventType = query.eventType;
       }
@@ -93,9 +95,9 @@ export class EventsService {
   /**
    * Busca timeline completa de um lead
    */
-  async getLeadTimeline(leadId: string, limit = 50): Promise<Event[]> {
+  async getLeadTimeline(clinicId: string, leadId: string, limit = 50): Promise<Event[]> {
     return this.eventsRepository.find({
-      where: { leadId },
+      where: { clinicId, leadId },
       order: { createdAt: 'DESC' },
       take: limit,
     });
@@ -105,11 +107,12 @@ export class EventsService {
    * Busca eventos de um tipo específico
    */
   async getEventsByType(
+    clinicId: string,
     eventType: EventType,
     startDate?: Date,
     endDate?: Date,
   ): Promise<Event[]> {
-    const where: FindOptionsWhere<Event> = { eventType };
+    const where: FindOptionsWhere<Event> = { clinicId, eventType };
 
     if (startDate && endDate) {
       where.createdAt = Between(startDate, endDate);
@@ -125,12 +128,13 @@ export class EventsService {
   /**
    * Estatísticas de eventos por tipo
    */
-  async getEventStats(startDate: Date, endDate: Date): Promise<Record<string, number>> {
+  async getEventStats(clinicId: string, startDate: Date, endDate: Date): Promise<Record<string, number>> {
     const query = this.eventsRepository
       .createQueryBuilder('event')
       .select('event.eventType', 'eventType')
       .addSelect('COUNT(*)', 'count')
-      .where('event.createdAt BETWEEN :startDate AND :endDate', {
+      .where('event.clinicId = :clinicId', { clinicId })
+      .andWhere('event.createdAt BETWEEN :startDate AND :endDate', {
         startDate,
         endDate,
       })
@@ -149,12 +153,13 @@ export class EventsService {
   /**
    * Eventos recentes do sistema (últimas 24h)
    */
-  async getRecentEvents(limit = 100): Promise<Event[]> {
+  async getRecentEvents(clinicId: string, limit = 100): Promise<Event[]> {
     const oneDayAgo = new Date();
     oneDayAgo.setDate(oneDayAgo.getDate() - 1);
 
     return this.eventsRepository.find({
       where: {
+        clinicId,
         createdAt: Between(oneDayAgo, new Date()),
       },
       order: { createdAt: 'DESC' },
@@ -166,11 +171,12 @@ export class EventsService {
    * Conta eventos de um tipo específico para um lead
    */
   async countEventsByLeadAndType(
+    clinicId: string,
     leadId: string,
     eventType: EventType,
   ): Promise<number> {
     return this.eventsRepository.count({
-      where: { leadId, eventType },
+      where: { clinicId, leadId, eventType },
     });
   }
 
@@ -215,9 +221,10 @@ export class EventsService {
   /**
    * Busca mudanças de stage de um lead
    */
-  async getStageChanges(leadId: string): Promise<Event[]> {
+  async getStageChanges(clinicId: string, leadId: string): Promise<Event[]> {
     return this.eventsRepository.find({
       where: {
+        clinicId,
         leadId,
         eventType: EventType.STAGE_CHANGED,
       },
@@ -228,7 +235,7 @@ export class EventsService {
   /**
    * Busca histórico de mensagens enviadas para um lead
    */
-  async getMessageHistory(leadId: string): Promise<Event[]> {
+  async getMessageHistory(clinicId: string, leadId: string): Promise<Event[]> {
     const messageTypes = [
       EventType.MESSAGE_SENT,
       EventType.MESSAGE_DELIVERED,
@@ -238,7 +245,8 @@ export class EventsService {
 
     return this.eventsRepository
       .createQueryBuilder('event')
-      .where('event.leadId = :leadId', { leadId })
+      .where('event.clinicId = :clinicId', { clinicId })
+      .andWhere('event.leadId = :leadId', { leadId })
       .andWhere('event.eventType IN (:...types)', { types: messageTypes })
       .orderBy('event.createdAt', 'DESC')
       .getMany();

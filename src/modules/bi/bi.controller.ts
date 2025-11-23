@@ -1,6 +1,7 @@
 import { Controller, Get, Header, UseGuards, Query } from '@nestjs/common';
 import { BiService } from './bi.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { ClinicId } from '../../shared/decorators/clinic-id.decorator';
 
 /**
  * Controller de Business Intelligence e Métricas
@@ -24,6 +25,7 @@ export class BiController {
    * @example
    * GET /bi/dashboard
    * Authorization: Bearer <jwt-token>
+   * x-clinic-id: CLINIC_ID
    * 
    * Response:
    * {
@@ -35,8 +37,8 @@ export class BiController {
    * }
    */
   @Get('dashboard')
-  async getDashboard() {
-    return this.biService.getDashboardMetrics();
+  async getDashboard(@ClinicId() clinicId: string) {
+    return this.biService.getDashboardMetrics(clinicId);
   }
 
   /**
@@ -54,6 +56,7 @@ export class BiController {
    * 
    * @example
    * GET /bi/metrics
+   * x-clinic-id: CLINIC_ID
    * 
    * Response (text/plain):
    * # HELP elevare_leads_total Total de leads
@@ -63,8 +66,8 @@ export class BiController {
    */
   @Get('metrics')
   @Header('Content-Type', 'text/plain; version=0.0.4')
-  async getMetrics() {
-    return this.biService.getPrometheusMetrics();
+  async getMetrics(@ClinicId() clinicId: string) {
+    return this.biService.getPrometheusMetrics(clinicId);
   }
 
   /**
@@ -73,6 +76,7 @@ export class BiController {
    * 
    * @example
    * GET /bi/funil
+   * x-clinic-id: CLINIC_ID
    * 
    * Response:
    * {
@@ -85,8 +89,8 @@ export class BiController {
    * }
    */
   @Get('funil')
-  async getFunil() {
-    return this.biService.getAnaliseFunil();
+  async getFunil(@ClinicId() clinicId: string) {
+    return this.biService.getAnaliseFunil(clinicId);
   }
 
   /**
@@ -97,6 +101,7 @@ export class BiController {
    * 
    * @example
    * GET /bi/etiquetas?limit=5
+   * x-clinic-id: CLINIC_ID
    * 
    * Response:
    * [
@@ -107,9 +112,12 @@ export class BiController {
    * ]
    */
   @Get('etiquetas')
-  async getTopEtiquetas(@Query('limit') limit?: string) {
+  async getTopEtiquetas(
+    @ClinicId() clinicId: string,
+    @Query('limit') limit?: string,
+  ) {
     const limitNum = limit ? parseInt(limit, 10) : 10;
-    return this.biService.getTopEtiquetas(limitNum);
+    return this.biService.getTopEtiquetas(clinicId, limitNum);
   }
 
   /**
@@ -117,6 +125,7 @@ export class BiController {
    * 
    * @example
    * GET /bi/origens
+   * x-clinic-id: CLINIC_ID
    * 
    * Response:
    * [
@@ -127,8 +136,8 @@ export class BiController {
    * ]
    */
   @Get('origens')
-  async getPerformancePorOrigem() {
-    return this.biService.getPerformancePorOrigem();
+  async getPerformancePorOrigem(@ClinicId() clinicId: string) {
+    return this.biService.getPerformancePorOrigem(clinicId);
   }
 }
 

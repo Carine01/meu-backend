@@ -47,21 +47,22 @@ export class AgendaSemanalService {
    * Executa agenda automática do dia atual
    * Deve ser chamado por CronJob diariamente (ex: 9h da manhã)
    * 
+   * @param clinicId - ID da clínica para filtrar os dados
    * @example
    * ```typescript
    * // Em AgendaSemanalController ou CronJob
    * @Cron('0 9 * * *') // Todo dia às 9h
    * async handleCron() {
-   *   await this.agendaSemanalService.executarAgendaDoDia();
+   *   await this.agendaSemanalService.executarAgendaDoDia('CLINIC_ID');
    * }
    * ```
    */
-  async executarAgendaDoDia(): Promise<void> {
+  async executarAgendaDoDia(clinicId: string): Promise<void> {
     const hoje = new Date();
     const diasSemana = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
     const diaSemanaAtual = diasSemana[hoje.getDay()];
 
-    this.logger.log(`Executando agenda semanal para ${diaSemanaAtual}`);
+    this.logger.log(`Executando agenda semanal para ${diaSemanaAtual} (Clinic: ${clinicId})`);
 
     const regras = this.getRegrasSemanais()[diaSemanaAtual];
 
@@ -80,7 +81,7 @@ export class AgendaSemanalService {
 
       try {
         // Buscar leads que correspondem às etiquetas da regra
-        const leads = await this.buscarLeadsPorEtiquetas(regra.publicoEtiquetas);
+        const leads = await this.buscarLeadsPorEtiquetas(clinicId, regra.publicoEtiquetas);
 
         this.logger.log(`${leads.length} leads encontrados para "${regra.objetivo}"`);
 
@@ -112,15 +113,19 @@ export class AgendaSemanalService {
   /**
    * Busca leads que possuem TODAS as etiquetas especificadas
    * 
+   * @param clinicId - ID da clínica para filtrar os dados
    * @param etiquetas - Array de etiquetas necessárias
    * @returns Array de leads que correspondem
    */
-  private async buscarLeadsPorEtiquetas(etiquetas: string[]): Promise<Lead[]> {
+  private async buscarLeadsPorEtiquetas(clinicId: string, etiquetas: string[]): Promise<Lead[]> {
     try {
       // Firestore não suporta array-contains-all nativamente
       // Solução: buscar todos e filtrar em memória (ou usar array-contains para 1 etiqueta)
       
-      const snapshot = await this.firestore.collection('leads').get();
+      const snapshot = await this.firestore
+        .collection('leads')
+        .where('clinicId', '==', clinicId)
+        .get();
 
       const leadsCorrespondentes: Lead[] = [];
 
@@ -303,10 +308,11 @@ export class AgendaSemanalService {
   /**
    * Executa regra específica manualmente (teste)
    * 
+   * @param clinicId - ID da clínica
    * @param diaSemana - Dia da regra
    * @param objetivo - Objetivo da regra para identificar
    */
-  async executarRegraManual(diaSemana: string, objetivo: string): Promise<number> {
+  async executarRegraManual(clinicId: string, diaSemana: string, objetivo: string): Promise<number> {
     const regras = this.getRegrasSemanais()[diaSemana] || [];
     const regra = regras.find(r => r.objetivo === objetivo);
 
@@ -314,9 +320,9 @@ export class AgendaSemanalService {
       throw new Error(`Regra não encontrada: ${diaSemana} - ${objetivo}`);
     }
 
-    this.logger.log(`Executando regra manual: ${regra.objetivo}`);
+    this.logger.log(`Executando regra manual: ${regra.objetivo} (Clinic: ${clinicId})`);
 
-    const leads = await this.buscarLeadsPorEtiquetas(regra.publicoEtiquetas);
+    const leads = await this.buscarLeadsPorEtiquetas(clinicId, regra.publicoEtiquetas);
 
     for (const lead of leads) {
       await this.filaService.adicionarNaFila(
