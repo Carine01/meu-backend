@@ -11,7 +11,7 @@ for wf in "${WORKFLOWS[@]}"; do
   echo "-> Disparando workflow: $wf"
   gh workflow run "$wf" --ref "$REF" || { echo "Falha ao disparar $wf"; continue; }
   sleep 4
-  run_id=$(gh run list --workflow "$wf" --branch "$REF" --limit 10 --json databaseId,headBranch --jq '.[] | .databaseId' | head -n1)
+  run_id=$(gh run list --workflow "$wf" --branch "$REF" --limit 10 --json databaseId,headBranch --jq ".[] | select(.headBranch==\"$REF\") | .databaseId" | head -n1)
   if [ -z "$run_id" ]; then
     echo "  Não encontrei run_id para $wf; pulando espera."
     continue
