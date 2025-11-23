@@ -1,0 +1,24 @@
+name: Métricas Elevare
+
+on:
+  schedule:
+    - cron: "*/15 * * * *"
+
+jobs:
+  metrics:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Coletar métricas
+        run: |
+          echo "$(date): $(curl -s http://${{ secrets.SERVER_IP }}:3000/health)" >> metrics.log
+
+      - name: Publicar métricas
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: .
+          keep_files: true
+          force_orphan: true
