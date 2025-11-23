@@ -47,7 +47,7 @@ Write-Host ""
 # Compare with remote
 Write-Host "🔍 Comparing with remote branch..." -ForegroundColor Yellow
 try {
-    $LOCAL = git rev-parse "@"
+    $LOCAL = git rev-parse "@" 2>$null
     $REMOTE = git rev-parse "@{u}" 2>$null
     $BASE = git merge-base "@" "@{u}" 2>$null
 

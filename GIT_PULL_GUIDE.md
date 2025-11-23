@@ -320,6 +320,11 @@ git stash pop    # Restaurar alterações
 
 ---
 
-**✅ Repositório está atualizado!**  
-**Status atual:** Up to date with `origin/copilot/update-git-pull-command-again`  
-**Última verificação:** 2025-11-23
+**✅ Para verificar o status atual do repositório, execute:**
+```bash
+# Linux/Mac
+./scripts/verify-git-status.sh
+
+# Windows
+.\scripts\verify-git-status.ps1
+```
