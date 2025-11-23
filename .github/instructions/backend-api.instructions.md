@@ -345,6 +345,29 @@ export class AllExceptionsFilter implements ExceptionFilter {
 - Use transactions para operações múltiplas
 - Implemente soft deletes quando apropriado
 
+**Exemplo de prevenção N+1:**
+```typescript
+// ❌ N+1 Problem
+const users = await userRepository.find();
+for (const user of users) {
+  user.posts = await postRepository.find({ where: { userId: user.id } });
+}
+
+// ✅ Solution with JOIN
+const users = await userRepository.find({
+  relations: ['posts'],
+});
+```
+
+**Exemplo de Transaction:**
+```typescript
+await this.dataSource.transaction(async (manager) => {
+  const user = await manager.save(User, userData);
+  const profile = await manager.save(Profile, { ...profileData, userId: user.id });
+  await manager.save(Audit, { action: 'USER_CREATED', userId: user.id });
+});
+```
+
 ### 6. Documentação API
 - Use decorators do Swagger (@ApiProperty, @ApiOperation)
 - Documente todos os endpoints

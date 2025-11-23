@@ -68,7 +68,7 @@ export const useApiData = <T,>(endpoint: string) => {
 1. **useState**: Para estado local simples
 2. **useReducer**: Para estado complexo com múltiplas ações
 3. **Context API**: Para estado global quando necessário
-4. **React Query/SWR**: Para cache de dados de API
+4. **Custom hooks**: Para lógica de fetch reutilizável (considere React Query/SWR para projetos maiores)
 
 ### Performance
 1. **Use React.memo** para componentes que renderizam com frequência

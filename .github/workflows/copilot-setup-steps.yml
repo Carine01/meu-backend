@@ -28,7 +28,7 @@ jobs:
         
       - name: Run linting (if available)
         run: |
-          if grep -q "\"lint\"" package.json; then
+          if npm run | grep -q "lint"; then
             npm run lint
           else
             echo "No lint script found, skipping..."
@@ -42,10 +42,10 @@ jobs:
           
       - name: Check test coverage
         run: |
-          if [ -f "jest.config.js" ]; then
+          if npm run | grep -q "test:cov"; then
             npm run test:cov
           else
-            echo "No coverage configuration found, skipping..."
+            echo "No coverage script found, skipping..."
           fi
         continue-on-error: true
         
