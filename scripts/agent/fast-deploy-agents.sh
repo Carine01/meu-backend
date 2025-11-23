@@ -6,7 +6,7 @@ set -euo pipefail
 # Aplica patches, dispara workflows, comenta em PRs, cria issues em caso de erro
 ###############################################################################
 
-BRANCH=${1:-"feat/whatsapp-clinicid-filters"}
+BRANCH=${1:-"main"}
 AUTO_MERGE=${2:-"false"}
 CREATE_SECRETS=${3:-"false"}
 

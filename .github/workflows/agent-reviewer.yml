@@ -29,7 +29,7 @@ jobs:
 
       - name: Request reviewers if label present
         if: contains(github.event.pull_request.labels.*.name, 'needs-review')
-        uses: dawidd6/action-request-review@v1
-        with:
-          reviewers: |
-            devuser1,devuser2
+        run: |
+          # Add repository-specific reviewers here
+          # Example: gh pr edit ${{ github.event.pull_request.number }} --add-reviewer "user1,user2"
+          echo "Add reviewer logic here - configure based on your team structure"

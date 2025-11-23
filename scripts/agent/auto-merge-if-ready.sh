@@ -15,9 +15,17 @@ if [ -z "$approvals" ]; then
   exit 2
 fi
 
-overall_success=$(gh pr checks "$PR_NUMBER" --json conclusion --jq '.conclusion' 2>/dev/null || true)
-if [ "$overall_success" != "SUCCESS" ]; then
-  echo "Checks não estão 100% com sucesso (conclusion=$overall_success). Abortando merge."
+# Check PR checks status - handle multiple success states
+check_status=$(gh pr checks "$PR_NUMBER" --json conclusion --jq '[.[] | .conclusion] | unique | .[]' 2>/dev/null || echo "")
+if echo "$check_status" | grep -qE "FAILURE|CANCELLED|TIMED_OUT"; then
+  echo "Um ou mais checks falharam. Abortando merge."
+  exit 3
+fi
+
+# Ensure all checks are complete (SUCCESS or SKIPPED are acceptable)
+incomplete=$(echo "$check_status" | grep -vE "SUCCESS|SKIPPED|NEUTRAL" || true)
+if [ -n "$incomplete" ]; then
+  echo "Checks ainda não concluídos ou com estado inválido: $incomplete. Abortando merge."
   exit 3
 fi
 

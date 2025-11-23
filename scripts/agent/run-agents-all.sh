@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-BRANCH=${1:-"feat/whatsapp-clinicid-filters"}
+BRANCH=${1:-"main"}
 PR_NUMBER=${2:-""}
 AUTO_MERGE=${3:-"false"}
 
