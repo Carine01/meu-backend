@@ -29,7 +29,7 @@ import { AuthModule } from './modules/auth/auth.module';
       envFilePath: '.env',
     }),
     
-    // TypeORM - PostgreSQL
+    // TypeORM - PostgreSQL with Performance Optimizations
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
@@ -39,6 +39,21 @@ import { AuthModule } from './modules/auth/auth.module';
         entities: [__dirname + '/**/*.entity{.ts,.js}'],
         synchronize: config.get('DB_SYNCHRONIZE', 'false') === 'true',
         logging: config.get('DB_LOGGING', 'false') === 'true',
+        // Performance optimizations
+        extra: {
+          max: 20, // Maximum connections
+          min: 5,  // Minimum connections
+          idleTimeoutMillis: 30000, // Close idle connections after 30s
+          connectionTimeoutMillis: 5000, // Connection timeout
+        },
+        cache: {
+          type: 'database',
+          duration: 30000, // Cache query results for 30 seconds
+          // Note: Using 'database' cache for simplicity. For production with high load,
+          // consider using Redis cache for better performance isolation:
+          // type: 'redis', options: { host: 'localhost', port: 6379 }
+        },
+        maxQueryExecutionTime: 1000, // Log slow queries (>1s)
       }),
     }),
     

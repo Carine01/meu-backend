@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, Raw, MoreThan } from 'typeorm';
+import { Repository, Raw, MoreThan, DataSource } from 'typeorm';
 import { Bloqueio } from './entities/bloqueio.entity';
 
 @Injectable()
@@ -21,86 +21,147 @@ export class BloqueiosService {
   constructor(
     @InjectRepository(Bloqueio)
     private readonly bloqueioRepo: Repository<Bloqueio>,
+    private readonly dataSource: DataSource,
   ) {}
 
   /**
    * Bloquear horário de almoço (12h-14h) nos próximos 30 dias
+   * Performance: Use batch insert with transaction for data consistency
    */
   async bloquearAlmoco(clinicId: string): Promise<void> {
-    for (let i = 0; i < 30; i++) {
-      const data = new Date();
-      data.setDate(data.getDate() + i);
-      const diaSemana = data.getDay();
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
 
-      if (diaSemana >= 1 && diaSemana <= 5) {
-        // Segunda a sexta
-        const bloqueio = this.bloqueioRepo.create({
-          clinicId,
-          data: data.toISOString().split('T')[0],
-          startTime: '12:00',
-          endTime: '14:00',
-          tipo: 'almoco',
-          motivo: 'Horário de almoço',
-          recorrente: false,
-        });
+    try {
+      const bloqueios: Bloqueio[] = [];
+      
+      for (let i = 0; i < 30; i++) {
+        const data = new Date();
+        data.setDate(data.getDate() + i);
+        const diaSemana = data.getDay();
 
-        await this.bloqueioRepo.save(bloqueio);
+        if (diaSemana >= 1 && diaSemana <= 5) {
+          // Segunda a sexta
+          const bloqueio = this.bloqueioRepo.create({
+            clinicId,
+            data: data.toISOString().split('T')[0],
+            startTime: '12:00',
+            endTime: '14:00',
+            tipo: 'almoco',
+            motivo: 'Horário de almoço',
+            recorrente: false,
+          });
+
+          bloqueios.push(bloqueio);
+        }
       }
-    }
 
-    this.logger.log(`🍽️ Bloqueios de almoço criados para ${clinicId}`);
+      // Batch insert with transaction for better performance and consistency
+      await queryRunner.manager.save(bloqueios);
+      await queryRunner.commitTransaction();
+
+      this.logger.log(`🍽️ Bloqueios de almoço criados para ${clinicId}`);
+    } catch (error: any) {
+      await queryRunner.rollbackTransaction();
+      this.logger.error(`Erro ao criar bloqueios de almoço: ${error?.message || error}`);
+      throw error;
+    } finally {
+      await queryRunner.release();
+    }
   }
 
   /**
    * Bloquear sábados (apenas manhã funciona, tarde bloqueada)
+   * Performance: Use batch insert with transaction for data consistency
    */
   async bloquearSabados(clinicId: string): Promise<void> {
-    for (let i = 0; i < 8; i++) {
-      const data = new Date();
-      data.setDate(data.getDate() + (i * 7)); // Próximos 8 sábados
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
 
-      // Encontrar próximo sábado
-      while (data.getDay() !== 6) {
-        data.setDate(data.getDate() + 1);
+    try {
+      const bloqueios: Bloqueio[] = [];
+      
+      // Find next Saturday first
+      let currentDate = new Date();
+      while (currentDate.getDay() !== 6) {
+        currentDate.setDate(currentDate.getDate() + 1);
       }
 
-      // Bloquear tarde (apenas 8h-14h funciona)
-      const bloqueio = this.bloqueioRepo.create({
-        clinicId,
-        data: data.toISOString().split('T')[0],
-        startTime: '14:00',
-        endTime: '23:59',
-        tipo: 'sabado',
-        motivo: 'Sábado só funciona até 14h',
-        recorrente: false,
-      });
+      // Create blocks for next 8 Saturdays
+      for (let i = 0; i < 8; i++) {
+        // Create a new Date object for each iteration to avoid mutation issues
+        const sabadoData = new Date(currentDate);
+        sabadoData.setDate(currentDate.getDate() + (i * 7));
+        
+        // Bloquear tarde (apenas 8h-14h funciona)
+        const bloqueio = this.bloqueioRepo.create({
+          clinicId,
+          data: sabadoData.toISOString().split('T')[0],
+          startTime: '14:00',
+          endTime: '23:59',
+          tipo: 'sabado',
+          motivo: 'Sábado só funciona até 14h',
+          recorrente: false,
+        });
 
-      await this.bloqueioRepo.save(bloqueio);
+        bloqueios.push(bloqueio);
+      }
+
+      // Batch insert with transaction for better performance and consistency
+      await queryRunner.manager.save(bloqueios);
+      await queryRunner.commitTransaction();
+
+      this.logger.log(`🗓️ Bloqueios de sábado criados para ${clinicId}`);
+    } catch (error: any) {
+      await queryRunner.rollbackTransaction();
+      this.logger.error(`Erro ao criar bloqueios de sábado: ${error?.message || error}`);
+      throw error;
+    } finally {
+      await queryRunner.release();
     }
-
-    this.logger.log(`🗓️ Bloqueios de sábado criados para ${clinicId}`);
   }
 
   /**
    * Bloquear feriados nacionais
+   * Performance: Use batch insert with transaction for data consistency
    */
   async bloquearFeriados(clinicId: string): Promise<void> {
-    for (const feriado of this.FERIADOS_NACIONAIS) {
-      const bloqueio = this.bloqueioRepo.create({
-        clinicId,
-        data: feriado,
-        startTime: '00:00',
-        endTime: '23:59',
-        tipo: 'feriado',
-        motivo: 'Feriado Nacional',
-        recorrente: true,
-        ateData: '2026-01-01',
-      });
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
 
-      await this.bloqueioRepo.save(bloqueio);
+    try {
+      const bloqueios: Bloqueio[] = [];
+      
+      for (const feriado of this.FERIADOS_NACIONAIS) {
+        const bloqueio = this.bloqueioRepo.create({
+          clinicId,
+          data: feriado,
+          startTime: '00:00',
+          endTime: '23:59',
+          tipo: 'feriado',
+          motivo: 'Feriado Nacional',
+          recorrente: true,
+          ateData: '2026-01-01',
+        });
+
+        bloqueios.push(bloqueio);
+      }
+
+      // Batch insert with transaction for better performance and consistency
+      await queryRunner.manager.save(bloqueios);
+      await queryRunner.commitTransaction();
+
+      this.logger.log(`🏖️ Bloqueios de feriados nacionais criados para ${clinicId}`);
+    } catch (error: any) {
+      await queryRunner.rollbackTransaction();
+      this.logger.error(`Erro ao criar bloqueios de feriados: ${error?.message || error}`);
+      throw error;
+    } finally {
+      await queryRunner.release();
     }
-
-    this.logger.log(`🏖️ Bloqueios de feriados nacionais criados para ${clinicId}`);
   }
 
   /**
@@ -117,12 +178,13 @@ export class BloqueiosService {
     const inicioMinutos = hora * 60 + minuto;
     const fimMinutos = inicioMinutos + duracaoMinutos;
 
-    // Buscar bloqueios para esta data
+    // Buscar bloqueios para esta data (with caching for performance)
     const bloqueios = await this.bloqueioRepo.find({
       where: {
         clinicId,
         data,
       },
+      cache: 60000, // Cache for 60 seconds - bloqueios don't change frequently
     });
 
     // Verificar sobreposição de horários
@@ -187,9 +249,11 @@ export class BloqueiosService {
    * Listar todos os bloqueios de uma clínica
    */
   async listarBloqueios(clinicId: string): Promise<Bloqueio[]> {
+    // Performance: Cache bloqueios list for 60 seconds
     return this.bloqueioRepo.find({
       where: { clinicId },
       order: { data: 'ASC' },
+      cache: 60000,
     });
   }
 

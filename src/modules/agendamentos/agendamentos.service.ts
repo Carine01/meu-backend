@@ -23,7 +23,8 @@ export class AgendamentosService {
     const qb = this.agendamentoRepo.createQueryBuilder('agendamento');
     applyClinicIdFilter(qb, clinicId);
     
-    return qb.getMany();
+    // Performance: Cache query results for 30 seconds
+    return qb.cache(30000).getMany();
   }
 
   /**
@@ -218,8 +219,10 @@ export class AgendamentosService {
    * Listar todos agendamentos
    */
   async findAll(): Promise<Agendamento[]> {
+    // Performance: Cache query results and use indexes
     return this.agendamentoRepo.find({
       order: { startISO: 'ASC' },
+      cache: 30000, // Cache for 30 seconds
     });
   }
 }

@@ -1,6 +1,8 @@
-import { Entity, PrimaryColumn, Column, CreateDateColumn } from 'typeorm';
+import { Entity, PrimaryColumn, Column, CreateDateColumn, Index } from 'typeorm';
 
 @Entity('bloqueios')
+@Index(['clinicId', 'data']) // Composite index for clinic + date lookups
+@Index(['clinicId', 'tipo']) // Composite index for clinic + type filtering
 export class Bloqueio {
   @PrimaryColumn('uuid')
   id!: string;

@@ -1,6 +1,9 @@
-import { Entity, PrimaryColumn, Column, CreateDateColumn, UpdateDateColumn } from 'typeorm';
+import { Entity, PrimaryColumn, Column, CreateDateColumn, UpdateDateColumn, Index } from 'typeorm';
 
 @Entity('agendamentos')
+@Index(['clinicId', 'startISO']) // Composite index for clinic + date queries
+@Index(['clinicId', 'status']) // Composite index for clinic + status filtering
+@Index(['leadId']) // Index for lead association
 export class Agendamento {
   @PrimaryColumn('uuid')
   id!: string;

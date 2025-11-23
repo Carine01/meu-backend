@@ -190,9 +190,11 @@ export class IndicacoesService {
    * Buscar indicações de um lead
    */
   async getIndicacoes(indicadorId: string): Promise<Indicacao[]> {
+    // Performance: Cache query results for 30 seconds
     return this.indicacaoRepo.find({
       where: { indicadorId },
       order: { createdAt: 'DESC' },
+      cache: 30000,
     });
   }
 

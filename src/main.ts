@@ -3,6 +3,7 @@ import { AppModule } from './app.module';
 import { Logger, ValidationPipe } from '@nestjs/common';
 import { Logger as PinoLogger } from 'nestjs-pino';
 import helmet from 'helmet';
+import compression from 'compression';
 import { CorrelationInterceptor } from './shared/logger';
 
 async function bootstrap() {
@@ -18,6 +19,9 @@ async function bootstrap() {
 
   // SEGURANÇA: Helmet - protege contra vulnerabilidades conhecidas
   app.use(helmet());
+
+  // PERFORMANCE: Compression - comprime responses HTTP (gzip/deflate)
+  app.use(compression());
 
   // SEGURANÇA: CORS restritivo
   app.enableCors({
