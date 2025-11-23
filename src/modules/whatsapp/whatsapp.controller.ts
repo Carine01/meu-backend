@@ -1,4 +1,4 @@
-import { Controller, Post, Body, Get, Param, Logger, UseGuards } from '@nestjs/common';
+import { Controller, Post, Body, Get, Param, Logger, UseGuards, BadRequestException } from '@nestjs/common';
 import { WhatsAppService } from './whatsapp.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 
@@ -80,6 +80,43 @@ export class WhatsAppController {
   async checkNumber(@Param('phoneNumber') phoneNumber: string) {
     const hasWhatsApp = await this.whatsappService.isWhatsAppNumber(phoneNumber);
     return { phoneNumber, hasWhatsApp };
+  }
+
+  /**
+   * Endpoint de simulação para testes de produção
+   * 
+   * ⚠️ ATENÇÃO: Este endpoint NÃO tem autenticação para permitir testes automatizados
+   * 
+   * @param body - Corpo da requisição com mensagem de teste
+   * @returns Resposta de sucesso com status "ok"
+   * 
+   * @example
+   * POST /whatsapp/simulate
+   * {
+   *   "message": "Oi"
+   * }
+   * 
+   * Response:
+   * {
+   *   "status": "ok",
+   *   "message": "Simulação executada com sucesso",
+   *   "timestamp": "2025-11-23T18:07:29.680Z"
+   * }
+   */
+  @Post('simulate')
+  async simulate(@Body() body: { message?: string }) {
+    // Validação de entrada
+    if (body.message && body.message.length > 100) {
+      throw new BadRequestException('Mensagem muito longa (máximo 100 caracteres)');
+    }
+
+    this.logger.log(`🧪 Simulação de teste recebida`);
+    
+    return {
+      status: 'ok',
+      message: 'Simulação executada com sucesso',
+      timestamp: new Date().toISOString()
+    };
   }
 }
 

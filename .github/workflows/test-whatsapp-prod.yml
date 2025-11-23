@@ -1,0 +1,21 @@
+name: Testes Reais WhatsApp Produção
+
+on:
+  schedule:
+    - cron: "*/30 * * * *"
+
+jobs:
+  wpp-prod:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: none
+
+    steps:
+      - name: Enviar mensagem simulada
+        run: |
+          RESPONSE=$(curl -X POST -s --max-time 30 --fail ${{ secrets.WHATSAPP_PROD_URL }}/simulate \
+          -H "Content-Type: application/json" \
+          -d '{"message":"Oi"}')
+
+          echo "$RESPONSE"
+          [[ "$RESPONSE" == *"ok"* ]] || exit 1
