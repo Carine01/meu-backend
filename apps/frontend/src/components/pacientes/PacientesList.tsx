@@ -11,15 +11,40 @@ interface Paciente {
 export function PacientesList({ clinicId }: { clinicId: string }) {
   const [pacientes, setPacientes] = useState<Paciente[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState<boolean>(true);
 
   useEffect(() => {
+    const abortController = new AbortController();
+    
+    setLoading(true);
+    setError(null);
+    
     fetchPacientes(clinicId)
-      .then(setPacientes)
+      .then((data) => {
+        if (!abortController.signal.aborted) {
+          setPacientes(data);
+        }
+      })
       .catch((err) => {
-        console.error('Error fetching pacientes:', err);
-        setError('Failed to load pacientes. Please try again.');
+        if (!abortController.signal.aborted) {
+          console.error('Error fetching pacientes:', err);
+          setError('Failed to load pacientes. Please try again.');
+        }
+      })
+      .finally(() => {
+        if (!abortController.signal.aborted) {
+          setLoading(false);
+        }
       });
+
+    return () => {
+      abortController.abort();
+    };
   }, [clinicId]);
+
+  if (loading) {
+    return <div>Loading...</div>;
+  }
 
   if (error) {
     return <div style={{ color: 'red' }}>{error}</div>;

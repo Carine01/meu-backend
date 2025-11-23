@@ -1,4 +1,8 @@
 export async function fetchPacientes(clinicId: string) {
+  if (!clinicId || clinicId.trim() === '') {
+    throw new Error('clinicId is required');
+  }
+  
   const res = await fetch('/api/pacientes', {
     headers: { 'x-clinic-id': clinicId },
   });

@@ -7,9 +7,9 @@ export class PacientesController {
 
   @Get()
   async findAll(@Headers('x-clinic-id') clinicId: string) {
-    if (!clinicId) {
+    if (!clinicId || clinicId.trim() === '') {
       throw new BadRequestException('x-clinic-id header is required');
     }
-    return this.pacientesService.findAllByClinic(clinicId);
+    return this.pacientesService.findAllByClinic(clinicId.trim());
   }
 }
