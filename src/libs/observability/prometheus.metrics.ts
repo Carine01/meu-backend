@@ -3,7 +3,7 @@ import { Injectable } from '@nestjs/common';
 
 const productRequests = new Counter({
   name: 'product_requests_total',
-  help: 'Total de requisições em products',
+  help: 'Total number of product requests',
 });
 
 @Injectable()

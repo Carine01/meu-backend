@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { Product } from './product.entity';
+import { v4 as uuidv4 } from 'uuid';
 
 // SOLID: Interface Segregation & Dependency Inversion
 export interface IProductsRepository {
@@ -16,7 +17,7 @@ export class ProductsRepository implements IProductsRepository {
   }
 
   async create(product: Product): Promise<Product> {
-    const newProduct = { ...product, id: Date.now().toString() };
+    const newProduct = { ...product, id: uuidv4() };
     this.products.push(newProduct);
     return newProduct;
   }

@@ -13,13 +13,21 @@ export const ProductForm: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const res = await fetch('/api/products', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(product),
-    });
-    if (res.ok) setMessage('Produto cadastrado!');
-    else setMessage('Erro ao cadastrar.');
+    try {
+      const res = await fetch('/api/products', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(product),
+      });
+      if (res.ok) {
+        setMessage('Produto cadastrado!');
+      } else {
+        const errorData = await res.json().catch(() => ({}));
+        setMessage(`Erro ao cadastrar: ${errorData.message || res.statusText}`);
+      }
+    } catch (error) {
+      setMessage('Erro ao cadastrar: ' + (error instanceof Error ? error.message : 'Erro desconhecido'));
+    }
   };
 
   return (
