@@ -1,4 +1,4 @@
-import { Controller, Get, Query, Param, UseGuards } from '@nestjs/common';
+import { Controller, Get, Query, Param, UseGuards, Headers } from '@nestjs/common';
 import { EventsService, EventQueryDto } from './events.service';
 import { EventType } from './entities/event.entity';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
@@ -14,10 +14,12 @@ export class EventsController {
    */
   @Get('timeline/:leadId')
   async getLeadTimeline(
+    @Headers('x-clinic-id') clinicId: string,
     @Param('leadId') leadId: string,
     @Query('limit') limit?: string,
   ) {
     const events = await this.eventsService.getLeadTimeline(
+      clinicId,
       leadId,
       limit ? parseInt(limit, 10) : 50,
     );
@@ -35,6 +37,7 @@ export class EventsController {
    */
   @Get('search')
   async searchEvents(
+    @Headers('x-clinic-id') clinicId: string,
     @Query('leadId') leadId?: string,
     @Query('eventType') eventType?: EventType,
     @Query('startDate') startDate?: string,
@@ -42,6 +45,7 @@ export class EventsController {
     @Query('limit') limit?: string,
   ) {
     const query: EventQueryDto = {
+      clinicId,
       leadId,
       eventType,
       startDate: startDate ? new Date(startDate) : undefined,
@@ -64,13 +68,14 @@ export class EventsController {
    */
   @Get('stats')
   async getStats(
+    @Headers('x-clinic-id') clinicId: string,
     @Query('startDate') startDate?: string,
     @Query('endDate') endDate?: string,
   ) {
     const start = startDate ? new Date(startDate) : new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
     const end = endDate ? new Date(endDate) : new Date();
 
-    const stats = await this.eventsService.getEventStats(start, end);
+    const stats = await this.eventsService.getEventStats(clinicId, start, end);
 
     return {
       period: { start, end },
@@ -83,8 +88,12 @@ export class EventsController {
    * Eventos recentes (últimas 24h)
    */
   @Get('recent')
-  async getRecent(@Query('limit') limit?: string) {
+  async getRecent(
+    @Headers('x-clinic-id') clinicId: string,
+    @Query('limit') limit?: string,
+  ) {
     const events = await this.eventsService.getRecentEvents(
+      clinicId,
       limit ? parseInt(limit, 10) : 100,
     );
 
@@ -99,8 +108,11 @@ export class EventsController {
    * Histórico de mudanças de stage
    */
   @Get('stage-changes/:leadId')
-  async getStageChanges(@Param('leadId') leadId: string) {
-    const changes = await this.eventsService.getStageChanges(leadId);
+  async getStageChanges(
+    @Headers('x-clinic-id') clinicId: string,
+    @Param('leadId') leadId: string,
+  ) {
+    const changes = await this.eventsService.getStageChanges(clinicId, leadId);
 
     return {
       leadId,
@@ -114,8 +126,11 @@ export class EventsController {
    * Histórico de mensagens
    */
   @Get('messages/:leadId')
-  async getMessageHistory(@Param('leadId') leadId: string) {
-    const messages = await this.eventsService.getMessageHistory(leadId);
+  async getMessageHistory(
+    @Headers('x-clinic-id') clinicId: string,
+    @Param('leadId') leadId: string,
+  ) {
+    const messages = await this.eventsService.getMessageHistory(clinicId, leadId);
 
     return {
       leadId,

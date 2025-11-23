@@ -65,8 +65,10 @@ export class BiService {
   /**
    * Retorna métricas completas do dashboard
    * Equivalente à aba "Dashboard" do Google Sheets original
+   * 
+   * @param clinicId - ID da clínica para filtrar os dados
    */
-  async getDashboardMetrics(): Promise<DashboardMetrics> {
+  async getDashboardMetrics(clinicId: string): Promise<DashboardMetrics> {
     const agora = new Date();
     const thirtyDaysAgo = new Date(agora.getTime() - 30 * 24 * 60 * 60 * 1000);
     const sevenDaysAgo = new Date(agora.getTime() - 7 * 24 * 60 * 60 * 1000);
@@ -78,11 +80,23 @@ export class BiService {
         await Promise.all([
           this.firestore
             .collection('leads')
+            .where('clinicId', '==', clinicId)
             .where('createdAt', '>=', thirtyDaysAgo)
             .get(),
-          this.firestore.collection('leads').where('createdAt', '>=', sevenDaysAgo).get(),
-          this.firestore.collection('leads').where('createdAt', '>=', hoje).get(),
-          this.firestore.collection('leads').get(),
+          this.firestore
+            .collection('leads')
+            .where('clinicId', '==', clinicId)
+            .where('createdAt', '>=', sevenDaysAgo)
+            .get(),
+          this.firestore
+            .collection('leads')
+            .where('clinicId', '==', clinicId)
+            .where('createdAt', '>=', hoje)
+            .get(),
+          this.firestore
+            .collection('leads')
+            .where('clinicId', '==', clinicId)
+            .get(),
         ]);
 
       const leads30d = leadsSnapshot30d.size;
@@ -114,14 +128,17 @@ export class BiService {
         await Promise.all([
           this.firestore
             .collection('agendamentos')
+            .where('clinicId', '==', clinicId)
             .where('createdAt', '>=', thirtyDaysAgo)
             .get(),
           this.firestore
             .collection('agendamentos')
+            .where('clinicId', '==', clinicId)
             .where('createdAt', '>=', sevenDaysAgo)
             .get(),
           this.firestore
             .collection('agendamentos')
+            .where('clinicId', '==', clinicId)
             .where('createdAt', '>=', hoje)
             .get(),
         ]);
@@ -133,6 +150,7 @@ export class BiService {
       // === COMPARECIMENTO ===
       const compareceuSnapshot = await this.firestore
         .collection('agendamentos')
+        .where('clinicId', '==', clinicId)
         .where('createdAt', '>=', thirtyDaysAgo)
         .where('status', '==', 'compareceu')
         .get();
@@ -143,6 +161,7 @@ export class BiService {
       // === NO-SHOW ===
       const noShowSnapshot = await this.firestore
         .collection('agendamentos')
+        .where('clinicId', '==', clinicId)
         .where('createdAt', '>=', thirtyDaysAgo)
         .where('status', '==', 'no_show')
         .get();
@@ -155,6 +174,7 @@ export class BiService {
       // Por enquanto, busca observações contendo "reagendado"
       const reagendamentosSnapshot = await this.firestore
         .collection('agendamentos')
+        .where('clinicId', '==', clinicId)
         .where('createdAt', '>=', thirtyDaysAgo)
         .get();
 
@@ -170,15 +190,18 @@ export class BiService {
       const [filaPendenteSnapshot, filaEnviados30d, filaFalhas30d] = await Promise.all([
         this.firestore
           .collection('fila_envio')
+          .where('clinicId', '==', clinicId)
           .where('status', '==', 'pending')
           .get(),
         this.firestore
           .collection('fila_envio')
+          .where('clinicId', '==', clinicId)
           .where('createdAt', '>=', thirtyDaysAgo)
           .where('status', '==', 'sent')
           .get(),
         this.firestore
           .collection('fila_envio')
+          .where('clinicId', '==', clinicId)
           .where('createdAt', '>=', thirtyDaysAgo)
           .where('status', '==', 'failed')
           .get(),
@@ -225,6 +248,7 @@ export class BiService {
    * Retorna métricas no formato Prometheus (text/plain)
    * Compatível com scraping do Prometheus
    * 
+   * @param clinicId - ID da clínica para filtrar os dados
    * @example
    * ```
    * # HELP elevare_leads_total Total de leads
@@ -232,8 +256,8 @@ export class BiService {
    * elevare_leads_total{periodo="30d"} 150
    * ```
    */
-  async getPrometheusMetrics(): Promise<string> {
-    const metrics = await this.getDashboardMetrics();
+  async getPrometheusMetrics(clinicId: string): Promise<string> {
+    const metrics = await this.getDashboardMetrics(clinicId);
 
     const metricsText = `
 # HELP elevare_leads_total Total de leads captados
@@ -293,12 +317,14 @@ elevare_leads_por_stage{stage="frio"} ${metrics.percentualFrio}
   /**
    * Retorna análise de funil de conversão
    * Útil para identificar gargalos no processo
+   * 
+   * @param clinicId - ID da clínica para filtrar os dados
    */
-  async getAnaliseFunil(): Promise<{
+  async getAnaliseFunil(clinicId: string): Promise<{
     etapas: Array<{ etapa: string; quantidade: number; percentual: number }>;
     taxaConversaoGeral: number;
   }> {
-    const metrics = await this.getDashboardMetrics();
+    const metrics = await this.getDashboardMetrics(clinicId);
 
     const etapas = [
       {
@@ -329,10 +355,16 @@ elevare_leads_por_stage{stage="frio"} ${metrics.percentualFrio}
   /**
    * Retorna top etiquetas mais comuns
    * Útil para campanhas segmentadas
+   * 
+   * @param clinicId - ID da clínica para filtrar os dados
+   * @param limit - Quantidade de etiquetas a retornar
    */
-  async getTopEtiquetas(limit: number = 10): Promise<Array<{ etiqueta: string; count: number }>> {
+  async getTopEtiquetas(clinicId: string, limit: number = 10): Promise<Array<{ etiqueta: string; count: number }>> {
     try {
-      const leadsSnapshot = await this.firestore.collection('leads').get();
+      const leadsSnapshot = await this.firestore
+        .collection('leads')
+        .where('clinicId', '==', clinicId)
+        .get();
 
       const etiquetasMap: Record<string, number> = {};
 
@@ -362,14 +394,22 @@ elevare_leads_por_stage{stage="frio"} ${metrics.percentualFrio}
   /**
    * Retorna estatísticas de performance por origem
    * Qual canal traz leads com melhor conversão?
+   * 
+   * @param clinicId - ID da clínica para filtrar os dados
    */
-  async getPerformancePorOrigem(): Promise<
+  async getPerformancePorOrigem(clinicId: string): Promise<
     Array<{ origem: string; leads: number; agendamentos: number; taxaConversao: number }>
   > {
     try {
       const [leadsSnapshot, agendamentosSnapshot] = await Promise.all([
-        this.firestore.collection('leads').get(),
-        this.firestore.collection('agendamentos').get(),
+        this.firestore
+          .collection('leads')
+          .where('clinicId', '==', clinicId)
+          .get(),
+        this.firestore
+          .collection('agendamentos')
+          .where('clinicId', '==', clinicId)
+          .get(),
       ]);
 
       const origemStats: Record<string, { leads: number; agendamentos: Set<string> }> = {};
