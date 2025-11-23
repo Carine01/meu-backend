@@ -1,0 +1,84 @@
+{
+  "title": "Auth & RBAC Observability",
+  "panels": [
+    {
+      "type": "graph",
+      "title": "Tentativas de Login por Usuário",
+      "targets": [
+        {
+          "expr": "sum(increase(login_attempts_total[5m])) by (user)",
+          "legendFormat": "{{user}}"
+        }
+      ],
+      "id": 1,
+      "gridPos": {
+        "x": 0,
+        "y": 0,
+        "w": 12,
+        "h": 8
+      }
+    },
+    {
+      "type": "graph",
+      "title": "Falhas de Login por Usuário",
+      "targets": [
+        {
+          "expr": "sum(increase(login_failures_total[5m])) by (user)",
+          "legendFormat": "{{user}}"
+        }
+      ],
+      "id": 2,
+      "gridPos": {
+        "x": 12,
+        "y": 0,
+        "w": 12,
+        "h": 8
+      }
+    },
+    {
+      "type": "graph",
+      "title": "Latência p95 Rotas Protegidas (RBAC)",
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.95, sum(rate(http_request_duration_ms_bucket{route=~\"/admin.*\"}[5m])) by (le, route))",
+          "legendFormat": "{{route}}"
+        }
+      ],
+      "id": 3,
+      "gridPos": {
+        "x": 0,
+        "y": 8,
+        "w": 12,
+        "h": 8
+      }
+    },
+    {
+      "type": "graph",
+      "title": "Falhas de Refresh Token",
+      "targets": [
+        {
+          "expr": "sum(increase(refresh_token_failures_total[10m]))",
+          "legendFormat": "Falhas"
+        }
+      ],
+      "id": 4,
+      "gridPos": {
+        "x": 12,
+        "y": 8,
+        "w": 12,
+        "h": 8
+      }
+    }
+  ],
+  "time": {
+    "from": "now-6h",
+    "to": "now"
+  },
+  "version": 1,
+  "uid": "auth-rbac-observability",
+  "schemaVersion": 16,
+  "tags": ["auth", "rbac", "security"],
+  "timezone": "browser",
+  "editable": true,
+  "refresh": "30s"
+}

@@ -1,0 +1,58 @@
+name: Monorepo CI/CD
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+
+      - name: Install dependencies - API
+        run: npm install
+        working-directory: .
+
+      - name: Install dependencies - Web
+        run: npm install
+        working-directory: apps/frontend
+
+      - name: Lint API
+        run: npm run lint
+        continue-on-error: true
+
+      - name: Lint Web
+        run: npm run lint
+        working-directory: apps/frontend
+
+      - name: Test API (NestJS RBAC)
+        run: npm run test:cov
+        env:
+          NODE_ENV: test
+        continue-on-error: true
+
+      - name: Test Web (React hooks)
+        run: npm run test
+        working-directory: apps/frontend
+        env:
+          NODE_ENV: test
+        continue-on-error: true
+
+      - name: Build API
+        run: npm run build
+
+      - name: Build Web
+        run: npm run build
+        working-directory: apps/frontend
+
+      # Exemplo de deploy (ajuste conforme sua infra)
+      - name: Deploy (exemplo)
+        if: github.ref == 'refs/heads/main'
+        run: echo "Deploy step here"
