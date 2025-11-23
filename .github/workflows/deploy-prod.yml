@@ -1,0 +1,39 @@
+name: Deploy Production
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Use Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+
+      - name: Run tests
+        run: npm test
+
+      - name: Deploy to Production
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          API_KEY: ${{ secrets.API_KEY }}
+          PROMETHEUS_PUSHGATEWAY_URL: ${{ secrets.PROMETHEUS_PUSHGATEWAY_URL }}
+        run: |
+          # Example deployment command with Docker Compose
+          # Replace with your actual deployment process (e.g., kubectl, gcloud, aws cli)
+          # docker-compose -f docker-compose.prod.yml up -d --build
+          echo "Replace this with your deployment command"
