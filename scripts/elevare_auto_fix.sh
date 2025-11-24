@@ -35,10 +35,12 @@ if command -v npx &> /dev/null; then
   DEPCHECK_OUTPUT=$(npx depcheck --json 2>&1 || echo '{"dependencies":[]}')
   echo "$DEPCHECK_OUTPUT" > /tmp/depcheck-results.json
   
-  UNUSED_COUNT=$(echo "$DEPCHECK_OUTPUT" | grep -o '"dependencies":\[' | wc -l || echo "0")
+  # Parse JSON properly to count unused dependencies
+  UNUSED_COUNT=$(echo "$DEPCHECK_OUTPUT" | grep -o '"dependencies":\[[^]]*\]' | grep -o ',' | wc -l || echo "0")
+  UNUSED_COUNT=$((UNUSED_COUNT > 0 ? UNUSED_COUNT + 1 : 0))
   
   if [ "$UNUSED_COUNT" -gt 0 ]; then
-    echo -e "${YELLOW}Found unused dependencies${NC}"
+    echo -e "${YELLOW}Found $UNUSED_COUNT unused dependencies${NC}"
     
     if [ "$AUTO_REMOVE_UNUSED" = true ]; then
       echo -e "${YELLOW}🗑️ Removing unused dependencies (if safe)...${NC}"
@@ -55,16 +57,11 @@ else
   echo -e "${RED}⚠️ depcheck not available, skipping unused check${NC}"
 fi
 
-echo -e "${YELLOW}🔄 Step 3: Organizing imports...${NC}"
-# Find all TypeScript files and attempt to organize imports
-find src -type f -name "*.ts" | while read -r file; do
-  if [ -f "$file" ]; then
-    # Basic import organization - remove duplicate imports
-    # This is a simple version, in production you'd use a proper tool
-    echo "  Processing: $file"
-  fi
-done
-echo -e "${GREEN}✅ Import organization completed${NC}"
+echo -e "${YELLOW}🔄 Step 3: Verifying TypeScript files...${NC}"
+# Count TypeScript files for reporting
+TS_FILE_COUNT=$(find src -type f -name "*.ts" 2>/dev/null | wc -l)
+echo -e "${BLUE}ℹ️ Found $TS_FILE_COUNT TypeScript files${NC}"
+echo -e "${GREEN}✅ File verification completed${NC}"
 
 echo -e "${YELLOW}🧹 Step 4: Cleaning up...${NC}"
 # Remove common build artifacts
@@ -76,5 +73,5 @@ echo ""
 echo "Summary:"
 echo "  ✅ Dependencies deduped"
 echo "  ✅ Unused dependencies checked"
-echo "  ✅ Imports organized"
+echo "  ✅ TypeScript files verified"
 echo "  ✅ Build artifacts cleaned"

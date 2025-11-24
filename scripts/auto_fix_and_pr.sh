@@ -55,6 +55,9 @@ if [ "$SCAFFOLD_DTOS" = true ]; then
   # Create a template DTO example if none exist
   if [ ! -d "src/shared/dto" ]; then
     mkdir -p src/shared/dto
+  fi
+  
+  if [ ! -f "src/shared/dto/base.dto.ts" ]; then
     echo -e "${YELLOW}📄 Creating DTO template example...${NC}"
     
     cat > src/shared/dto/base.dto.ts << 'EOF'
@@ -105,6 +108,8 @@ export class PaginationDto {
 }
 EOF
     echo -e "${GREEN}✅ Base DTO template created${NC}"
+  else
+    echo -e "${BLUE}ℹ️ Base DTO template already exists${NC}"
   fi
   
   echo -e "${GREEN}✅ DTO scaffolding completed${NC}"
@@ -119,10 +124,12 @@ if [ "$SECURITY_BASIC" = true ]; then
   echo -e "${BLUE}ℹ️ Scanning for common security patterns...${NC}"
   
   # Check for hardcoded secrets (basic check)
-  if grep -r "password.*=.*['\"]" src/ 2>/dev/null | grep -v "dto\|entity\|interface" | grep -v "Password" > /tmp/hardcoded-check.txt 2>/dev/null; then
+  # Look for actual hardcoded values, not just field definitions
+  if grep -rE "(password|secret|apikey|api_key|token)\s*=\s*['\"][^'\"]{8,}['\"]" src/ 2>/dev/null | grep -v "dto\|entity\|interface\|\.spec\." > /tmp/hardcoded-check.txt 2>/dev/null; then
     HARDCODED_COUNT=$(wc -l < /tmp/hardcoded-check.txt)
     if [ "$HARDCODED_COUNT" -gt 0 ]; then
       echo -e "${RED}⚠️ Found $HARDCODED_COUNT potential hardcoded credentials${NC}"
+      echo -e "${YELLOW}   Review /tmp/hardcoded-check.txt for details${NC}"
     fi
   fi
   

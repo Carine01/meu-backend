@@ -20,9 +20,14 @@ if [ ! -d "src" ]; then
   exit 1
 fi
 
-# Count modules
-MODULE_COUNT=$(find src/modules -maxdepth 1 -type d 2>/dev/null | wc -l)
-echo -e "${BLUE}ℹ️ Found $((MODULE_COUNT - 1)) modules${NC}"
+# Count modules - handle case where modules directory might not exist
+if [ -d "src/modules" ]; then
+  MODULE_COUNT=$(find src/modules -maxdepth 1 -type d 2>/dev/null | wc -l)
+  MODULE_COUNT=$((MODULE_COUNT > 0 ? MODULE_COUNT - 1 : 0))
+else
+  MODULE_COUNT=0
+fi
+echo -e "${BLUE}ℹ️ Found $MODULE_COUNT modules${NC}"
 
 echo -e "${YELLOW}🔗 Step 2: Validating route-controller-service connections...${NC}"
 
@@ -79,7 +84,7 @@ mkdir -p .elevare_validation_report
   echo "==================================="
   echo ""
   echo "Statistics:"
-  echo "  Modules: $((MODULE_COUNT - 1))"
+  echo "  Modules: $MODULE_COUNT"
   echo "  Controllers: $CONTROLLER_COUNT"
   echo "  Services: $SERVICE_COUNT"
   echo "  Module files: $MODULE_FILE_COUNT"
