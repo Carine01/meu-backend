@@ -7,6 +7,10 @@ on:
     branches: ['**']
   workflow_dispatch:
 
+permissions:
+  contents: read
+  actions: read
+
 jobs:
   hygiene-check:
     name: Verificação de Higiene
