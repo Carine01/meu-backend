@@ -2,7 +2,8 @@
 # ELEVARE AUTO FIX - Script de Correção Automática
 # Este script executa correções automáticas no código e dependências
 
-set -e
+# Don't exit on error immediately - we want to run all checks
+set +e
 
 echo "🔧 Iniciando Elevare Auto Fix..."
 echo "=================================================="
@@ -46,11 +47,12 @@ if npm ci --silent 2>/dev/null; then
     log_success "Dependências instaladas com npm ci"
 else
     log_warning "npm ci falhou, tentando npm install..."
-    npm install --silent || {
-        log_error "Falha ao instalar dependências"
-        exit 1
-    }
-    log_success "Dependências instaladas com npm install"
+    if npm install --silent 2>/dev/null; then
+        log_success "Dependências instaladas com npm install"
+    else
+        log_error "Falha ao instalar dependências - continuando mesmo assim..."
+        # Don't exit, continue with other checks
+    fi
 fi
 
 # 3. VERIFICAR VULNERABILIDADES
