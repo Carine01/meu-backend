@@ -1,4 +1,4 @@
-import { IsString, IsNotEmpty, IsOptional } from 'class-validator';
+import { IsNotEmpty, IsNumber, IsOptional, IsString } from 'class-validator';
 
 /**
  * DTO for creating Indicacao
@@ -30,7 +30,7 @@ export class CreateIndicacaoDto {
   status!: 'pendente' | 'contatado' | 'agendado' | 'compareceu' | 'cancelado';
 
   @IsNotEmpty()
-  @IsString()
+  @IsNumber()
   pontosGanhos!: number;
 
   @IsNotEmpty()

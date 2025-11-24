@@ -1,4 +1,4 @@
-import { IsString, IsNotEmpty, IsOptional } from 'class-validator';
+import { IsBoolean, IsNotEmpty, IsOptional, IsString } from 'class-validator';
 
 /**
  * DTO for creating Event
@@ -50,7 +50,7 @@ export class CreateEventDto {
   source!: string;
 
   @IsNotEmpty()
-  @IsString()
+  @IsBoolean()
   processed!: boolean;
 
 }

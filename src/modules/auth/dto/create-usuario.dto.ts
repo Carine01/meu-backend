@@ -1,4 +1,4 @@
-import { IsString, IsNotEmpty, IsOptional } from 'class-validator';
+import { IsArray, IsBoolean, IsNotEmpty, IsOptional, IsString } from 'class-validator';
 
 /**
  * DTO for creating Usuario
@@ -22,11 +22,11 @@ export class CreateUsuarioDto {
   clinicId!: string;
 
   @IsNotEmpty()
-  @IsString()
+  @IsArray()
   roles!: string[];
 
   @IsNotEmpty()
-  @IsString()
+  @IsBoolean()
   ativo!: boolean;
 
 }

@@ -48,6 +48,8 @@ jobs:
 
       - name: Remove Unused Dependencies
         run: |
+          # Note: This step is conservative and only removes dependencies
+          # that are clearly unused. Review the changes before merging.
           npx depcheck --json > .depcheck.json || echo '{"dependencies":[]}' > .depcheck.json
           UNUSED=$(jq -r '.dependencies[]?' .depcheck.json 2>/dev/null || echo "")
           for PKG in $UNUSED; do

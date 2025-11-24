@@ -1,4 +1,4 @@
-import { IsString, IsNotEmpty, IsOptional } from 'class-validator';
+import { IsArray, IsDateString, IsNotEmpty, IsNumber, IsOptional, IsString } from 'class-validator';
 
 /**
  * DTO for creating Recompensa
@@ -10,19 +10,19 @@ export class CreateRecompensaDto {
   clinicId!: string;
 
   @IsNotEmpty()
-  @IsString()
+  @IsNumber()
   pontosAcumulados!: number;
 
   @IsNotEmpty()
-  @IsString()
+  @IsNumber()
   sessoesGratisDisponiveis!: number;
 
   @IsNotEmpty()
-  @IsString()
+  @IsArray()
   historicoIndicacoes!: string[];
 
   @IsNotEmpty()
-  @IsString()
+  @IsDateString()
   ultimaResgate!: Date;
 
 }

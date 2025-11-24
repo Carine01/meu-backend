@@ -1,4 +1,4 @@
-import { IsString, IsNotEmpty, IsOptional } from 'class-validator';
+import { IsBoolean, IsNotEmpty, IsOptional, IsString } from 'class-validator';
 
 /**
  * DTO for creating Campanha
@@ -14,7 +14,7 @@ export class CreateCampanhaDto {
   objetivo!: string;
 
   @IsNotEmpty()
-  @IsString()
+  @IsBoolean()
   ativo!: boolean;
 
 }

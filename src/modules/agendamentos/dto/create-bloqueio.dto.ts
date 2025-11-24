@@ -1,4 +1,4 @@
-import { IsString, IsNotEmpty, IsOptional } from 'class-validator';
+import { IsBoolean, IsNotEmpty, IsOptional, IsString } from 'class-validator';
 
 /**
  * DTO for creating Bloqueio
@@ -30,7 +30,7 @@ export class CreateBloqueioDto {
   motivo!: string;
 
   @IsNotEmpty()
-  @IsString()
+  @IsBoolean()
   recorrente!: boolean;
 
   @IsNotEmpty()
