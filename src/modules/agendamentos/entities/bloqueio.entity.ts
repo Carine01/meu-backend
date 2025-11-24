@@ -1,11 +1,11 @@
-import { Entity, PrimaryColumn, Column, CreateDateColumn } from 'typeorm';
+import { Entity, PrimaryColumn, Column, CreateDateColumn } from "typeorm";
 
-@Entity('bloqueios')
+@Entity("bloqueios")
 export class Bloqueio {
-  @PrimaryColumn('uuid')
+  @PrimaryColumn("uuid")
   id!: string;
 
-  @Column({ type: 'varchar', length: 50, default: 'ELEVARE_MAIN' })
+  @Column({ type: "varchar", length: 50, default: "ELEVARE_MAIN" })
   clinicId!: string;
 
   @Column()
@@ -17,12 +17,12 @@ export class Bloqueio {
   @Column({ nullable: true })
   endTime?: string; // HH:mm
 
-  @Column({ 
-    type: 'enum', 
-    enum: ['almoco', 'feriado', 'sabado', 'intervalo', 'personalizado'], 
-    default: 'personalizado' 
+  @Column({
+    type: "enum",
+    enum: ["almoco", "feriado", "sabado", "intervalo", "personalizado"],
+    default: "personalizado",
   })
-  tipo!: 'almoco' | 'feriado' | 'sabado' | 'intervalo' | 'personalizado';
+  tipo!: "almoco" | "feriado" | "sabado" | "intervalo" | "personalizado";
 
   @Column({ nullable: true })
   motivo?: string;
@@ -40,4 +40,3 @@ export class Bloqueio {
     this.id = `BLK${Date.now()}`;
   }
 }
-

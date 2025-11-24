@@ -75,6 +75,8 @@ if npx eslint . --format=json --output-file="$REPORT_DIR/eslint.json" 2>&1; then
 else
     LINT_ERRORS=$(cat "$REPORT_DIR/eslint.json" 2>/dev/null | grep -o '"errorCount":[0-9]*' | awk -F: '{sum+=$2} END {print sum}' || echo "0")
     LINT_WARNINGS=$(cat "$REPORT_DIR/eslint.json" 2>/dev/null | grep -o '"warningCount":[0-9]*' | awk -F: '{sum+=$2} END {print sum}' || echo "0")
+    LINT_ERRORS=${LINT_ERRORS:-0}
+    LINT_WARNINGS=${LINT_WARNINGS:-0}
     echo -e "${RED}✗${NC} Lint com erros: $LINT_ERRORS erros, $LINT_WARNINGS avisos"
     CHECK_STATUS[lint]="❌ FAILED"
 fi
@@ -91,6 +93,7 @@ if npx tsc --noEmit > "$REPORT_DIR/tsc.log" 2>&1; then
     PASSED_CHECKS=$((PASSED_CHECKS + 1))
 else
     TSC_ERRORS=$(grep -c "error TS" "$REPORT_DIR/tsc.log" 2>/dev/null || echo "0")
+    TSC_ERRORS=${TSC_ERRORS:-0}
     echo -e "${RED}✗${NC} TypeScript com erros: $TSC_ERRORS"
     CHECK_STATUS[tsc]="❌ FAILED"
 fi
@@ -107,6 +110,7 @@ if npm test > "$REPORT_DIR/test.log" 2>&1; then
     PASSED_CHECKS=$((PASSED_CHECKS + 1))
 else
     TEST_FAILED=$(grep -c "FAIL" "$REPORT_DIR/test.log" 2>/dev/null || echo "0")
+    TEST_FAILED=${TEST_FAILED:-0}
     echo -e "${RED}✗${NC} Testes falharam: $TEST_FAILED"
     CHECK_STATUS[test]="❌ FAILED"
 fi
@@ -133,7 +137,11 @@ npm audit --json > "$REPORT_DIR/audit.json" 2>&1 || true
 CRITICAL=$(cat "$REPORT_DIR/audit.json" 2>/dev/null | grep -o '"critical":[0-9]*' | head -1 | awk -F: '{print $2}' || echo "0")
 HIGH=$(cat "$REPORT_DIR/audit.json" 2>/dev/null | grep -o '"high":[0-9]*' | head -1 | awk -F: '{print $2}' || echo "0")
 
-if [ "$CRITICAL" -gt 0 ] || [ "$HIGH" -gt 0 ]; then
+# Ensure we have numeric values
+CRITICAL=${CRITICAL:-0}
+HIGH=${HIGH:-0}
+
+if [ "$CRITICAL" -gt 0 ] 2>/dev/null || [ "$HIGH" -gt 0 ] 2>/dev/null; then
     SECURITY_ISSUES=$((SECURITY_ISSUES + 1))
 fi
 
@@ -157,7 +165,9 @@ if [ -f "$REPORT_DIR/depcheck.json" ]; then
     UNUSED_DEPS=$(cat "$REPORT_DIR/depcheck.json" | grep -o '"dependencies":\[.*\]' | grep -c ',' 2>/dev/null || echo "0")
 fi
 
-if [ "$UNUSED_DEPS" -gt 0 ]; then
+UNUSED_DEPS=${UNUSED_DEPS:-0}
+
+if [ "$UNUSED_DEPS" -gt 0 ] 2>/dev/null; then
     echo -e "${YELLOW}⚠${NC} Dependências não usadas: $UNUSED_DEPS"
     CHECK_STATUS[deps]="⚠️ WARNING"
 else
@@ -177,7 +187,10 @@ if [ -f "$REPORT_DIR/tsc.log" ]; then
     CRITICAL_WARNINGS=$(grep -c "warning" "$REPORT_DIR/tsc.log" 2>/dev/null || echo "0")
 fi
 
-if [ "$CRITICAL_WARNINGS" -eq 0 ]; then
+# Ensure numeric value
+CRITICAL_WARNINGS=${CRITICAL_WARNINGS:-0}
+
+if [ "$CRITICAL_WARNINGS" -eq 0 ] 2>/dev/null; then
     echo -e "${GREEN}✓${NC} Sem avisos críticos"
     CHECK_STATUS[warnings]="✅ SUCCESS"
     PASSED_CHECKS=$((PASSED_CHECKS + 1))
@@ -300,12 +313,12 @@ Branch não atende aos critérios mínimos.
 
 EOF
 
-    [ "$LINT_ERRORS" -gt 0 ] && echo "- ❌ $LINT_ERRORS erros de lint" >> "$REPORT_FILE"
-    [ "$TSC_ERRORS" -gt 0 ] && echo "- ❌ $TSC_ERRORS erros TypeScript" >> "$REPORT_FILE"
-    [ "$TEST_FAILED" -gt 0 ] && echo "- ❌ $TEST_FAILED testes falhados" >> "$REPORT_FILE"
-    [ "$SECURITY_ISSUES" -gt 0 ] && echo "- ❌ $SECURITY_ISSUES problemas de segurança" >> "$REPORT_FILE"
-    [ "$UNUSED_DEPS" -gt 0 ] && echo "- ⚠️ $UNUSED_DEPS dependências não usadas" >> "$REPORT_FILE"
-    [ "$CRITICAL_WARNINGS" -gt 0 ] && echo "- ⚠️ $CRITICAL_WARNINGS avisos críticos" >> "$REPORT_FILE"
+    [ "${LINT_ERRORS:-0}" -gt 0 ] 2>/dev/null && echo "- ❌ $LINT_ERRORS erros de lint" >> "$REPORT_FILE"
+    [ "${TSC_ERRORS:-0}" -gt 0 ] 2>/dev/null && echo "- ❌ $TSC_ERRORS erros TypeScript" >> "$REPORT_FILE"
+    [ "${TEST_FAILED:-0}" -gt 0 ] 2>/dev/null && echo "- ❌ $TEST_FAILED testes falhados" >> "$REPORT_FILE"
+    [ "${SECURITY_ISSUES:-0}" -gt 0 ] 2>/dev/null && echo "- ❌ $SECURITY_ISSUES problemas de segurança" >> "$REPORT_FILE"
+    [ "${UNUSED_DEPS:-0}" -gt 0 ] 2>/dev/null && echo "- ⚠️ $UNUSED_DEPS dependências não usadas" >> "$REPORT_FILE"
+    [ "${CRITICAL_WARNINGS:-0}" -gt 0 ] 2>/dev/null && echo "- ⚠️ $CRITICAL_WARNINGS avisos críticos" >> "$REPORT_FILE"
     
     cat >> "$REPORT_FILE" << 'EOF'
 

@@ -1,9 +1,9 @@
-import { NestFactory } from '@nestjs/core';
-import { AppModule } from './app.module';
-import { Logger, ValidationPipe } from '@nestjs/common';
-import { Logger as PinoLogger } from 'nestjs-pino';
-import helmet from 'helmet';
-import { CorrelationInterceptor } from './shared/logger';
+import { NestFactory } from "@nestjs/core";
+import { AppModule } from "./app.module";
+import { Logger, ValidationPipe } from "@nestjs/common";
+import { Logger as PinoLogger } from "nestjs-pino";
+import helmet from "helmet";
+import { CorrelationInterceptor } from "./shared/logger";
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, {
@@ -21,8 +21,10 @@ async function bootstrap() {
 
   // SEGURANÇA: CORS restritivo
   app.enableCors({
-    origin: process.env.ALLOWED_ORIGINS?.split(',') || ['http://localhost:3000'],
-    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
+    origin: process.env.ALLOWED_ORIGINS?.split(",") || [
+      "http://localhost:3000",
+    ],
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE"],
     credentials: true,
     maxAge: 3600,
   });
@@ -42,21 +44,20 @@ async function bootstrap() {
   // Graceful shutdown
   const logger = app.get(PinoLogger);
   app.enableShutdownHooks();
-  
-  process.on('SIGTERM', async () => {
-    logger.log('SIGTERM recebido, encerrando aplicação...');
+
+  process.on("SIGTERM", async () => {
+    logger.log("SIGTERM recebido, encerrando aplicação...");
     await app.close();
   });
 
   const port = process.env.PORT || 3000;
-  await app.listen(port, '0.0.0.0');
-  
+  await app.listen(port, "0.0.0.0");
+
   logger.log(`🚀 Application is running on: http://0.0.0.0:${port}`);
   logger.log(`🔒 Security: Helmet, CORS, ValidationPipe ativados`);
 }
 
 bootstrap().catch((error) => {
-  console.error('❌ Erro fatal na inicialização:', error);
+  console.error("❌ Erro fatal na inicialização:", error);
   process.exit(1);
 });
-

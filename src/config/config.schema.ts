@@ -1,4 +1,4 @@
-import * as Joi from 'joi';
+import * as Joi from "joi";
 
 export interface ConfigSchema {
   PORT: number;
@@ -15,4 +15,3 @@ export const validationSchema = Joi.object({
   DEFAULT_CLINIC: Joi.string().optional(),
   DEFAULT_ORIGEM: Joi.string().optional(),
 });
-

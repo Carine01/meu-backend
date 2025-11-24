@@ -1,8 +1,8 @@
-import { Evento } from './entities/evento.entity';
-import { Injectable, Logger } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, Between, FindOptionsWhere, In } from 'typeorm';
-import { Event, EventType } from './entities/event.entity';
+import { Evento } from "./entities/evento.entity";
+import { Injectable, Logger } from "@nestjs/common";
+import { InjectRepository } from "@nestjs/typeorm";
+import { Repository, Between, FindOptionsWhere, In } from "typeorm";
+import { Event, EventType } from "./entities/event.entity";
 
 export interface CreateEventDto {
   eventType: EventType;
@@ -29,20 +29,20 @@ export interface EventQueryDto {
 
 @Injectable()
 export class EventsService {
-    async findAll(): Promise<Evento[]> {
-      // Mock para teste
-      return [];
-    }
+  async findAll(): Promise<Evento[]> {
+    // Mock para teste
+    return [];
+  }
 
-    async registrar(evento: Partial<Evento>): Promise<Evento> {
-      // Mock para teste
-      return { ...evento, id: 'mock-id' } as Evento;
-    }
+  async registrar(evento: Partial<Evento>): Promise<Evento> {
+    // Mock para teste
+    return { ...evento, id: "mock-id" } as Evento;
+  }
 
-    async findByTipo(tipo: string): Promise<Evento[]> {
-      // Mock para teste
-      return [];
-    }
+  async findByTipo(tipo: string): Promise<Evento[]> {
+    // Mock para teste
+    return [];
+  }
   private readonly logger = new Logger(EventsService.name);
 
   constructor(
@@ -58,13 +58,13 @@ export class EventsService {
       const event = this.eventsRepository.create({
         ...dto,
         eventDate: new Date(), // Para facilitar queries por data
-        source: dto.source || 'system',
+        source: dto.source || "system",
       });
 
       const saved = await this.eventsRepository.save(event);
-      
+
       this.logger.debug(
-        `Event logged: ${dto.eventType} for lead ${dto.leadId || 'N/A'}`
+        `Event logged: ${dto.eventType} for lead ${dto.leadId || "N/A"}`,
       );
 
       return saved;
@@ -100,7 +100,7 @@ export class EventsService {
 
     return this.eventsRepository.find({
       where,
-      order: { createdAt: 'DESC' },
+      order: { createdAt: "DESC" },
       take: query.limit || 100,
     });
   }
@@ -111,7 +111,7 @@ export class EventsService {
   async getLeadTimeline(leadId: string, limit = 50): Promise<Event[]> {
     return this.eventsRepository.find({
       where: { leadId },
-      order: { createdAt: 'DESC' },
+      order: { createdAt: "DESC" },
       take: limit,
     });
   }
@@ -132,7 +132,7 @@ export class EventsService {
 
     return this.eventsRepository.find({
       where,
-      order: { createdAt: 'DESC' },
+      order: { createdAt: "DESC" },
       take: 1000,
     });
   }
@@ -140,16 +140,19 @@ export class EventsService {
   /**
    * Estatísticas de eventos por tipo
    */
-  async getEventStats(startDate: Date, endDate: Date): Promise<Record<string, number>> {
+  async getEventStats(
+    startDate: Date,
+    endDate: Date,
+  ): Promise<Record<string, number>> {
     const query = this.eventsRepository
-      .createQueryBuilder('event')
-      .select('event.eventType', 'eventType')
-      .addSelect('COUNT(*)', 'count')
-      .where('event.createdAt BETWEEN :startDate AND :endDate', {
+      .createQueryBuilder("event")
+      .select("event.eventType", "eventType")
+      .addSelect("COUNT(*)", "count")
+      .where("event.createdAt BETWEEN :startDate AND :endDate", {
         startDate,
         endDate,
       })
-      .groupBy('event.eventType');
+      .groupBy("event.eventType");
 
     const results = await query.getRawMany();
 
@@ -172,7 +175,7 @@ export class EventsService {
       where: {
         createdAt: Between(oneDayAgo, new Date()),
       },
-      order: { createdAt: 'DESC' },
+      order: { createdAt: "DESC" },
       take: limit,
     });
   }
@@ -193,10 +196,7 @@ export class EventsService {
    * Marca eventos como processados (para processamento assíncrono)
    */
   async markAsProcessed(eventIds: string[]): Promise<void> {
-    await this.eventsRepository.update(
-      eventIds,
-      { processed: true },
-    );
+    await this.eventsRepository.update(eventIds, { processed: true });
   }
 
   /**
@@ -205,7 +205,7 @@ export class EventsService {
   async getUnprocessedEvents(limit = 100): Promise<Event[]> {
     return this.eventsRepository.find({
       where: { processed: false },
-      order: { createdAt: 'ASC' },
+      order: { createdAt: "ASC" },
       take: limit,
     });
   }
@@ -220,7 +220,7 @@ export class EventsService {
     const result = await this.eventsRepository
       .createQueryBuilder()
       .delete()
-      .where('createdAt < :date', { date: sixMonthsAgo })
+      .where("createdAt < :date", { date: sixMonthsAgo })
       .execute();
 
     this.logger.log(`Cleaned ${result.affected} old events`);
@@ -236,7 +236,7 @@ export class EventsService {
         leadId,
         eventType: EventType.STAGE_CHANGED,
       },
-      order: { createdAt: 'DESC' },
+      order: { createdAt: "DESC" },
     });
   }
 
@@ -252,11 +252,10 @@ export class EventsService {
     ];
 
     return this.eventsRepository
-      .createQueryBuilder('event')
-      .where('event.leadId = :leadId', { leadId })
-      .andWhere('event.eventType IN (:...types)', { types: messageTypes })
-      .orderBy('event.createdAt', 'DESC')
+      .createQueryBuilder("event")
+      .where("event.leadId = :leadId", { leadId })
+      .andWhere("event.eventType IN (:...types)", { types: messageTypes })
+      .orderBy("event.createdAt", "DESC")
       .getMany();
   }
 }
-

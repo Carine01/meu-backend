@@ -1,28 +1,28 @@
-import { Injectable, Logger, HttpException, HttpStatus } from '@nestjs/common';
-import { HttpService } from '@nestjs/axios';
-import { ConfigService } from '@nestjs/config';
-import { firstValueFrom } from 'rxjs';
-import admin from 'firebase-admin';
-import { FilaEnvio } from '../mensagens/entities/mensagem.entity';
-import { MensagemResolverService } from '../mensagens/mensagem-resolver.service';
+import { Injectable, Logger, HttpException, HttpStatus } from "@nestjs/common";
+import { HttpService } from "@nestjs/axios";
+import { ConfigService } from "@nestjs/config";
+import { firstValueFrom } from "rxjs";
+import admin from "firebase-admin";
+import { FilaEnvio } from "../mensagens/entities/mensagem.entity";
+import { MensagemResolverService } from "../mensagens/mensagem-resolver.service";
 
 /**
  * Service de Fila de Envio WhatsApp
- * 
+ *
  * Funcionalidades:
  * - Adicionar mensagens na fila com agendamento
  * - Processar fila em batches (10 por vez)
  * - Retry automático (3 tentativas com backoff)
  * - Integração com webhook Make.com/Zapier
  * - Status tracking: pending → sent/failed
- * 
+ *
  * Baseado na lógica original do Google Apps Script evento "fila_add"
  */
 @Injectable()
 export class FilaService {
   private readonly logger = new Logger(FilaService.name);
   private readonly firestore: admin.firestore.Firestore;
-  private readonly COLLECTION_NAME = 'fila_envio';
+  private readonly COLLECTION_NAME = "fila_envio";
   private readonly MAX_RETRIES = 3;
   private readonly RETRY_DELAY_MS = 2000; // 2 segundos entre tentativas
 
@@ -36,7 +36,7 @@ export class FilaService {
 
   /**
    * Adiciona nova mensagem à fila de envio
-   * 
+   *
    * @param leadId - ID do lead destinatário
    * @param leadNome - Nome do destinatário
    * @param leadTelefone - Telefone E.164 (+5511999999999)
@@ -44,7 +44,7 @@ export class FilaService {
    * @param variaveisExtras - Variáveis adicionais para interpolar
    * @param scheduledFor - Data/hora para envio agendado (opcional, padrão: agora)
    * @param clinicId - ID da clínica (opcional, padrão: elevare-01)
-   * 
+   *
    * @example
    * ```typescript
    * await filaService.adicionarNaFila(
@@ -64,7 +64,7 @@ export class FilaService {
     mensagemKey: string,
     variaveisExtras: Record<string, string | number> = {},
     scheduledFor?: Date,
-    clinicId: string = 'elevare-01',
+    clinicId: string = "elevare-01",
   ): Promise<FilaEnvio> {
     // Validação de telefone E.164
     if (!leadTelefone.match(/^\+55\d{10,11}$/)) {
@@ -80,10 +80,8 @@ export class FilaService {
       ...variaveisExtras,
     };
 
-    const { template, mensagemResolvida } = this.mensagemResolver.resolverPorKey(
-      mensagemKey,
-      variaveis,
-    );
+    const { template, mensagemResolvida } =
+      this.mensagemResolver.resolverPorKey(mensagemKey, variaveis);
 
     if (!template) {
       throw new HttpException(
@@ -103,13 +101,13 @@ export class FilaService {
     const tsCriado = agora.getTime() / 86400000; // Serial date (igual ao Google Sheets)
 
     const itemFila: FilaEnvio = {
-      id: `FILA_${Date.now()}_${leadTelefone.replace(/\D/g, '')}`,
+      id: `FILA_${Date.now()}_${leadTelefone.replace(/\D/g, "")}`,
       tsCriado,
       destinoNome: leadNome,
       destinoTelefone: leadTelefone,
       msgId: mensagemKey,
       textoResolvido: mensagemResolvida,
-      status: 'pending',
+      status: "pending",
       clinicId,
       attempts: 0,
       scheduledFor: scheduledFor || agora,
@@ -119,7 +117,9 @@ export class FilaService {
 
     // Salvar no Firestore
     try {
-      const docRef = this.firestore.collection(this.COLLECTION_NAME).doc(itemFila.id);
+      const docRef = this.firestore
+        .collection(this.COLLECTION_NAME)
+        .doc(itemFila.id);
       await docRef.set(itemFila);
 
       this.logger.log(
@@ -131,7 +131,7 @@ export class FilaService {
       const err = error as Error;
       this.logger.error(`Erro ao adicionar na fila: ${err.message}`, err.stack);
       throw new HttpException(
-        'Erro ao adicionar mensagem na fila',
+        "Erro ao adicionar mensagem na fila",
         HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }
@@ -139,14 +139,14 @@ export class FilaService {
 
   /**
    * Processa fila de envio em batch
-   * 
+   *
    * Busca até `batchSize` itens com status 'pending' e scheduledFor <= agora
    * Tenta enviar cada um, atualiza status para 'sent' ou 'failed'
    * Retry automático: até 3 tentativas com delay de 2s entre elas
-   * 
+   *
    * @param batchSize - Quantidade de mensagens a processar (padrão: 10)
    * @returns Quantidade de mensagens enviadas com sucesso
-   * 
+   *
    * @example
    * ```typescript
    * // Executar em CronJob a cada 1 minuto
@@ -164,14 +164,14 @@ export class FilaService {
       // Buscar itens pending com scheduledFor <= agora
       const snapshot = await this.firestore
         .collection(this.COLLECTION_NAME)
-        .where('status', '==', 'pending')
-        .where('scheduledFor', '<=', agora)
-        .orderBy('scheduledFor', 'asc')
+        .where("status", "==", "pending")
+        .where("scheduledFor", "<=", agora)
+        .orderBy("scheduledFor", "asc")
         .limit(batchSize)
         .get();
 
       if (snapshot.empty) {
-        this.logger.debug('Fila de envio vazia');
+        this.logger.debug("Fila de envio vazia");
         return 0;
       }
 
@@ -187,7 +187,7 @@ export class FilaService {
 
           // Sucesso: atualizar status
           await doc.ref.update({
-            status: 'sent',
+            status: "sent",
             attempts: admin.firestore.FieldValue.increment(1),
             updatedAt: new Date(),
           });
@@ -202,7 +202,7 @@ export class FilaService {
           if (novaTentativa >= this.MAX_RETRIES) {
             // Falha definitiva
             await doc.ref.update({
-              status: 'failed',
+              status: "failed",
               attempts: novaTentativa,
               lastError: err.message,
               updatedAt: new Date(),
@@ -218,7 +218,9 @@ export class FilaService {
               lastError: err.message,
               updatedAt: new Date(),
               // Reagenda para daqui alguns segundos (backoff)
-              scheduledFor: new Date(Date.now() + this.RETRY_DELAY_MS * novaTentativa),
+              scheduledFor: new Date(
+                Date.now() + this.RETRY_DELAY_MS * novaTentativa,
+              ),
             });
 
             this.logger.warn(
@@ -228,7 +230,9 @@ export class FilaService {
         }
       }
 
-      this.logger.log(`Processamento concluído: ${enviados}/${snapshot.size} enviados`);
+      this.logger.log(
+        `Processamento concluído: ${enviados}/${snapshot.size} enviados`,
+      );
       return enviados;
     } catch (error: any) {
       const err = error as Error;
@@ -239,21 +243,21 @@ export class FilaService {
 
   /**
    * Envia mensagem via webhook WhatsApp (Make.com/Zapier/n8n)
-   * 
+   *
    * Integração com sistema de webhooks criado anteriormente
    * Usa WEBHOOK_MAKE_URL ou WEBHOOK_URL como fallback
-   * 
+   *
    * @param item - Item da fila a enviar
    * @private
    */
   private async enviarWhatsApp(item: FilaEnvio): Promise<void> {
     const webhookUrl =
-      this.configService.get<string>('MAKE_WEBHOOK_URL') ||
-      this.configService.get<string>('WEBHOOK_URL');
+      this.configService.get<string>("MAKE_WEBHOOK_URL") ||
+      this.configService.get<string>("WEBHOOK_URL");
 
     if (!webhookUrl) {
       throw new Error(
-        'WEBHOOK_URL não configurado. Defina MAKE_WEBHOOK_URL ou WEBHOOK_URL no .env',
+        "WEBHOOK_URL não configurado. Defina MAKE_WEBHOOK_URL ou WEBHOOK_URL no .env",
       );
     }
 
@@ -270,10 +274,10 @@ export class FilaService {
       const response = await firstValueFrom(
         this.httpService.post(webhookUrl, payload, {
           headers: {
-            'Content-Type': 'application/json',
+            "Content-Type": "application/json",
             // Adicionar token se configurado
-            ...(this.configService.get<string>('WEBHOOK_TOKEN') && {
-              Authorization: `Bearer ${this.configService.get<string>('WEBHOOK_TOKEN')}`,
+            ...(this.configService.get<string>("WEBHOOK_TOKEN") && {
+              Authorization: `Bearer ${this.configService.get<string>("WEBHOOK_TOKEN")}`,
             }),
           },
           timeout: 10000, // 10 segundos
@@ -293,9 +297,9 @@ export class FilaService {
         throw new Error(
           `Webhook falhou: ${err.response.status} - ${JSON.stringify(err.response.data)}`,
         );
-      } else if (err.code === 'ECONNABORTED') {
+      } else if (err.code === "ECONNABORTED") {
         // Timeout
-        throw new Error('Timeout ao enviar para webhook (10s)');
+        throw new Error("Timeout ao enviar para webhook (10s)");
       } else {
         // Erro de rede
         throw new Error(`Erro de rede: ${err.message}`);
@@ -305,13 +309,15 @@ export class FilaService {
 
   /**
    * Cancela mensagem pendente na fila
-   * 
+   *
    * @param filaId - ID do item da fila
    * @returns true se cancelado, false se não encontrado
    */
   async cancelarMensagem(filaId: string): Promise<boolean> {
     try {
-      const docRef = this.firestore.collection(this.COLLECTION_NAME).doc(filaId);
+      const docRef = this.firestore
+        .collection(this.COLLECTION_NAME)
+        .doc(filaId);
       const doc = await docRef.get();
 
       if (!doc.exists) {
@@ -320,7 +326,7 @@ export class FilaService {
 
       const item = doc.data() as FilaEnvio;
 
-      if (item.status !== 'pending') {
+      if (item.status !== "pending") {
         throw new HttpException(
           `Não é possível cancelar mensagem com status "${item.status}"`,
           HttpStatus.BAD_REQUEST,
@@ -328,7 +334,7 @@ export class FilaService {
       }
 
       await docRef.update({
-        status: 'cancelled',
+        status: "cancelled",
         updatedAt: new Date(),
       });
 
@@ -338,7 +344,7 @@ export class FilaService {
       const err = error as Error;
       this.logger.error(`Erro ao cancelar mensagem: ${err.message}`, err.stack);
       throw new HttpException(
-        'Erro ao cancelar mensagem',
+        "Erro ao cancelar mensagem",
         HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }
@@ -346,29 +352,29 @@ export class FilaService {
 
   /**
    * Busca itens da fila por status
-   * 
+   *
    * @param status - Status a filtrar (pending, sent, failed, cancelled)
    * @param limit - Quantidade máxima de resultados (padrão: 50)
    * @returns Array de itens da fila
    */
   async listarPorStatus(
-    status: FilaEnvio['status'],
+    status: FilaEnvio["status"],
     limit: number = 50,
   ): Promise<FilaEnvio[]> {
     try {
       const snapshot = await this.firestore
         .collection(this.COLLECTION_NAME)
-        .where('status', '==', status)
-        .orderBy('createdAt', 'desc')
+        .where("status", "==", status)
+        .orderBy("createdAt", "desc")
         .limit(limit)
         .get();
 
-      return snapshot.docs.map(doc => doc.data() as FilaEnvio);
+      return snapshot.docs.map((doc) => doc.data() as FilaEnvio);
     } catch (error: any) {
       const err = error as Error;
       this.logger.error(`Erro ao listar fila: ${err.message}`, err.stack);
       throw new HttpException(
-        'Erro ao listar fila de envio',
+        "Erro ao listar fila de envio",
         HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }
@@ -376,21 +382,23 @@ export class FilaService {
 
   /**
    * Estatísticas da fila de envio
-   * 
+   *
    * @returns Contadores por status
    */
-  async getEstatisticas(): Promise<Record<FilaEnvio['status'], number>> {
+  async getEstatisticas(): Promise<Record<FilaEnvio["status"], number>> {
     try {
-      const snapshot = await this.firestore.collection(this.COLLECTION_NAME).get();
+      const snapshot = await this.firestore
+        .collection(this.COLLECTION_NAME)
+        .get();
 
-      const stats: Record<FilaEnvio['status'], number> = {
+      const stats: Record<FilaEnvio["status"], number> = {
         pending: 0,
         sent: 0,
         failed: 0,
         cancelled: 0,
       };
 
-      snapshot.docs.forEach(doc => {
+      snapshot.docs.forEach((doc) => {
         const item = doc.data() as FilaEnvio;
         stats[item.status] = (stats[item.status] || 0) + 1;
       });
@@ -398,12 +406,14 @@ export class FilaService {
       return stats;
     } catch (error: any) {
       const err = error as Error;
-      this.logger.error(`Erro ao buscar estatísticas: ${err.message}`, err.stack);
+      this.logger.error(
+        `Erro ao buscar estatísticas: ${err.message}`,
+        err.stack,
+      );
       throw new HttpException(
-        'Erro ao buscar estatísticas da fila',
+        "Erro ao buscar estatísticas da fila",
         HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }
   }
 }
-

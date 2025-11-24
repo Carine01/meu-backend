@@ -1,7 +1,7 @@
-import { AgendaSemanalService } from '../agenda-semanal.service';
-import { FilaService } from '../../fila/fila.service';
+import { AgendaSemanalService } from "../agenda-semanal.service";
+import { FilaService } from "../../fila/fila.service";
 
-describe('AgendaSemanalService - clinicId isolation', () => {
+describe("AgendaSemanalService - clinicId isolation", () => {
   let service: AgendaSemanalService;
   let filaService: FilaService;
 
@@ -10,17 +10,19 @@ describe('AgendaSemanalService - clinicId isolation', () => {
     service = new AgendaSemanalService(filaService);
   });
 
-  it('should be defined', () => {
+  it("should be defined", () => {
     expect(service).toBeDefined();
   });
 
-  it('should have executarAgendaDoDiaPorClinica method', () => {
+  it("should have executarAgendaDoDiaPorClinica method", () => {
     expect(service.executarAgendaDoDiaPorClinica).toBeDefined();
-    expect(typeof service.executarAgendaDoDiaPorClinica).toBe('function');
+    expect(typeof service.executarAgendaDoDiaPorClinica).toBe("function");
   });
 
-  it('should throw error for empty clinicId', async () => {
-    await expect(service.executarAgendaDoDiaPorClinica('')).rejects.toThrow('clinicId é obrigatório');
+  it("should throw error for empty clinicId", async () => {
+    await expect(service.executarAgendaDoDiaPorClinica("")).rejects.toThrow(
+      "clinicId é obrigatório",
+    );
   });
 
   // Note: Full integration test would require Firestore emulator

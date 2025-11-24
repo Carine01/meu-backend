@@ -1,11 +1,17 @@
-import { Entity, PrimaryColumn, Column, CreateDateColumn, UpdateDateColumn } from 'typeorm';
+import {
+  Entity,
+  PrimaryColumn,
+  Column,
+  CreateDateColumn,
+  UpdateDateColumn,
+} from "typeorm";
 
-@Entity('agendamentos')
+@Entity("agendamentos")
 export class Agendamento {
-  @PrimaryColumn('uuid')
+  @PrimaryColumn("uuid")
   id!: string;
 
-  @Column({ type: 'varchar', length: 50, default: 'ELEVARE_MAIN' })
+  @Column({ type: "varchar", length: 50, default: "ELEVARE_MAIN" })
   clinicId!: string;
 
   @Column()
@@ -23,12 +29,12 @@ export class Agendamento {
   @Column({ default: 60 })
   duracaoMinutos!: number;
 
-  @Column({ 
-    type: 'enum', 
-    enum: ['agendado', 'confirmado', 'compareceu', 'no-show', 'cancelado'], 
-    default: 'agendado' 
+  @Column({
+    type: "enum",
+    enum: ["agendado", "confirmado", "compareceu", "no-show", "cancelado"],
+    default: "agendado",
   })
-  status!: 'agendado' | 'confirmado' | 'compareceu' | 'no-show' | 'cancelado';
+  status!: "agendado" | "confirmado" | "compareceu" | "no-show" | "cancelado";
 
   @Column({ nullable: true })
   observacoes?: string;
@@ -44,4 +50,3 @@ export class Agendamento {
 
   // Removido construtor para evitar inicialização duplicada, propriedades obrigatórias já usam '!'.
 }
-

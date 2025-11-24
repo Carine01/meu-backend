@@ -1,7 +1,7 @@
-import { Controller, Get, Req, UseGuards } from '@nestjs/common';
-import { FirebaseAuthGuard } from './firebase-auth.guard';
+import { Controller, Get, Req, UseGuards } from "@nestjs/common";
+import { FirebaseAuthGuard } from "./firebase-auth.guard";
 
-@Controller('auth-test')
+@Controller("auth-test")
 export class AuthTestController {
   @Get()
   @UseGuards(FirebaseAuthGuard)
@@ -10,4 +10,3 @@ export class AuthTestController {
     return { firebaseUser: req.user };
   }
 }
-

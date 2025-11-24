@@ -1,8 +1,14 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn } from 'typeorm';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  CreateDateColumn,
+  UpdateDateColumn,
+} from "typeorm";
 
-@Entity('usuarios')
+@Entity("usuarios")
 export class Usuario {
-  @PrimaryGeneratedColumn('uuid')
+  @PrimaryGeneratedColumn("uuid")
   id!: string;
 
   @Column({ unique: true })
@@ -14,10 +20,10 @@ export class Usuario {
   @Column()
   nome!: string;
 
-  @Column({ type: 'varchar', length: 50, default: 'ELEVARE_MAIN' })
+  @Column({ type: "varchar", length: 50, default: "ELEVARE_MAIN" })
   clinicId!: string;
 
-  @Column('simple-array')
+  @Column("simple-array")
   roles!: string[]; // ['user', 'admin', 'manager']
 
   @Column({ default: true })
@@ -29,4 +35,3 @@ export class Usuario {
   @UpdateDateColumn()
   updatedAt!: Date;
 }
-
