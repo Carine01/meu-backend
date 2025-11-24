@@ -109,7 +109,8 @@ jobs:
             const fs = require('fs');
             const path = require('path');
             
-            const stats = ${{ steps.stats.outputs.result }};
+            // Safely parse the JSON output
+            const stats = JSON.parse('${{ steps.stats.outputs.result }}');
             const reportPath = '.github/ELEVARE_AGENT_REPORT.md';
             
             // Read current report
@@ -200,7 +201,8 @@ jobs:
             const fs = require('fs');
             const path = require('path');
             
-            const activity = ${{ steps.activity.outputs.result }};
+            // Safely parse the JSON output
+            const activity = JSON.parse('${{ steps.activity.outputs.result }}');
             const reportPath = '.github/ELEVARE_AGENT_REPORT.md';
             
             let report = fs.readFileSync(reportPath, 'utf8');

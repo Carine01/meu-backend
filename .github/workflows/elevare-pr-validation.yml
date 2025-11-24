@@ -35,7 +35,9 @@ jobs:
         id: secret-scan
         run: |
           echo "🔍 Verificando vazamento de segredos..."
-          if git diff origin/main...HEAD | grep -i -E '(password|secret|api[_-]?key|token|bearer|private[_-]?key|aws[_-]?access|credential).*=.*["\047][a-zA-Z0-9+/]{20,}["\047]'; then
+          # Check for common secret patterns in the diff
+          # This checks for: password=..., api_key=..., token=..., etc. with quoted values
+          if git diff origin/main...HEAD | grep -i -E '(password|secret|api[_-]?key|token|bearer|private[_-]?key|aws[_-]?access|credential)[[:space:]]*[:=][[:space:]]*["\x27][^"\x27]{8,}["\x27]'; then
             echo "❌ FALHA: Possível vazamento de segredos detectado!"
             echo "has_secrets=true" >> $GITHUB_OUTPUT
             exit 1

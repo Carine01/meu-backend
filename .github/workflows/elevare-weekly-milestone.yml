@@ -25,10 +25,20 @@ jobs:
           YEAR=$(date +%Y)
           
           # Calculate start of week (Monday)
-          START_DATE=$(date -d "last monday" +%Y-%m-%d)
+          # If today is Monday, use today; otherwise use last Monday
+          if [ $(date +%u) -eq 1 ]; then
+            START_DATE=$(date +%Y-%m-%d)
+          else
+            START_DATE=$(date -d "last monday" +%Y-%m-%d)
+          fi
           
           # Calculate end of week (Sunday)
-          END_DATE=$(date -d "next sunday" +%Y-%m-%d)
+          # If today is Sunday, use today; otherwise use next Sunday
+          if [ $(date +%u) -eq 7 ]; then
+            END_DATE=$(date +%Y-%m-%d)
+          else
+            END_DATE=$(date -d "next sunday" +%Y-%m-%d)
+          fi
           
           # Format milestone title
           MILESTONE_TITLE="Semana $WEEK_NUMBER - $YEAR"
