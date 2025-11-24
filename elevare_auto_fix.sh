@@ -30,14 +30,16 @@ if command -v npx &> /dev/null; then
     npx depcheck --json > /tmp/depcheck-result.json 2>&1 || true
     
     if [ "$AUTO_REMOVE_UNUSED" = true ]; then
-        echo "Auto-removing unused dependencies (if any)..."
-        # Note: In a real scenario, we'd parse the JSON and remove unused deps
-        # For safety, we'll just report them
+        echo "Scanning for unused dependencies..."
+        # Note: Automatic removal of unused dependencies requires manual review
+        # to avoid breaking the application. This option generates a report
+        # that should be reviewed before taking action.
         if [ -f /tmp/depcheck-result.json ]; then
             echo "Depcheck results available in /tmp/depcheck-result.json"
+            echo "Review the report and manually remove unused dependencies if appropriate"
         fi
     else
-        echo "Use --auto-remove-unused to automatically remove unused dependencies"
+        echo "Use --auto-remove-unused to generate unused dependencies report"
     fi
 fi
 

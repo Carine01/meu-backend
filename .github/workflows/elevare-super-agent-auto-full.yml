@@ -47,7 +47,7 @@ jobs:
       # 3️⃣ Lint, Prettier e harmonização
       - name: Run Lint & Prettier
         run: |
-          npx eslint . --fix || true
+          ESLINT_USE_FLAT_CONFIG=false npx eslint . --fix || true
           npx prettier --write . || true
           echo "Lint e Prettier aplicados."
 
@@ -67,13 +67,15 @@ jobs:
       # 5️⃣ Build e check
       - name: Build production
         run: npm run build
+        # Note: continue-on-error is used because there are pre-existing TypeScript errors
+        # that are not part of this automation. The errors are captured in the reports.
         continue-on-error: true
 
       # 6️⃣ Gerar relatórios detalhados
       - name: Generate Reports
         run: |
           mkdir -p .elevare_validation_report
-          npx eslint . -f json > .elevare_validation_report/eslint.json || true
+          ESLINT_USE_FLAT_CONFIG=false npx eslint . -f json > .elevare_validation_report/eslint.json || true
           npx depcheck --json > .elevare_validation_report/depcheck.json || true
           npx tsc --noEmit > .elevare_validation_report/tsc.out 2>&1 || true
           echo "Relatórios completos gerados."
@@ -114,6 +116,8 @@ jobs:
         run: |
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
           git config --local user.name "github-actions[bot]"
+          # Add all changes made by automated fixes (linting, formatting, etc.)
+          # .gitignore ensures sensitive files are not included
           git add -A
           git diff --staged --quiet || git commit -m "chore: automated fixes and improvements via elevare-super-agent"
 
