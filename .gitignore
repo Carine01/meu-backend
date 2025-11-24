@@ -11,3 +11,5 @@ dist/
 service-account.json
 *.firebase-admin.json
 *.credentials.json
+# Elevare validation reports
+.elevare_validation_report/
