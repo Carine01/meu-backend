@@ -121,12 +121,14 @@ jobs:
         run: npm ci --silent || npm install --silent
         
       - name: TypeScript Check
+        id: typecheck
         run: |
-          npx tsc --noEmit || {
-            echo "TypeScript errors detected"
+          if npx tsc --noEmit; then
+            echo "TypeScript check passed"
+          else
             echo "TYPECHECK_FAILED=true" >> $GITHUB_ENV
-            exit 0
-          }
+            echo "TypeScript errors detected - job will continue but marked as warning"
+          fi
           
       - name: ESLint Check (if configured)
         continue-on-error: true

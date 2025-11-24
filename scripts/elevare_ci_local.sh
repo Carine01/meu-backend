@@ -66,7 +66,7 @@ echo "📦 Verificando dependências..."
 npm outdated --json > artifacts/outdated-deps.json 2>/dev/null || true
 
 # Generate comprehensive report
-cat > artifacts/ELEVARE_CI_REPORT.md << EOF
+cat > artifacts/ELEVARE_CI_REPORT.md << 'EOF'
 # 🚀 ELEVARE CI/CD - RELATÓRIO TÉCNICO LOCAL
 
 **Data:** $(date '+%Y-%m-%d %H:%M:%S')
