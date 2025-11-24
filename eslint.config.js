@@ -9,7 +9,6 @@ module.exports = tseslint.config(
   prettierConfig,
   {
     rules: {
-      '@typescript-eslint/interface-name-prefix': 'off',
       '@typescript-eslint/explicit-function-return-type': 'off',
       '@typescript-eslint/explicit-module-boundary-types': 'off',
       '@typescript-eslint/no-explicit-any': 'off',
@@ -19,6 +18,13 @@ module.exports = tseslint.config(
     },
   },
   {
-    ignores: ['dist/', 'node_modules/', '*.js', '*.mjs', '*.cjs', 'coverage/'],
+    ignores: [
+      'dist/',
+      'node_modules/',
+      'coverage/',
+      '*.config.js',
+      '*.config.mjs',
+      '*.config.cjs',
+    ],
   },
 );
