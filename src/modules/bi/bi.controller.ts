@@ -4,7 +4,7 @@ import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 
 /**
  * Controller de Business Intelligence e Métricas
- * 
+ *
  * Endpoints:
  * - GET /bi/dashboard - Métricas do dashboard (autenticado)
  * - GET /bi/metrics - Prometheus metrics (público para scraper)
@@ -20,11 +20,11 @@ export class BiController {
   /**
    * Dashboard completo com métricas 30d/7d/hoje
    * Requer autenticação JWT
-   * 
+   *
    * @example
    * GET /bi/dashboard
    * Authorization: Bearer <jwt-token>
-   * 
+   *
    * Response:
    * {
    *   "leads30d": 150,
@@ -42,7 +42,7 @@ export class BiController {
   /**
    * Métricas no formato Prometheus (text/plain)
    * Endpoint público para scraping automático
-   * 
+   *
    * Configurar no prometheus.yml:
    * ```yaml
    * scrape_configs:
@@ -51,10 +51,10 @@ export class BiController {
    *       - targets: ['backend:3000']
    *     metrics_path: '/bi/metrics'
    * ```
-   * 
+   *
    * @example
    * GET /bi/metrics
-   * 
+   *
    * Response (text/plain):
    * # HELP elevare_leads_total Total de leads
    * # TYPE elevare_leads_total gauge
@@ -70,10 +70,10 @@ export class BiController {
   /**
    * Análise de funil de conversão
    * Identifica gargalos no processo
-   * 
+   *
    * @example
    * GET /bi/funil
-   * 
+   *
    * Response:
    * {
    *   "etapas": [
@@ -92,12 +92,12 @@ export class BiController {
   /**
    * Top etiquetas mais comuns
    * Útil para segmentação de campanhas
-   * 
+   *
    * @param limit - Quantidade de etiquetas (padrão: 10)
-   * 
+   *
    * @example
    * GET /bi/etiquetas?limit=5
-   * 
+   *
    * Response:
    * [
    *   { "etiqueta": "Mulheres", "count": 120 },
@@ -114,10 +114,10 @@ export class BiController {
 
   /**
    * Performance por origem (qual canal converte melhor?)
-   * 
+   *
    * @example
    * GET /bi/origens
-   * 
+   *
    * Response:
    * [
    *   { "origem": "indicacao", "leads": 30, "agendamentos": 25, "taxaConversao": 83 },
@@ -131,4 +131,3 @@ export class BiController {
     return this.biService.getPerformancePorOrigem();
   }
 }
-

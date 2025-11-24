@@ -5,7 +5,7 @@ import { Logger } from '@nestjs/common';
 
 async function bootstrap() {
   const logger = new Logger('SeedAdmin');
-  
+
   const app = await NestFactory.createApplicationContext(AppModule);
   const authService = app.get(AuthService);
 
@@ -24,4 +24,3 @@ async function bootstrap() {
 }
 
 bootstrap();
-

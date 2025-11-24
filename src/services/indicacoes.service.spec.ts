@@ -7,14 +7,16 @@ import { Recompensa } from '../modules/indicacoes/entities/recompensa.entity';
 import { Repository } from 'typeorm';
 
 import { ObjectLiteral } from 'typeorm';
-type MockRepository<T extends ObjectLiteral = any> = Partial<Record<keyof Repository<T>, jest.Mock>>;
+type MockRepository<T extends ObjectLiteral = any> = Partial<
+  Record<keyof Repository<T>, jest.Mock>
+>;
 
 const createMockRepository = <T extends ObjectLiteral = any>(): MockRepository<T> => ({
   find: jest.fn(),
   findOne: jest.fn(),
   save: jest.fn(),
   delete: jest.fn(),
-  create: jest.fn((dto) => ({ ...dto, id: 'mock-id' })),
+  create: jest.fn(dto => ({ ...dto, id: 'mock-id' })),
 });
 
 describe('IndicacoesService', () => {

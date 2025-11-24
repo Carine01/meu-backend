@@ -5,7 +5,9 @@ import admin from 'firebase-admin';
 // Mock Firebase initialization for test environment
 if (process.env.NODE_ENV === 'test' && !admin.apps.length) {
   admin.initializeApp({
-    credential: admin.credential.applicationDefault ? admin.credential.applicationDefault() : undefined,
+    credential: admin.credential.applicationDefault
+      ? admin.credential.applicationDefault()
+      : undefined,
   });
 }
 import { FilaService } from '../fila/fila.service';
@@ -25,14 +27,14 @@ interface RegraDisparo {
 
 /**
  * Service de Agenda Semanal Automatizada
- * 
+ *
  * Implementa disparos automáticos baseados em:
  * - Dia da semana (Segunda a Domingo)
  * - Etiquetas do lead (segmentação)
  * - Objetivo da campanha (reativação, nutrição, etc)
- * 
+ *
  * Baseado na aba "Agenda_Semanal_Disparos" do Google Sheets original
- * 
+ *
  * REGRAS:
  * - Segunda: Repescagem de leads frios (NovoCliente, Ocasional)
  * - Terça: Qualificação de leads mornos (Morno stage)
@@ -44,27 +46,27 @@ interface RegraDisparo {
  */
 @Injectable()
 export class AgendaSemanalService {
-      async criarCampanha(dto: Partial<Campanha>): Promise<Campanha> {
-        // Mock para teste
-        return { ...dto, id: 'mock-id' } as Campanha;
-      }
+  async criarCampanha(dto: Partial<Campanha>): Promise<Campanha> {
+    // Mock para teste
+    return { ...dto, id: 'mock-id' } as Campanha;
+  }
 
-      async listarAtivas(): Promise<Campanha[]> {
-        // Mock para teste
-        return [];
-      }
-    /**
-     * Executa agenda do dia filtrando por clinicId
-     * Lança erro se clinicId for vazio ou inválido
-     */
-    async executarAgendaDoDiaPorClinica(clinicId: string): Promise<void> {
-      if (!clinicId || clinicId.trim() === '') {
-        throw new Error('clinicId é obrigatório');
-      }
-      // TODO: Filtrar regras/leads por clinicId
-      // Por enquanto executa agenda normal
-      await this.executarAgendaDoDia();
+  async listarAtivas(): Promise<Campanha[]> {
+    // Mock para teste
+    return [];
+  }
+  /**
+   * Executa agenda do dia filtrando por clinicId
+   * Lança erro se clinicId for vazio ou inválido
+   */
+  async executarAgendaDoDiaPorClinica(clinicId: string): Promise<void> {
+    if (!clinicId || clinicId.trim() === '') {
+      throw new Error('clinicId é obrigatório');
     }
+    // TODO: Filtrar regras/leads por clinicId
+    // Por enquanto executa agenda normal
+    await this.executarAgendaDoDia();
+  }
   private readonly logger = new Logger(AgendaSemanalService.name);
   private readonly firestore: admin.firestore.Firestore;
 
@@ -75,7 +77,7 @@ export class AgendaSemanalService {
   /**
    * Executa agenda automática do dia atual
    * Deve ser chamado por CronJob diariamente (ex: 9h da manhã)
-   * 
+   *
    * @example
    * ```typescript
    * // Em AgendaSemanalController ou CronJob
@@ -105,7 +107,9 @@ export class AgendaSemanalService {
         continue;
       }
 
-      this.logger.log(`Processando regra: ${regra.objetivo} (${regra.publicoEtiquetas.join(', ')})`);
+      this.logger.log(
+        `Processando regra: ${regra.objetivo} (${regra.publicoEtiquetas.join(', ')})`,
+      );
 
       try {
         // Buscar leads que correspondem às etiquetas da regra
@@ -133,14 +137,17 @@ export class AgendaSemanalService {
         this.logger.log(`✅ Regra "${regra.objetivo}" executada com sucesso`);
       } catch (error: any) {
         const err = error as Error;
-        this.logger.error(`❌ Erro ao executar regra "${regra.objetivo}": ${err.message}`, err.stack);
+        this.logger.error(
+          `❌ Erro ao executar regra "${regra.objetivo}": ${err.message}`,
+          err.stack,
+        );
       }
     }
   }
 
   /**
    * Busca leads que possuem TODAS as etiquetas especificadas
-   * 
+   *
    * @param etiquetas - Array de etiquetas necessárias
    * @returns Array de leads que correspondem
    */
@@ -148,7 +155,7 @@ export class AgendaSemanalService {
     try {
       // Firestore não suporta array-contains-all nativamente
       // Solução: buscar todos e filtrar em memória (ou usar array-contains para 1 etiqueta)
-      
+
       const snapshot = await this.firestore.collection('leads').get();
 
       const leadsCorrespondentes: Lead[] = [];
@@ -157,8 +164,8 @@ export class AgendaSemanalService {
         const lead = doc.data() as Lead;
 
         // Verifica se lead tem TODAS as etiquetas necessárias
-        const temTodasEtiquetas = etiquetas.every(etiqueta =>
-          lead.etiquetas && lead.etiquetas.includes(etiqueta),
+        const temTodasEtiquetas = etiquetas.every(
+          etiqueta => lead.etiquetas && lead.etiquetas.includes(etiqueta),
         );
 
         if (temTodasEtiquetas) {
@@ -177,7 +184,7 @@ export class AgendaSemanalService {
   /**
    * Retorna regras semanais completas
    * Baseado na lógica original do Google Sheets
-   * 
+   *
    * TODO: Mover para Firestore collection 'agenda_semanal' para edição via admin
    */
   private getRegrasSemanais(): Record<string, RegraDisparo[]> {
@@ -313,7 +320,7 @@ export class AgendaSemanalService {
   /**
    * Retorna regras ativas para um dia específico
    * Útil para visualização no admin
-   * 
+   *
    * @param diaSemana - Nome do dia (Segunda, Terça, etc)
    * @returns Array de regras do dia
    */
@@ -331,7 +338,7 @@ export class AgendaSemanalService {
 
   /**
    * Executa regra específica manualmente (teste)
-   * 
+   *
    * @param diaSemana - Dia da regra
    * @param objetivo - Objetivo da regra para identificar
    */
@@ -363,4 +370,3 @@ export class AgendaSemanalService {
     return leads.length;
   }
 }
-

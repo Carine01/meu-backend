@@ -12,16 +12,16 @@ interface DadosIndicacao {
 
 @Injectable()
 export class IndicacoesService {
-    async findAll(): Promise<Indicacao[]> {
-      // Utiliza o mock do repositório para testes
-      return await this.indicacaoRepo.find();
-    }
+  async findAll(): Promise<Indicacao[]> {
+    // Utiliza o mock do repositório para testes
+    return await this.indicacaoRepo.find();
+  }
 
-    async create(dto: Partial<Indicacao>): Promise<Indicacao> {
-      // Utiliza o mock do repositório para testes
-      const entity = this.indicacaoRepo.create(dto);
-      return await this.indicacaoRepo.save(entity);
-    }
+  async create(dto: Partial<Indicacao>): Promise<Indicacao> {
+    // Utiliza o mock do repositório para testes
+    const entity = this.indicacaoRepo.create(dto);
+    return await this.indicacaoRepo.save(entity);
+  }
   private readonly logger = new Logger(IndicacoesService.name);
 
   constructor(
@@ -73,9 +73,9 @@ export class IndicacoesService {
     // A cada 3 pontos, ganhar 1 sessão grátis
     const novasSessoes = Math.floor(recompensa.pontosAcumulados / 3);
     const sessoesAnteriores = Math.floor((recompensa.pontosAcumulados - 1) / 3);
-    
+
     if (novasSessoes > sessoesAnteriores) {
-      recompensa.sessoesGratisDisponiveis += (novasSessoes - sessoesAnteriores);
+      recompensa.sessoesGratisDisponiveis += novasSessoes - sessoesAnteriores;
       this.logger.log(
         `🎁 ${indicadorId} ganhou sessão grátis! Total: ${recompensa.sessoesGratisDisponiveis}`,
       );
@@ -136,13 +136,13 @@ export class IndicacoesService {
 
     if (recompensa) {
       recompensa.pontosAcumulados += 2; // Bônus extra
-      
+
       // Verificar se ganhou nova sessão
       const novasSessoes = Math.floor(recompensa.pontosAcumulados / 3);
       const sessoesAnteriores = Math.floor((recompensa.pontosAcumulados - 2) / 3);
-      
+
       if (novasSessoes > sessoesAnteriores) {
-        recompensa.sessoesGratisDisponiveis += (novasSessoes - sessoesAnteriores);
+        recompensa.sessoesGratisDisponiveis += novasSessoes - sessoesAnteriores;
       }
 
       await this.recompensaRepo.save(recompensa);
@@ -162,9 +162,9 @@ export class IndicacoesService {
     });
 
     if (!recompensa || recompensa.sessoesGratisDisponiveis <= 0) {
-      return { 
-        sucesso: false, 
-        mensagem: 'Você não tem sessões gratuitas disponíveis' 
+      return {
+        sucesso: false,
+        mensagem: 'Você não tem sessões gratuitas disponíveis',
       };
     }
 
@@ -176,9 +176,9 @@ export class IndicacoesService {
       `🎁 Sessão grátis resgatada: ${leadId} (${recompensa.sessoesGratisDisponiveis} restantes)`,
     );
 
-    return { 
-      sucesso: true, 
-      mensagem: 'Sessão grátis resgatada com sucesso!' 
+    return {
+      sucesso: true,
+      mensagem: 'Sessão grátis resgatada com sucesso!',
     };
   }
 
@@ -213,4 +213,3 @@ export class IndicacoesService {
     return recompensa;
   }
 }
-

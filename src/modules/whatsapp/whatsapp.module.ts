@@ -14,11 +14,11 @@ import { WhatsAppOfficialProvider } from './whatsapp-official.provider';
       provide: 'WHATSAPP_PROVIDER',
       useFactory: (configService: ConfigService) => {
         const provider = configService.get<string>('WHATSAPP_PROVIDER', 'baileys');
-        
+
         if (provider === 'official') {
           return new WhatsAppOfficialProvider(configService);
         }
-        
+
         // Default: Baileys para MVP
         const baileysProvider = new BaileysProvider();
         baileysProvider.initialize(); // Inicia conexão
@@ -30,4 +30,3 @@ import { WhatsAppOfficialProvider } from './whatsapp-official.provider';
   exports: [WhatsAppService],
 })
 export class WhatsAppModule {}
-

@@ -4,7 +4,9 @@ import admin from 'firebase-admin';
 // Mock Firebase initialization for test environment
 if (process.env.NODE_ENV === 'test' && !admin.apps.length) {
   admin.initializeApp({
-    credential: admin.credential.applicationDefault ? admin.credential.applicationDefault() : undefined,
+    credential: admin.credential.applicationDefault
+      ? admin.credential.applicationDefault()
+      : undefined,
   });
 }
 import { Lead, Agendamento, FilaEnvio } from '../mensagens/entities/mensagem.entity';
@@ -53,7 +55,7 @@ export interface DashboardMetrics {
 
 /**
  * Service de Business Intelligence e Métricas
- * 
+ *
  * Funcionalidades:
  * - Dashboard com métricas 30d/7d/hoje
  * - Métricas Prometheus para scraping
@@ -62,25 +64,25 @@ export interface DashboardMetrics {
  */
 @Injectable()
 export class BiService {
-    async summary(): Promise<any> {
-      // Mock para teste
-      return {};
-    }
+  async summary(): Promise<any> {
+    // Mock para teste
+    return {};
+  }
 
-    async calcularConversao(clinicId: string): Promise<any> {
-      // Mock para teste
-      return {};
-    }
+  async calcularConversao(clinicId: string): Promise<any> {
+    // Mock para teste
+    return {};
+  }
 
-    async metricasMensagens(): Promise<any> {
-      // Mock para teste
-      return {};
-    }
+  async metricasMensagens(): Promise<any> {
+    // Mock para teste
+    return {};
+  }
 
-    async metricasPorPeriodo(dataInicio: Date, dataFim: Date): Promise<any> {
-      // Mock para teste
-      return {};
-    }
+  async metricasPorPeriodo(dataInicio: Date, dataFim: Date): Promise<any> {
+    // Mock para teste
+    return {};
+  }
   private readonly logger = new Logger(BiService.name);
   private readonly firestore: admin.firestore.Firestore;
 
@@ -88,18 +90,18 @@ export class BiService {
     this.firestore = admin.firestore();
   }
 
-    /**
-     * Retorna relatório filtrado por clinicId
-     * Lança erro se clinicId for vazio ou inválido
-     */
-    async getReportForClinic(clinicId: string): Promise<DashboardMetrics> {
-      if (!clinicId || clinicId.trim() === '') {
-        throw new Error('clinicId é obrigatório');
-      }
-      // TODO: Filtrar métricas por clinicId
-      // Por enquanto retorna métricas padrão
-      return await this.getDashboardMetrics();
+  /**
+   * Retorna relatório filtrado por clinicId
+   * Lança erro se clinicId for vazio ou inválido
+   */
+  async getReportForClinic(clinicId: string): Promise<DashboardMetrics> {
+    if (!clinicId || clinicId.trim() === '') {
+      throw new Error('clinicId é obrigatório');
     }
+    // TODO: Filtrar métricas por clinicId
+    // Por enquanto retorna métricas padrão
+    return await this.getDashboardMetrics();
+  }
 
   /**
    * Retorna métricas completas do dashboard
@@ -113,16 +115,12 @@ export class BiService {
 
     try {
       // === LEADS ===
-      const [leadsSnapshot30d, leadsSnapshot7d, leadsSnapshotHoje, allLeads] =
-        await Promise.all([
-          this.firestore
-            .collection('leads')
-            .where('createdAt', '>=', thirtyDaysAgo)
-            .get(),
-          this.firestore.collection('leads').where('createdAt', '>=', sevenDaysAgo).get(),
-          this.firestore.collection('leads').where('createdAt', '>=', hoje).get(),
-          this.firestore.collection('leads').get(),
-        ]);
+      const [leadsSnapshot30d, leadsSnapshot7d, leadsSnapshotHoje, allLeads] = await Promise.all([
+        this.firestore.collection('leads').where('createdAt', '>=', thirtyDaysAgo).get(),
+        this.firestore.collection('leads').where('createdAt', '>=', sevenDaysAgo).get(),
+        this.firestore.collection('leads').where('createdAt', '>=', hoje).get(),
+        this.firestore.collection('leads').get(),
+      ]);
 
       const leads30d = leadsSnapshot30d.size;
       const leads7d = leadsSnapshot7d.size;
@@ -149,21 +147,11 @@ export class BiService {
       const percentualFrio = totalLeads > 0 ? Math.round((countFrio / totalLeads) * 100) : 0;
 
       // === AGENDAMENTOS ===
-      const [agendadosSnapshot30d, agendadosSnapshot7d, agendadosSnapshotHoje] =
-        await Promise.all([
-          this.firestore
-            .collection('agendamentos')
-            .where('createdAt', '>=', thirtyDaysAgo)
-            .get(),
-          this.firestore
-            .collection('agendamentos')
-            .where('createdAt', '>=', sevenDaysAgo)
-            .get(),
-          this.firestore
-            .collection('agendamentos')
-            .where('createdAt', '>=', hoje)
-            .get(),
-        ]);
+      const [agendadosSnapshot30d, agendadosSnapshot7d, agendadosSnapshotHoje] = await Promise.all([
+        this.firestore.collection('agendamentos').where('createdAt', '>=', thirtyDaysAgo).get(),
+        this.firestore.collection('agendamentos').where('createdAt', '>=', sevenDaysAgo).get(),
+        this.firestore.collection('agendamentos').where('createdAt', '>=', hoje).get(),
+      ]);
 
       const agendados30d = agendadosSnapshot30d.size;
       const agendados7d = agendadosSnapshot7d.size;
@@ -177,7 +165,8 @@ export class BiService {
         .get();
 
       const compareceu30d = compareceuSnapshot.size;
-      const comparecimentoPct = agendados30d > 0 ? Math.round((compareceu30d / agendados30d) * 100) : 0;
+      const comparecimentoPct =
+        agendados30d > 0 ? Math.round((compareceu30d / agendados30d) * 100) : 0;
 
       // === NO-SHOW ===
       const noShowSnapshot = await this.firestore
@@ -207,10 +196,7 @@ export class BiService {
 
       // === FILA DE ENVIO ===
       const [filaPendenteSnapshot, filaEnviados30d, filaFalhas30d] = await Promise.all([
-        this.firestore
-          .collection('fila_envio')
-          .where('status', '==', 'pending')
-          .get(),
+        this.firestore.collection('fila_envio').where('status', '==', 'pending').get(),
         this.firestore
           .collection('fila_envio')
           .where('createdAt', '>=', thirtyDaysAgo)
@@ -263,7 +249,7 @@ export class BiService {
   /**
    * Retorna métricas no formato Prometheus (text/plain)
    * Compatível com scraping do Prometheus
-   * 
+   *
    * @example
    * ```
    * # HELP elevare_leads_total Total de leads
@@ -348,19 +334,20 @@ elevare_leads_por_stage{stage="frio"} ${metrics.percentualFrio}
       {
         etapa: '2. Agendamento Criado',
         quantidade: metrics.agendados30d,
-        percentual: metrics.leads30d > 0 ? Math.round((metrics.agendados30d / metrics.leads30d) * 100) : 0,
+        percentual:
+          metrics.leads30d > 0 ? Math.round((metrics.agendados30d / metrics.leads30d) * 100) : 0,
       },
       {
         etapa: '3. Compareceu',
         quantidade: metrics.compareceu30d,
-        percentual: metrics.leads30d > 0 ? Math.round((metrics.compareceu30d / metrics.leads30d) * 100) : 0,
+        percentual:
+          metrics.leads30d > 0 ? Math.round((metrics.compareceu30d / metrics.leads30d) * 100) : 0,
       },
       // TODO: Adicionar etapa "4. Comprou" quando módulo financeiro estiver pronto
     ];
 
-    const taxaConversaoGeral = metrics.leads30d > 0 
-      ? Math.round((metrics.compareceu30d / metrics.leads30d) * 100) 
-      : 0;
+    const taxaConversaoGeral =
+      metrics.leads30d > 0 ? Math.round((metrics.compareceu30d / metrics.leads30d) * 100) : 0;
 
     return { etapas, taxaConversaoGeral };
   }
@@ -431,9 +418,7 @@ elevare_leads_por_stage{stage="frio"} ${metrics.percentualFrio}
         const telefone = agendamento.telefoneE164;
 
         // Buscar origem do lead pelo telefone
-        const leadDoc = leadsSnapshot.docs.find(
-          l => (l.data() as Lead).telefone === telefone,
-        );
+        const leadDoc = leadsSnapshot.docs.find(l => (l.data() as Lead).telefone === telefone);
 
         if (leadDoc) {
           const lead = leadDoc.data() as Lead;
@@ -452,9 +437,7 @@ elevare_leads_por_stage{stage="frio"} ${metrics.percentualFrio}
           leads: stats.leads,
           agendamentos: stats.agendamentos.size,
           taxaConversao:
-            stats.leads > 0
-              ? Math.round((stats.agendamentos.size / stats.leads) * 100)
-              : 0,
+            stats.leads > 0 ? Math.round((stats.agendamentos.size / stats.leads) * 100) : 0,
         }))
         .sort((a, b) => b.taxaConversao - a.taxaConversao);
 
@@ -466,4 +449,3 @@ elevare_leads_por_stage{stage="frio"} ${metrics.percentualFrio}
     }
   }
 }
-

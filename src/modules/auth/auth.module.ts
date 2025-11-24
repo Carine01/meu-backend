@@ -26,4 +26,3 @@ import { Usuario } from './entities/usuario.entity';
   exports: [AuthService, JwtStrategy],
 })
 export class AuthModule {}
-

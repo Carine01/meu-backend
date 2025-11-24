@@ -82,4 +82,3 @@ export class WhatsAppController {
     return { phoneNumber, hasWhatsApp };
   }
 }
-

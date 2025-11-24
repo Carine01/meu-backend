@@ -29,20 +29,20 @@ export interface EventQueryDto {
 
 @Injectable()
 export class EventsService {
-    async findAll(): Promise<Evento[]> {
-      // Mock para teste
-      return [];
-    }
+  async findAll(): Promise<Evento[]> {
+    // Mock para teste
+    return [];
+  }
 
-    async registrar(evento: Partial<Evento>): Promise<Evento> {
-      // Mock para teste
-      return { ...evento, id: 'mock-id' } as Evento;
-    }
+  async registrar(evento: Partial<Evento>): Promise<Evento> {
+    // Mock para teste
+    return { ...evento, id: 'mock-id' } as Evento;
+  }
 
-    async findByTipo(tipo: string): Promise<Evento[]> {
-      // Mock para teste
-      return [];
-    }
+  async findByTipo(tipo: string): Promise<Evento[]> {
+    // Mock para teste
+    return [];
+  }
   private readonly logger = new Logger(EventsService.name);
 
   constructor(
@@ -62,10 +62,8 @@ export class EventsService {
       });
 
       const saved = await this.eventsRepository.save(event);
-      
-      this.logger.debug(
-        `Event logged: ${dto.eventType} for lead ${dto.leadId || 'N/A'}`
-      );
+
+      this.logger.debug(`Event logged: ${dto.eventType} for lead ${dto.leadId || 'N/A'}`);
 
       return saved;
     } catch (error: any) {
@@ -119,11 +117,7 @@ export class EventsService {
   /**
    * Busca eventos de um tipo específico
    */
-  async getEventsByType(
-    eventType: EventType,
-    startDate?: Date,
-    endDate?: Date,
-  ): Promise<Event[]> {
+  async getEventsByType(eventType: EventType, startDate?: Date, endDate?: Date): Promise<Event[]> {
     const where: FindOptionsWhere<Event> = { eventType };
 
     if (startDate && endDate) {
@@ -154,7 +148,7 @@ export class EventsService {
     const results = await query.getRawMany();
 
     const stats: Record<string, number> = {};
-    results.forEach((r) => {
+    results.forEach(r => {
       stats[r.eventType] = parseInt(r.count, 10);
     });
 
@@ -180,10 +174,7 @@ export class EventsService {
   /**
    * Conta eventos de um tipo específico para um lead
    */
-  async countEventsByLeadAndType(
-    leadId: string,
-    eventType: EventType,
-  ): Promise<number> {
+  async countEventsByLeadAndType(leadId: string, eventType: EventType): Promise<number> {
     return this.eventsRepository.count({
       where: { leadId, eventType },
     });
@@ -193,10 +184,7 @@ export class EventsService {
    * Marca eventos como processados (para processamento assíncrono)
    */
   async markAsProcessed(eventIds: string[]): Promise<void> {
-    await this.eventsRepository.update(
-      eventIds,
-      { processed: true },
-    );
+    await this.eventsRepository.update(eventIds, { processed: true });
   }
 
   /**
@@ -259,4 +247,3 @@ export class EventsService {
       .getMany();
   }
 }
-

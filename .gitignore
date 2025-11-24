@@ -1,13 +1,28 @@
 node_modules/
 dist/
+build/
 .env
 .env.local
 *.log
-firebase-config.jsnode_modules/
-dist/
-.env
+
 # Firebase service account (do not commit)
 *.serviceAccount.json
 service-account.json
 *.firebase-admin.json
 *.credentials.json
+
+# Elevare validation reports and automation artifacts
+.elevare_validation_report/
+*.elevare_validation_report/
+AUTOMACAO_COMPLETA.txt
+
+# Test coverage
+coverage/
+.nyc_output/
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~

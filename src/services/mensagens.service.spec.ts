@@ -13,10 +13,7 @@ describe('MensagensService', () => {
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      providers: [
-        MensagensService,
-        { provide: 'MensagemRepository', useValue: mockRepo() },
-      ],
+      providers: [MensagensService, { provide: 'MensagemRepository', useValue: mockRepo() }],
     }).compile();
     service = module.get(MensagensService);
     repo = module.get<MockRepo>('MensagemRepository');

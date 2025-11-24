@@ -76,17 +76,17 @@ describe('EventsService', () => {
 
     const resultado = await service.registrar(evento);
     expect(resultado).toHaveProperty('id');
-    expect(mockFirestore.add).toHaveBeenCalledWith(expect.objectContaining({
-      tipo: 'agendamento_criado',
-    }));
+    expect(mockFirestore.add).toHaveBeenCalledWith(
+      expect.objectContaining({
+        tipo: 'agendamento_criado',
+      }),
+    );
   });
 
   it('deve filtrar eventos por tipo', async () => {
     mockFirestore.get.mockResolvedValue({
       empty: false,
-      docs: [
-        { id: '1', data: () => ({ tipo: 'lead_criado' }) },
-      ],
+      docs: [{ id: '1', data: () => ({ tipo: 'lead_criado' }) }],
     });
 
     const resultado = await service.findByTipo('lead_criado');

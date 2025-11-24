@@ -10,10 +10,7 @@ describe('BloqueiosService', () => {
   let service: BloqueiosService;
   beforeEach(async () => {
     const module = await Test.createTestingModule({
-      providers: [
-        BloqueiosService,
-        { provide: getRepositoryToken(Bloqueio), useValue: r() },
-      ],
+      providers: [BloqueiosService, { provide: getRepositoryToken(Bloqueio), useValue: r() }],
     }).compile();
     service = module.get(BloqueiosService);
   });

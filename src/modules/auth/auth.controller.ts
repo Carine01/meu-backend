@@ -46,4 +46,3 @@ export class AuthController {
     return { message: 'Admin seed executado' };
   }
 }
-

@@ -62,9 +62,9 @@ describe('WhatsAppService', () => {
     it('deve lançar erro se envio falhar', async () => {
       mockProvider.sendMessage.mockRejectedValue(new Error('Erro de rede'));
 
-      await expect(
-        service.sendTextMessage('+5511999999999', 'Olá!')
-      ).rejects.toThrow('Erro de rede');
+      await expect(service.sendTextMessage('+5511999999999', 'Olá!')).rejects.toThrow(
+        'Erro de rede',
+      );
     });
   });
 
@@ -72,9 +72,9 @@ describe('WhatsAppService', () => {
     it('deve tentar enviar 3 vezes antes de falhar', async () => {
       mockProvider.sendMessage.mockRejectedValue(new Error('Timeout'));
 
-      await expect(
-        service.sendWithRetry('+5511999999999', 'Teste', 3)
-      ).rejects.toThrow('Falha ao enviar mensagem após 3 tentativas');
+      await expect(service.sendWithRetry('+5511999999999', 'Teste', 3)).rejects.toThrow(
+        'Falha ao enviar mensagem após 3 tentativas',
+      );
 
       expect(mockProvider.sendMessage).toHaveBeenCalledTimes(3);
     });
@@ -119,14 +119,14 @@ describe('WhatsAppService', () => {
       const result = await service.sendMediaMessage(
         '+5511999999999',
         'https://example.com/image.jpg',
-        'Legenda da imagem'
+        'Legenda da imagem',
       );
 
       expect(result.messageId).toBe(mockMessageId);
       expect(mockProvider.sendMedia).toHaveBeenCalledWith(
         '+5511999999999',
         'https://example.com/image.jpg',
-        'Legenda da imagem'
+        'Legenda da imagem',
       );
     });
   });
@@ -136,18 +136,16 @@ describe('WhatsAppService', () => {
       const mockMessageId = 'template123';
       mockProvider.sendTemplate.mockResolvedValue(mockMessageId);
 
-      const result = await service.sendTemplateMessage(
-        '+5511999999999',
-        'hello_world',
-        ['Maria', 'Silva']
-      );
+      const result = await service.sendTemplateMessage('+5511999999999', 'hello_world', [
+        'Maria',
+        'Silva',
+      ]);
 
       expect(result.messageId).toBe(mockMessageId);
-      expect(mockProvider.sendTemplate).toHaveBeenCalledWith(
-        '+5511999999999',
-        'hello_world',
-        ['Maria', 'Silva']
-      );
+      expect(mockProvider.sendTemplate).toHaveBeenCalledWith('+5511999999999', 'hello_world', [
+        'Maria',
+        'Silva',
+      ]);
     });
   });
 });

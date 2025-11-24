@@ -22,7 +22,9 @@ describe('MensagemResolverService - clinicId isolation', () => {
   });
 
   it('should throw error for empty clinicId in resolverMensagemPorClinica', async () => {
-    await expect(service.resolverMensagemPorClinica('template', '')).rejects.toThrow('clinicId é obrigatório');
+    await expect(service.resolverMensagemPorClinica('template', '')).rejects.toThrow(
+      'clinicId é obrigatório',
+    );
   });
 
   it('should throw error for empty clinicId in getPerfilPorClinica', async () => {

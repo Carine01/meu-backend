@@ -9,10 +9,7 @@ describe('AuthService', () => {
   let auth: AuthService;
   beforeEach(async () => {
     const module = await Test.createTestingModule({
-      providers: [
-        AuthService,
-        { provide: UsersService, useValue: userMock },
-      ],
+      providers: [AuthService, { provide: UsersService, useValue: userMock }],
     }).compile();
     auth = module.get(AuthService);
   });

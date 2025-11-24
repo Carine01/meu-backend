@@ -6,7 +6,7 @@
  * Converte telefone brasileiro para formato E.164 internacional
  * @param phone Telefone em qualquer formato: (11) 99999-9999, 11999999999, +5511999999999
  * @returns Telefone no formato +5511999999999 ou null se inválido
- * 
+ *
  * @example
  * toE164('11999999999') // '+5511999999999'
  * toE164('(11) 99999-9999') // '+5511999999999'
@@ -52,7 +52,7 @@ export function toE164(phone: string): string | null {
  * Valida se telefone está no formato E.164
  * @param phone Telefone para validar
  * @returns true se está no formato +55XXXXXXXXXXX
- * 
+ *
  * @example
  * isValidE164('+5511999999999') // true
  * isValidE164('11999999999') // false
@@ -67,7 +67,7 @@ export function isValidE164(phone: string): boolean {
  * Formata telefone para exibição visual (formato brasileiro)
  * @param phone Telefone em qualquer formato
  * @returns Formato visual: (11) 99999-9999 ou (11) 3333-3333
- * 
+ *
  * @example
  * formatPhoneDisplay('+5511999999999') // '(11) 99999-9999'
  * formatPhoneDisplay('11999999999') // '(11) 99999-9999'
@@ -95,7 +95,7 @@ export function formatPhoneDisplay(phone: string): string {
  * Valida se telefone é celular (tem 9 dígitos após o DDD)
  * @param phone Telefone em qualquer formato
  * @returns true se for celular
- * 
+ *
  * @example
  * isCelular('+5511999999999') // true
  * isCelular('+551133333333') // false
@@ -103,7 +103,7 @@ export function formatPhoneDisplay(phone: string): string {
 export function isCelular(phone: string): boolean {
   const e164 = toE164(phone);
   if (!e164) return false;
-  
+
   const digits = e164.replace('+55', '');
   return digits.length === 11;
 }
@@ -112,7 +112,7 @@ export function isCelular(phone: string): boolean {
  * Extrai DDD do telefone
  * @param phone Telefone em qualquer formato
  * @returns DDD (2 dígitos) ou null se inválido
- * 
+ *
  * @example
  * extractDDD('+5511999999999') // '11'
  * extractDDD('(21) 98888-8888') // '21'
@@ -120,7 +120,7 @@ export function isCelular(phone: string): boolean {
 export function extractDDD(phone: string): string | null {
   const e164 = toE164(phone);
   if (!e164) return null;
-  
+
   const digits = e164.replace('+55', '');
   return digits.substring(0, 2);
 }
@@ -129,10 +129,66 @@ export function extractDDD(phone: string): string | null {
  * Lista de DDDs válidos do Brasil por região
  */
 export const DDD_VALIDOS = {
-  SUDESTE: ['11', '12', '13', '14', '15', '16', '17', '18', '19', '21', '22', '24', '27', '28', '31', '32', '33', '34', '35', '37', '38'],
+  SUDESTE: [
+    '11',
+    '12',
+    '13',
+    '14',
+    '15',
+    '16',
+    '17',
+    '18',
+    '19',
+    '21',
+    '22',
+    '24',
+    '27',
+    '28',
+    '31',
+    '32',
+    '33',
+    '34',
+    '35',
+    '37',
+    '38',
+  ],
   SUL: ['41', '42', '43', '44', '45', '46', '47', '48', '49', '51', '53', '54', '55'],
-  NORDESTE: ['71', '73', '74', '75', '77', '79', '81', '82', '83', '84', '85', '86', '87', '88', '89'],
-  NORTE: ['61', '62', '63', '64', '65', '66', '67', '68', '69', '91', '92', '93', '94', '95', '96', '97', '98'],
+  NORDESTE: [
+    '71',
+    '73',
+    '74',
+    '75',
+    '77',
+    '79',
+    '81',
+    '82',
+    '83',
+    '84',
+    '85',
+    '86',
+    '87',
+    '88',
+    '89',
+  ],
+  NORTE: [
+    '61',
+    '62',
+    '63',
+    '64',
+    '65',
+    '66',
+    '67',
+    '68',
+    '69',
+    '91',
+    '92',
+    '93',
+    '94',
+    '95',
+    '96',
+    '97',
+    '98',
+  ],
 };
 
 /**
@@ -141,4 +197,3 @@ export const DDD_VALIDOS = {
 export function isValidDDD(ddd: string): boolean {
   return Object.values(DDD_VALIDOS).flat().includes(ddd);
 }
-

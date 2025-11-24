@@ -1,4 +1,14 @@
-import { Controller, Get, Post, Put, Body, Param, Query, BadRequestException, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Put,
+  Body,
+  Param,
+  Query,
+  BadRequestException,
+  UseGuards,
+} from '@nestjs/common';
 import { AgendamentosService } from './agendamentos.service';
 import { BloqueiosService } from './bloqueios.service';
 import { Agendamento } from './entities/agendamento.entity';
@@ -17,12 +27,12 @@ export class AgendamentosController {
     // Verificar bloqueios antes de criar
     if (dados.startISO && dados.duracaoMinutos) {
       const data = new Date(dados.startISO);
-      const hora = data.toLocaleTimeString('pt-BR', { 
-        hour: '2-digit', 
+      const hora = data.toLocaleTimeString('pt-BR', {
+        hour: '2-digit',
         minute: '2-digit',
-        hour12: false 
+        hour12: false,
       });
-      
+
       const verificacao = await this.bloqueiosService.isHorarioBloqueado(
         dados.clinicId || 'default',
         dados.startISO,
@@ -44,10 +54,7 @@ export class AgendamentosController {
   }
 
   @Put(':id/cancelar')
-  async cancelar(
-    @Param('id') id: string,
-    @Body('motivo') motivo?: string,
-  ): Promise<void> {
+  async cancelar(@Param('id') id: string, @Body('motivo') motivo?: string): Promise<void> {
     return this.agendamentosService.cancelarAgendamento(id, motivo);
   }
 
@@ -81,11 +88,7 @@ export class AgendamentosController {
     @Query('data') data: string,
     @Query('duracao') duracao: string,
   ) {
-    return this.bloqueiosService.sugerirHorarioLivre(
-      clinicId,
-      data,
-      parseInt(duracao, 10),
-    );
+    return this.bloqueiosService.sugerirHorarioLivre(clinicId, data, parseInt(duracao, 10));
   }
 
   /**
@@ -129,12 +132,7 @@ export class AgendamentosController {
     @Query('hora') hora: string,
     @Query('duracao') duracao: string,
   ) {
-    return this.bloqueiosService.isHorarioBloqueado(
-      clinicId,
-      data,
-      hora,
-      parseInt(duracao, 10),
-    );
+    return this.bloqueiosService.isHorarioBloqueado(clinicId, data, hora, parseInt(duracao, 10));
   }
 
   /**
@@ -146,5 +144,3 @@ export class AgendamentosController {
     return this.bloqueiosService.listarBloqueios(clinicId);
   }
 }
-
-

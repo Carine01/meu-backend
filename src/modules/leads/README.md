@@ -7,6 +7,7 @@ Sistema central de gestão de leads com integração Supabase e IARA.
 ## 📋 Funcionalidades
 
 ### ✅ Gestão de Leads
+
 - Criar novos leads (manual ou via integração)
 - Atualizar dados de leads
 - Buscar e filtrar leads
@@ -15,6 +16,7 @@ Sistema central de gestão de leads com integração Supabase e IARA.
 - Export de relatórios
 
 ### 🔗 Integrações
+
 - **Supabase:** Envia leads para processamento
 - **IARA:** Sistema inteligente processa leads
 - **RD Station:** Sincronização de dados
@@ -25,6 +27,7 @@ Sistema central de gestão de leads com integração Supabase e IARA.
 ## 🎯 Endpoints Principais
 
 ### POST `/leads`
+
 Criar novo lead (3 etapas automáticas)
 
 ```typescript
@@ -59,6 +62,7 @@ Response:
 ```
 
 **Fluxo Automático:**
+
 1. ✅ Validar dados (telefone, email)
 2. ✅ Salvar no PostgreSQL
 3. ✅ Enviar para Supabase (processamento)
@@ -67,6 +71,7 @@ Response:
 ---
 
 ### GET `/leads`
+
 Listar leads com filtros
 
 ```typescript
@@ -94,6 +99,7 @@ Response:
 ```
 
 ### GET `/leads/:id`
+
 Buscar lead específico
 
 ```typescript
@@ -120,6 +126,7 @@ Response:
 ```
 
 ### PUT `/leads/:id`
+
 Atualizar lead
 
 ```typescript
@@ -162,20 +169,20 @@ leads/
   email?: string;
   cpf?: string;
   dataNascimento?: Date;
-  
+
   status: 'novo' | 'ativo' | 'inativo' | 'convertido' | 'perdido';
   origem: 'google' | 'instagram' | 'facebook' | 'indicacao' | 'whatsapp' | 'outro';
   tags: string[];                // ['ppc', 'terapia-online']
-  
+
   primeiroContato?: Date;
   ultimoContato?: Date;
   observacoes?: string;
-  
+
   // Relacionamentos
   agendamentos?: Agendamento[];
   indicacoes?: Indicacao[];
   eventos?: Event[];
-  
+
   createdAt: Date;
   updatedAt: Date;
 }
@@ -185,26 +192,26 @@ leads/
 
 ## 📊 Status de Lead
 
-| Status | Descrição | Quando |
-|--------|-----------|--------|
-| **novo** | Recém cadastrado | Lead criado |
-| **ativo** | Engajado | Respondeu mensagem ou agendou |
-| **inativo** | Sem contato > 30 dias | Automático via cron |
-| **convertido** | Cliente pagante | Primeira sessão confirmada |
-| **perdido** | Não converteu | Desistiu ou não responde |
+| Status         | Descrição             | Quando                        |
+| -------------- | --------------------- | ----------------------------- |
+| **novo**       | Recém cadastrado      | Lead criado                   |
+| **ativo**      | Engajado              | Respondeu mensagem ou agendou |
+| **inativo**    | Sem contato > 30 dias | Automático via cron           |
+| **convertido** | Cliente pagante       | Primeira sessão confirmada    |
+| **perdido**    | Não converteu         | Desistiu ou não responde      |
 
 ---
 
 ## 🎯 Origens de Lead
 
-| Origem | Descrição |
-|--------|-----------|
-| `google` | Google Ads, SEO |
-| `instagram` | Instagram Ads, Stories |
-| `facebook` | Facebook Ads, Messenger |
-| `indicacao` | Indicado por cliente |
-| `whatsapp` | Contato direto |
-| `outro` | Outras fontes |
+| Origem      | Descrição               |
+| ----------- | ----------------------- |
+| `google`    | Google Ads, SEO         |
+| `instagram` | Instagram Ads, Stories  |
+| `facebook`  | Facebook Ads, Messenger |
+| `indicacao` | Indicado por cliente    |
+| `whatsapp`  | Contato direto          |
+| `outro`     | Outras fontes           |
 
 ---
 
@@ -231,6 +238,7 @@ graph TD
 ## 🔗 Integração Supabase
 
 ### Envio Automático
+
 ```typescript
 // Ao criar lead
 const lead = await this.leadsRepository.save(data);
@@ -241,11 +249,12 @@ await this.supabaseService.sincronizarLead({
   nome: lead.nome,
   telefone: lead.telefone,
   email: lead.email,
-  clinicId: lead.clinicId
+  clinicId: lead.clinicId,
 });
 ```
 
 ### Resposta da IARA
+
 ```json
 {
   "status": "processado",
@@ -260,12 +269,14 @@ await this.supabaseService.sincronizarLead({
 ## 🏷️ Sistema de Tags
 
 ### Tags Automáticas
+
 - `novo` - Lead recém criado
 - `retorno` - Lead retornando após inatividade
 - `vip` - Múltiplas indicações ou alto engajamento
 - `risco` - Sem resposta por 7+ dias
 
 ### Tags Customizadas
+
 ```typescript
 PUT /leads/lead123
 {
@@ -306,6 +317,7 @@ PUT /leads/lead123
 ## 🛠️ Configuração
 
 ### Variáveis de Ambiente
+
 ```env
 # Supabase
 SUPABASE_URL=https://xxxxx.supabase.co
@@ -339,6 +351,7 @@ npm run test:e2e -- leads.e2e-spec.ts
 ## 🔧 Como Usar
 
 ### 1. Criar Lead Simples
+
 ```bash
 curl -X POST http://localhost:3000/api/leads \
   -H "Authorization: Bearer <token>" \
@@ -351,6 +364,7 @@ curl -X POST http://localhost:3000/api/leads \
 ```
 
 ### 2. Criar Lead Completo
+
 ```bash
 curl -X POST http://localhost:3000/api/leads \
   -H "Authorization: Bearer <token>" \
@@ -367,12 +381,14 @@ curl -X POST http://localhost:3000/api/leads \
 ```
 
 ### 3. Buscar Leads
+
 ```bash
 curl "http://localhost:3000/api/leads?status=novo&origem=google" \
   -H "Authorization: Bearer <token>"
 ```
 
 ### 4. Atualizar Status
+
 ```bash
 curl -X PUT http://localhost:3000/api/leads/lead123 \
   -H "Authorization: Bearer <token>" \
@@ -385,6 +401,7 @@ curl -X PUT http://localhost:3000/api/leads/lead123 \
 ## 📈 Importação em Lote
 
 ### CSV Format
+
 ```csv
 nome,telefone,email,origem,tags
 Maria Silva,+5511999999999,maria@email.com,google,"ppc,terapia-online"
@@ -392,6 +409,7 @@ João Santos,+5511988888888,joao@email.com,instagram,"stories,terapia-individual
 ```
 
 ### Endpoint
+
 ```typescript
 POST /leads/importar
 Content-Type: multipart/form-data
@@ -418,6 +436,7 @@ Response:
 ## 📊 Relatórios
 
 ### Estatísticas de Leads
+
 ```typescript
 GET /leads/estatisticas?periodo=30d
 
@@ -457,14 +476,17 @@ Response:
 ## 🐛 Troubleshooting
 
 ### Problema: "Telefone inválido"
+
 **Causa:** Formato incorreto (deve ser +55...)  
 **Solução:** Usar formato E.164: `+5511999999999`
 
 ### Problema: "Lead não sincronizado com Supabase"
+
 **Causa:** Credenciais Supabase incorretas  
 **Solução:** Verificar variáveis `SUPABASE_URL` e `SUPABASE_KEY`
 
 ### Problema: "IARA não processou"
+
 **Causa:** API IARA offline ou credenciais inválidas  
 **Solução:** Verificar `IARA_API_URL` e `IARA_API_KEY`
 

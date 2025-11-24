@@ -3,12 +3,12 @@ import { Lead } from '../mensagens/entities/mensagem.entity';
 
 /**
  * Service de cálculo de Score e determinação de Stages
- * 
+ *
  * REGRAS DE NEGÓCIO (35+ regras):
- * 
+ *
  * SCORE BASE:
  * - Lead novo: 20 pontos
- * 
+ *
  * COMPORTAMENTO LANDING PAGE:
  * - Time on page > 120s: +15 pontos
  * - Time on page > 60s: +10 pontos
@@ -16,7 +16,7 @@ import { Lead } from '../mensagens/entities/mensagem.entity';
  * - Scroll depth > 50%: +5 pontos
  * - Vídeo assistido > 70%: +15 pontos
  * - Clicou botão WhatsApp: +25 pontos (alta intenção)
- * 
+ *
  * ORIGEM:
  * - Indicação: +20 pontos (confiança)
  * - WhatsApp direto: +15 pontos
@@ -24,7 +24,7 @@ import { Lead } from '../mensagens/entities/mensagem.entity';
  * - Facebook Ads: +5 pontos
  * - Google Ads: +10 pontos
  * - Orgânico: +5 pontos
- * 
+ *
  * EVENTOS PÓS-CAPTAÇÃO:
  * - Agendamento criado: +30 pontos
  * - Mensagem simulada (resposta WhatsApp): +5 pontos/interação
@@ -32,12 +32,12 @@ import { Lead } from '../mensagens/entities/mensagem.entity';
  * - No-show: -15 pontos
  * - Reagendamento: +10 pontos (ainda interessado)
  * - Comprou pacote: +40 pontos
- * 
+ *
  * STAGES (baseado no score final):
  * - QUENTE (70-100): Prioridade máxima, autoridade suprema, fechar venda
  * - MORNO (40-69): Aquecimento, quebra de objeções, educação
  * - FRIO (0-39): Nutrição longa, reativação, conteúdo educacional
- * 
+ *
  * ETIQUETAS AUTOMÁTICAS:
  * - Gênero: Homens / Mulheres
  * - Faixa etária: Jovem (18-29), Adulto (30-44), 45PLUS (45+)
@@ -51,7 +51,7 @@ export class LeadsScoreService {
 
   /**
    * Calcula score completo do lead baseado em todas as métricas disponíveis
-   * 
+   *
    * @param lead - Objeto lead com todos os campos
    * @returns Score de 0 a 100
    */
@@ -92,7 +92,7 @@ export class LeadsScoreService {
     // === ORIGEM ===
     if (lead.origem) {
       const origemLower = lead.origem.toLowerCase();
-      
+
       if (origemLower.includes('indicacao') || origemLower.includes('indicação')) {
         score += 20;
         this.logger.debug('[Score] +20 (indicação)');
@@ -134,7 +134,7 @@ export class LeadsScoreService {
 
   /**
    * Determina stage do lead baseado no score
-   * 
+   *
    * @param score - Score calculado (0-100)
    * @returns Stage: frio, morno ou quente
    */
@@ -150,7 +150,7 @@ export class LeadsScoreService {
 
   /**
    * Identifica etiquetas automáticas baseadas nos dados do lead
-   * 
+   *
    * @param lead - Objeto lead
    * @returns Array de etiquetas
    */
@@ -179,7 +179,7 @@ export class LeadsScoreService {
     // === ORIGEM ===
     if (lead.origem) {
       const origemLower = lead.origem.toLowerCase();
-      
+
       if (origemLower.includes('whatsapp')) {
         etiquetas.push('WhatsAppLead');
       } else if (origemLower.includes('instagram')) {
@@ -209,26 +209,21 @@ export class LeadsScoreService {
     // === INTERESSE ===
     if (lead.interesse) {
       // Normaliza interesse para etiqueta
-      const interesseNormalizado = lead.interesse
-        .trim()
-        .replace(/\s+/g, '')
-        .toLowerCase();
-      
+      const interesseNormalizado = lead.interesse.trim().replace(/\s+/g, '').toLowerCase();
+
       etiquetas.push(`Interesse_${interesseNormalizado}`);
     }
 
     // === STATUS INICIAL ===
     etiquetas.push('NovoCliente'); // Todo lead novo recebe esta etiqueta
 
-    this.logger.log(
-      `Etiquetas identificadas para ${lead.nome || 'lead'}: ${etiquetas.join(', ')}`,
-    );
+    this.logger.log(`Etiquetas identificadas para ${lead.nome || 'lead'}: ${etiquetas.join(', ')}`);
     return etiquetas;
   }
 
   /**
    * Atualiza score de lead após evento específico
-   * 
+   *
    * @param scoreAtual - Score atual do lead
    * @param evento - Tipo de evento ocorrido
    * @returns Novo score calculado
@@ -259,7 +254,7 @@ export class LeadsScoreService {
 
   /**
    * Adiciona etiquetas dinâmicas baseadas em comportamento
-   * 
+   *
    * @param etiquetasAtuais - Etiquetas existentes do lead
    * @param evento - Evento que desencadeia nova etiqueta
    * @returns Novo array de etiquetas
@@ -282,7 +277,7 @@ export class LeadsScoreService {
     };
 
     const novaEtiqueta = mapeamentoEventoEtiqueta[evento];
-    
+
     if (novaEtiqueta && !novasEtiquetas.includes(novaEtiqueta)) {
       novasEtiquetas.push(novaEtiqueta);
       this.logger.log(`Nova etiqueta adicionada: ${novaEtiqueta}`);
@@ -296,7 +291,7 @@ export class LeadsScoreService {
         const index = novasEtiquetas.indexOf(e);
         if (index > -1) novasEtiquetas.splice(index, 1);
       });
-      
+
       // Remove NoShow se compareceu
       const indexNoShow = novasEtiquetas.indexOf('NoShow');
       if (indexNoShow > -1) novasEtiquetas.splice(indexNoShow, 1);
@@ -307,7 +302,7 @@ export class LeadsScoreService {
 
   /**
    * Sugere próxima mensagem ideal baseada no stage e etiquetas
-   * 
+   *
    * @param stage - Stage atual do lead
    * @param etiquetas - Etiquetas do lead
    * @returns Key da mensagem sugerida
@@ -342,7 +337,7 @@ export class LeadsScoreService {
   /**
    * Calcula prioridade de atendimento (0-10)
    * Usado para ordenar fila de atendimento humano
-   * 
+   *
    * @param lead - Lead completo
    * @returns Prioridade de 0 (baixa) a 10 (altíssima)
    */
@@ -379,4 +374,3 @@ export class LeadsScoreService {
     return Math.min(10, Math.max(0, prioridade));
   }
 }
-

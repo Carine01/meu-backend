@@ -8,15 +8,15 @@ import { LoginDto, RegisterDto } from './dto/auth.dto';
 
 @Injectable()
 export class AuthService {
-    async validateUser(email: string, password: string): Promise<any> {
-      // Mock para teste
-      return { email, id: 'mock-id' };
-    }
+  async validateUser(email: string, password: string): Promise<any> {
+    // Mock para teste
+    return { email, id: 'mock-id' };
+  }
 
-    async validateToken(token: string): Promise<boolean> {
-      // Mock para teste
-      return true;
-    }
+  async validateToken(token: string): Promise<boolean> {
+    // Mock para teste
+    return true;
+  }
   private readonly logger = new Logger(AuthService.name);
 
   constructor(
@@ -26,8 +26,8 @@ export class AuthService {
   ) {}
 
   async login(loginDto: LoginDto): Promise<{ access_token: string; user: any }> {
-    const usuario = await this.usuarioRepo.findOne({ 
-      where: { email: loginDto.email, ativo: true } 
+    const usuario = await this.usuarioRepo.findOne({
+      where: { email: loginDto.email, ativo: true },
     });
 
     if (!usuario) {
@@ -39,8 +39,8 @@ export class AuthService {
       throw new UnauthorizedException('Credenciais inválidas');
     }
 
-    const payload = { 
-      sub: usuario.id, 
+    const payload = {
+      sub: usuario.id,
       email: usuario.email,
       clinicId: usuario.clinicId,
       roles: usuario.roles,
@@ -61,8 +61,8 @@ export class AuthService {
   }
 
   async register(registerDto: RegisterDto): Promise<Usuario> {
-    const existe = await this.usuarioRepo.findOne({ 
-      where: { email: registerDto.email } 
+    const existe = await this.usuarioRepo.findOne({
+      where: { email: registerDto.email },
     });
 
     if (existe) {
@@ -103,4 +103,3 @@ export class AuthService {
     }
   }
 }
-

@@ -3,7 +3,7 @@ import { createParamDecorator, ExecutionContext } from '@nestjs/common';
 
 /**
  * Decorator para injetar correlationId nos controllers
- * 
+ *
  * @example
  * async create(@CorrelationId() correlationId: string) {
  *   const logger = getLogger('auth', correlationId);

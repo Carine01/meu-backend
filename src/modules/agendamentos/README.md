@@ -7,6 +7,7 @@ Sistema completo de gestão de agendamentos com verificação automática de blo
 ## 📋 Funcionalidades
 
 ### ✅ Agendamentos
+
 - Criar novo agendamento
 - Confirmar agendamento
 - Cancelar agendamento (com motivo)
@@ -16,6 +17,7 @@ Sistema completo de gestão de agendamentos com verificação automática de blo
 - Listar agendamentos por período
 
 ### 🚫 Bloqueios Automáticos
+
 - Horários de almoço (12h-14h)
 - Finais de semana (sábados e domingos)
 - Feriados nacionais
@@ -26,6 +28,7 @@ Sistema completo de gestão de agendamentos com verificação automática de blo
 ## 🎯 Endpoints Principais
 
 ### POST `/agendamentos`
+
 Criar novo agendamento (verifica bloqueios automaticamente)
 
 ```typescript
@@ -41,10 +44,13 @@ Authorization: Bearer <token>
 ```
 
 ### PUT `/agendamentos/:id/confirmar`
+
 Confirmar agendamento
 
 ### PUT `/agendamentos/:id/cancelar`
+
 Cancelar agendamento
+
 ```json
 {
   "motivo": "Paciente solicitou"
@@ -52,6 +58,7 @@ Cancelar agendamento
 ```
 
 ### GET `/agendamentos/sugerir/:clinicId`
+
 Sugerir horários livres
 
 ---
@@ -74,6 +81,7 @@ agendamentos/
 ## 💾 Entidades
 
 ### Agendamento
+
 ```typescript
 {
   id: string;
@@ -91,6 +99,7 @@ agendamentos/
 ```
 
 ### Bloqueio
+
 ```typescript
 {
   id: string;
@@ -127,16 +136,19 @@ graph TD
 ## 🚫 Regras de Bloqueio
 
 ### 1. **Almoço**
+
 - **Horário:** 12:00 - 14:00
 - **Dias:** Segunda a Sexta
 - **Aplicação:** Automática
 
 ### 2. **Sábados**
+
 - **Horário:** 08:00 - 12:00 (permitido)
 - **Bloqueio:** 12:00 - 18:00
 - **Domingo:** Totalmente bloqueado
 
 ### 3. **Feriados Nacionais**
+
 - Ano Novo (01/01)
 - Carnaval (móvel)
 - Sexta-feira Santa (móvel)
@@ -194,6 +206,7 @@ Todos os eventos são logados com contexto:
 ## 🛠️ Configuração
 
 ### Variáveis de Ambiente
+
 ```env
 # Nenhuma variável específica necessária
 # Usa as configurações globais de database
@@ -214,10 +227,12 @@ Todos os eventos são logados com contexto:
 ## 🐛 Troubleshooting
 
 ### Problema: "Horário bloqueado"
+
 **Causa:** Tentou agendar em horário de almoço, sábado à tarde ou feriado  
 **Solução:** Use o endpoint `/sugerir` para ver horários disponíveis
 
 ### Problema: "Agendamento não encontrado"
+
 **Causa:** ID inválido ou agendamento de outra clínica  
 **Solução:** Verifique se está usando o clinicId correto
 

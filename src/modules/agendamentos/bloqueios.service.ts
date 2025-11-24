@@ -5,17 +5,17 @@ import { Bloqueio } from './entities/bloqueio.entity';
 
 @Injectable()
 export class BloqueiosService {
-    async create(dto: Partial<Bloqueio>): Promise<Bloqueio> {
-      // Mock para teste
-      return { ...dto, id: 'mock-id' } as Bloqueio;
-    }
+  async create(dto: Partial<Bloqueio>): Promise<Bloqueio> {
+    // Mock para teste
+    return { ...dto, id: 'mock-id' } as Bloqueio;
+  }
 
-    async remover(id: string): Promise<void> {
-      // Mock para teste
-      return;
-    }
+  async remover(id: string): Promise<void> {
+    // Mock para teste
+    return;
+  }
   private readonly logger = new Logger(BloqueiosService.name);
-  
+
   private readonly FERIADOS_NACIONAIS = [
     '2025-01-01', // Ano Novo
     '2025-04-21', // Tiradentes
@@ -66,7 +66,7 @@ export class BloqueiosService {
   async bloquearSabados(clinicId: string): Promise<void> {
     for (let i = 0; i < 8; i++) {
       const data = new Date();
-      data.setDate(data.getDate() + (i * 7)); // Próximos 8 sábados
+      data.setDate(data.getDate() + i * 7); // Próximos 8 sábados
 
       // Encontrar próximo sábado
       while (data.getDay() !== 6) {
@@ -210,4 +210,3 @@ export class BloqueiosService {
     this.logger.log(`🗑️ Bloqueio removido: ${bloqueioId}`);
   }
 }
-

@@ -7,34 +7,32 @@ describe('Tenant Utilities', () => {
     it('should apply clinicId filter to query builder', () => {
       const mockQb = {
         expressionMap: {
-          mainAlias: { name: 'mensagem' }
+          mainAlias: { name: 'mensagem' },
         },
-        andWhere: jest.fn().mockReturnThis()
+        andWhere: jest.fn().mockReturnThis(),
       } as unknown as SelectQueryBuilder<any>;
 
       const result = applyClinicIdFilter(mockQb, 'clinic-123');
 
-      expect(mockQb.andWhere).toHaveBeenCalledWith(
-        'mensagem.clinicId = :clinicId',
-        { clinicId: 'clinic-123' }
-      );
+      expect(mockQb.andWhere).toHaveBeenCalledWith('mensagem.clinicId = :clinicId', {
+        clinicId: 'clinic-123',
+      });
       expect(result).toBe(mockQb);
     });
 
     it('should use custom column name', () => {
       const mockQb = {
         expressionMap: {
-          mainAlias: { name: 'user' }
+          mainAlias: { name: 'user' },
         },
-        andWhere: jest.fn().mockReturnThis()
+        andWhere: jest.fn().mockReturnThis(),
       } as unknown as SelectQueryBuilder<any>;
 
       applyClinicIdFilter(mockQb, 'clinic-456', 'customClinicId');
 
-      expect(mockQb.andWhere).toHaveBeenCalledWith(
-        'user.customClinicId = :clinicId',
-        { clinicId: 'clinic-456' }
-      );
+      expect(mockQb.andWhere).toHaveBeenCalledWith('user.customClinicId = :clinicId', {
+        clinicId: 'clinic-456',
+      });
     });
   });
 
@@ -61,7 +59,7 @@ describe('Tenant Utilities', () => {
       const req = {
         headers: { 'x-clinic-id': 'clinic-from-header' },
         body: {},
-        query: {}
+        query: {},
       };
 
       expect(extractClinicId(req)).toBe('clinic-from-header');
@@ -69,9 +67,9 @@ describe('Tenant Utilities', () => {
 
     it('should extract from clinicid header (lowercase)', () => {
       const req = {
-        headers: { 'clinicid': 'clinic-lowercase' },
+        headers: { clinicid: 'clinic-lowercase' },
         body: {},
-        query: {}
+        query: {},
       };
 
       expect(extractClinicId(req)).toBe('clinic-lowercase');
@@ -81,7 +79,7 @@ describe('Tenant Utilities', () => {
       const req = {
         headers: {},
         body: { clinicId: 'clinic-from-body' },
-        query: {}
+        query: {},
       };
 
       expect(extractClinicId(req)).toBe('clinic-from-body');
@@ -91,7 +89,7 @@ describe('Tenant Utilities', () => {
       const req = {
         headers: {},
         body: {},
-        query: { clinicId: 'clinic-from-query' }
+        query: { clinicId: 'clinic-from-query' },
       };
 
       expect(extractClinicId(req)).toBe('clinic-from-query');
@@ -101,7 +99,7 @@ describe('Tenant Utilities', () => {
       const req = {
         headers: { 'x-clinic-id': 'clinic-header' },
         body: { clinicId: 'clinic-body' },
-        query: { clinicId: 'clinic-query' }
+        query: { clinicId: 'clinic-query' },
       };
 
       expect(extractClinicId(req)).toBe('clinic-header');
@@ -111,7 +109,7 @@ describe('Tenant Utilities', () => {
       const req = {
         headers: {},
         body: {},
-        query: {}
+        query: {},
       };
 
       expect(extractClinicId(req)).toBeUndefined();

@@ -12,4 +12,3 @@ import { Recompensa } from './entities/recompensa.entity';
   exports: [IndicacoesService],
 })
 export class IndicacoesModule {}
-

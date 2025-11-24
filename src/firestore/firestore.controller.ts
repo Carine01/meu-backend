@@ -23,7 +23,11 @@ export class FirestoreController {
   }
 
   @Put(':collection/:id')
-  async update(@Param('collection') collection: string, @Param('id') id: string, @Body() body: any) {
+  async update(
+    @Param('collection') collection: string,
+    @Param('id') id: string,
+    @Body() body: any,
+  ) {
     return this.fs.update(collection, id, body);
   }
 
@@ -32,4 +36,3 @@ export class FirestoreController {
     return this.fs.remove(collection, id);
   }
 }
-

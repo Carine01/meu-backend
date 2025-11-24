@@ -7,6 +7,7 @@ Sistema de gamificação com pontos e recompensas para incentivar indicações.
 ## 📋 Funcionalidades
 
 ### ✅ Sistema de Pontos
+
 - **1 ponto** por indicação registrada
 - **1 sessão grátis** a cada 3 pontos acumulados
 - Rastreamento de indicador e indicado
@@ -14,6 +15,7 @@ Sistema de gamificação com pontos e recompensas para incentivar indicações.
 - Histórico completo de indicações
 
 ### 🎁 Recompensas
+
 - Sessões gratuitas
 - Descontos progressivos
 - Ranking de indicadores
@@ -24,6 +26,7 @@ Sistema de gamificação com pontos e recompensas para incentivar indicações.
 ## 🎯 Endpoints Principais
 
 ### POST `/indicacoes`
+
 Criar nova indicação
 
 ```typescript
@@ -55,6 +58,7 @@ Response:
 ```
 
 ### POST `/indicacoes/:id/confirmar`
+
 Confirmar conversão da indicação (admin)
 
 ```typescript
@@ -76,6 +80,7 @@ Response:
 ```
 
 ### POST `/indicacoes/resgatar-sessao`
+
 Resgatar sessão gratuita
 
 ```typescript
@@ -94,6 +99,7 @@ Response:
 ```
 
 ### GET `/indicacoes/status/:leadId`
+
 Status de indicações e recompensas
 
 ```typescript
@@ -176,30 +182,30 @@ indicacoes/
 
 ### Sistema de Pontos
 
-| Ação | Pontos |
-|------|--------|
-| Fazer indicação | 0 (pendente) |
-| Indicação converte | +1 ponto |
-| Indicado agenda primeira sessão | +1 ponto |
-| Indicado comparece | +1 ponto |
+| Ação                            | Pontos       |
+| ------------------------------- | ------------ |
+| Fazer indicação                 | 0 (pendente) |
+| Indicação converte              | +1 ponto     |
+| Indicado agenda primeira sessão | +1 ponto     |
+| Indicado comparece              | +1 ponto     |
 
 ### Sistema de Recompensas
 
-| Pontos | Recompensa |
-|--------|------------|
-| 3 pontos | 1 sessão grátis |
-| 6 pontos | 1 sessão grátis + 10% desconto permanente |
+| Pontos    | Recompensa                                  |
+| --------- | ------------------------------------------- |
+| 3 pontos  | 1 sessão grátis                             |
+| 6 pontos  | 1 sessão grátis + 10% desconto permanente   |
 | 10 pontos | 1 sessão grátis + Badge "Mestre Indicações" |
-| 20 pontos | 2 sessões grátis + 20% desconto permanente |
+| 20 pontos | 2 sessões grátis + 20% desconto permanente  |
 
 ### Badges
 
-| Badge | Requisito |
-|-------|-----------|
-| 🥉 **Primeiro Indicador** | 1ª indicação convertida |
-| 🥈 **Indicador Ativo** | 5 indicações convertidas |
-| 🥇 **Mestre Indicações** | 10 indicações convertidas |
-| 👑 **Lenda** | 20 indicações convertidas |
+| Badge                     | Requisito                 |
+| ------------------------- | ------------------------- |
+| 🥉 **Primeiro Indicador** | 1ª indicação convertida   |
+| 🥈 **Indicador Ativo**    | 5 indicações convertidas  |
+| 🥇 **Mestre Indicações**  | 10 indicações convertidas |
+| 👑 **Lenda**              | 20 indicações convertidas |
 
 ---
 
@@ -251,6 +257,7 @@ graph TD
 ## 🛠️ Configuração
 
 ### Variáveis de Ambiente
+
 ```env
 # Sistema de Pontos
 PONTOS_POR_INDICACAO=1
@@ -267,11 +274,13 @@ VALIDAR_TELEFONE_DUPLICADO=true
 ## 🧪 Testes
 
 ### Testes Unitários
+
 ```bash
 npm run test -- indicacoes.service.spec.ts
 ```
 
 ### Cenários Cobertos
+
 - ✅ Registrar indicação (0 pontos iniciais)
 - ✅ Confirmar conversão (+1 ponto)
 - ✅ Atingir 3 pontos (ganha sessão)
@@ -283,6 +292,7 @@ npm run test -- indicacoes.service.spec.ts
 ## 🔧 Como Usar
 
 ### 1. Fazer Indicação
+
 ```bash
 curl -X POST http://localhost:3000/api/indicacoes \
   -H "Authorization: Bearer <token>" \
@@ -296,12 +306,14 @@ curl -X POST http://localhost:3000/api/indicacoes \
 ```
 
 ### 2. Confirmar Conversão (Admin)
+
 ```bash
 curl -X POST http://localhost:3000/api/indicacoes/ind456/confirmar \
   -H "Authorization: Bearer <admin_token>"
 ```
 
 ### 3. Resgatar Sessão Grátis
+
 ```bash
 curl -X POST http://localhost:3000/api/indicacoes/resgatar-sessao \
   -H "Authorization: Bearer <token>" \
@@ -310,6 +322,7 @@ curl -X POST http://localhost:3000/api/indicacoes/resgatar-sessao \
 ```
 
 ### 4. Ver Status
+
 ```bash
 curl http://localhost:3000/api/indicacoes/status/lead123 \
   -H "Authorization: Bearer <token>"
@@ -320,6 +333,7 @@ curl http://localhost:3000/api/indicacoes/status/lead123 \
 ## 📈 Ranking de Indicadores
 
 ### Calcular Ranking
+
 ```typescript
 GET /indicacoes/ranking?limit=10
 
@@ -342,6 +356,7 @@ Response:
 ## 🎁 Exemplos de Mensagens
 
 ### Convite para Indicado
+
 ```
 Olá {{nome_indicado}}! 👋
 
@@ -354,6 +369,7 @@ Agende agora: {{link_agendamento}}
 ```
 
 ### Notificação de Recompensa
+
 ```
 Parabéns {{nome_indicador}}! 🎉
 
@@ -365,6 +381,7 @@ Você ganhou:
 ```
 
 ### Sessão Grátis Liberada
+
 ```
 PARABÉNS {{nome}}! 🏆
 
@@ -393,14 +410,17 @@ Continue indicando e ganhe mais recompensas! 💪
 ## 🐛 Troubleshooting
 
 ### Problema: "CPF já cadastrado"
+
 **Causa:** Indicado já existe no sistema  
 **Solução:** Verificar se já é cliente, não pode ser indicado novamente
 
 ### Problema: "Nenhuma sessão disponível para resgate"
+
 **Causa:** Lead não tem sessões grátis  
 **Solução:** Fazer mais indicações para acumular pontos
 
 ### Problema: "Pontos não atualizaram"
+
 **Causa:** Indicação ainda em status 'pendente'  
 **Solução:** Admin precisa confirmar conversão
 

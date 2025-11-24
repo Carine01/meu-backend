@@ -11,4 +11,3 @@ import { Event } from './entities/event.entity';
   exports: [EventsService], // Exporta para outros módulos usarem
 })
 export class EventosModule {}
-

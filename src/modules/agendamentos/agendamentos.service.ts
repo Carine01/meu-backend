@@ -170,4 +170,3 @@ export class AgendamentosService {
     this.logger.log(`✅ Agendamento confirmado: ${id} | Clínica: ${clinicId}`);
   }
 }
-

@@ -91,16 +91,8 @@ describe('BiService', () => {
 
     const resultado = await service.metricasPorPeriodo(dataInicio, dataFim);
 
-    expect(mockFirestore.where).toHaveBeenCalledWith(
-      'createdAt',
-      '>=',
-      expect.any(Object)
-    );
-    expect(mockFirestore.where).toHaveBeenCalledWith(
-      'createdAt',
-      '<=',
-      expect.any(Object)
-    );
+    expect(mockFirestore.where).toHaveBeenCalledWith('createdAt', '>=', expect.any(Object));
+    expect(mockFirestore.where).toHaveBeenCalledWith('createdAt', '<=', expect.any(Object));
     expect(resultado).toHaveProperty('total', 50);
   });
 });

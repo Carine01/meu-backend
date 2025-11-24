@@ -10,14 +10,9 @@ import { LeadsModule } from '../../leads/leads.module';
 import { FilaModule } from '../fila/fila.module';
 
 @Module({
-  imports: [
-    TypeOrmModule.forFeature([Agendamento, Bloqueio]),
-    LeadsModule,
-    FilaModule,
-  ],
+  imports: [TypeOrmModule.forFeature([Agendamento, Bloqueio]), LeadsModule, FilaModule],
   controllers: [AgendamentosController],
   providers: [AgendamentosService, BloqueiosService],
   exports: [AgendamentosService, BloqueiosService],
 })
 export class AgendamentosModule {}
-

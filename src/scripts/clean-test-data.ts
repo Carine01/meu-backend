@@ -31,14 +31,14 @@ async function cleanTestData() {
 
   try {
     const db = admin.firestore();
-    
+
     // Coleções para limpar
     const collections = ['leads', 'agendamentos', 'mensagens'];
     let totalDeleted = 0;
 
     for (const collectionName of collections) {
       console.log(`\n📂 Verificando coleção: ${collectionName}`);
-      
+
       const collectionRef = db.collection(collectionName);
       const snapshot = await collectionRef.get();
 
@@ -60,7 +60,7 @@ async function cleanTestData() {
 
         // Verifica se algum campo corresponde aos padrões de teste
         const isTestData = testPatterns.some(
-          (pattern) =>
+          pattern =>
             pattern.test(nome) ||
             pattern.test(email) ||
             pattern.test(phone) ||
@@ -88,7 +88,9 @@ async function cleanTestData() {
       }
 
       if (deletedInCollection > 0) {
-        console.log(`   ✅ ${deletedInCollection} registros de teste deletados de ${collectionName}`);
+        console.log(
+          `   ✅ ${deletedInCollection} registros de teste deletados de ${collectionName}`,
+        );
         totalDeleted += deletedInCollection;
       } else {
         console.log(`   ✅ Nenhum dado de teste encontrado em ${collectionName}`);
@@ -115,7 +117,7 @@ const readline = require('readline').createInterface({
 
 readline.question('Digite "SIM" para confirmar a limpeza: ', (answer: string) => {
   readline.close();
-  
+
   if (answer.trim().toUpperCase() === 'SIM') {
     cleanTestData();
   } else {
@@ -123,4 +125,3 @@ readline.question('Digite "SIM" para confirmar a limpeza: ', (answer: string) =>
     process.exit(0);
   }
 });
-

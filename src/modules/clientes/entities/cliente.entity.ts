@@ -3,13 +3,13 @@ import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn } from 'typeor
 @Entity('clientes')
 export class Cliente {
   @PrimaryGeneratedColumn('uuid')
-    id!: string;
+  id!: string;
 
   @Column()
-    nome!: string;
+  nome!: string;
 
   @Column()
-    telefone!: string;
+  telefone!: string;
 
   @Column({ nullable: true })
   dataNascimento?: string;
@@ -18,5 +18,5 @@ export class Cliente {
   clinicId?: string;
 
   @CreateDateColumn()
-    createdAt!: Date;
+  createdAt!: Date;
 }

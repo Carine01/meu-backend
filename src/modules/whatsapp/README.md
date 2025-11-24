@@ -7,6 +7,7 @@ Integração completa com WhatsApp Business API (Meta) para envio de mensagens.
 ## 📋 Funcionalidades
 
 ### ✅ Envio de Mensagens
+
 - Mensagens de texto simples
 - Mensagens com mídia (imagem, vídeo, documento)
 - Templates aprovados pela Meta
@@ -15,6 +16,7 @@ Integração completa com WhatsApp Business API (Meta) para envio de mensagens.
 - Backoff exponencial
 
 ### 🔗 Webhook
+
 - Receber status de entrega
 - Receber respostas de clientes
 - Eventos de leitura
@@ -25,6 +27,7 @@ Integração completa com WhatsApp Business API (Meta) para envio de mensagens.
 ## 🎯 Endpoints Principais
 
 ### POST `/whatsapp/webhook`
+
 Webhook público para receber eventos do WhatsApp (Meta)
 
 ```typescript
@@ -45,6 +48,7 @@ X-Hub-Signature-256: sha256=...
 ```
 
 ### GET `/whatsapp/webhook`
+
 Verificação do webhook (Meta)
 
 ```typescript
@@ -54,6 +58,7 @@ Response: CHALLENGE
 ```
 
 ### POST `/whatsapp/send`
+
 Enviar mensagem manualmente
 
 ```typescript
@@ -100,6 +105,7 @@ interface WhatsAppProvider {
 ## 🔄 Sistema de Retry
 
 ### Configuração
+
 - **Tentativas:** 3
 - **Backoff:** Exponencial
   - 1ª tentativa: imediata
@@ -107,6 +113,7 @@ interface WhatsAppProvider {
   - 3ª tentativa: após 4s
 
 ### Fluxo
+
 ```mermaid
 graph TD
     A[Enviar mensagem] --> B[Tentativa 1]
@@ -146,28 +153,35 @@ if (signature !== `sha256=${expectedSignature}`) {
 
 ### Status de Entrega
 
-| Status | Descrição |
-|--------|-----------|
-| `sent` | Mensagem enviada para o servidor WhatsApp |
+| Status      | Descrição                                    |
+| ----------- | -------------------------------------------- |
+| `sent`      | Mensagem enviada para o servidor WhatsApp    |
 | `delivered` | Mensagem entregue no celular do destinatário |
-| `read` | Mensagem lida pelo destinatário |
-| `failed` | Falha no envio |
+| `read`      | Mensagem lida pelo destinatário              |
+| `failed`    | Falha no envio                               |
 
 ### Exemplo de Evento
+
 ```json
 {
   "object": "whatsapp_business_account",
-  "entry": [{
-    "changes": [{
-      "value": {
-        "statuses": [{
-          "id": "wamid.xxx",
-          "status": "delivered",
-          "timestamp": "1700000000"
-        }]
-      }
-    }]
-  }]
+  "entry": [
+    {
+      "changes": [
+        {
+          "value": {
+            "statuses": [
+              {
+                "id": "wamid.xxx",
+                "status": "delivered",
+                "timestamp": "1700000000"
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ]
 }
 ```
 
@@ -195,6 +209,7 @@ POST /whatsapp/send-template
 ```
 
 ### Criar Template no Meta Console
+
 1. Acesse [Business Manager](https://business.facebook.com)
 2. WhatsApp Manager → Message Templates
 3. Criar novo template
@@ -205,11 +220,13 @@ POST /whatsapp/send-template
 ## 🧪 Testes
 
 ### Testes Unitários
+
 ```bash
 npm run test -- whatsapp.service.spec.ts
 ```
 
 ### Testes Cobertos
+
 - ✅ Envio de texto simples
 - ✅ Retry com 3 tentativas
 - ✅ Backoff exponencial (2s, 4s)
@@ -282,6 +299,7 @@ WHATSAPP_VERIFY_TOKEN=seu_token_secreto_para_webhook
 ## 🚀 Como Configurar Webhook
 
 ### 1. Expor Endpoint Público
+
 ```bash
 # Desenvolvimento (ngrok)
 ngrok http 3000
@@ -290,6 +308,7 @@ ngrok http 3000
 ```
 
 ### 2. Configurar no Meta
+
 ```
 Callback URL: https://abc123.ngrok.io/api/whatsapp/webhook
 Verify Token: seu_token_secreto_para_webhook
@@ -297,6 +316,7 @@ Subscribe to: messages, message_status
 ```
 
 ### 3. Testar
+
 ```bash
 # Meta vai fazer GET para verificar
 GET /whatsapp/webhook?hub.mode=subscribe&hub.verify_token=...
@@ -310,14 +330,15 @@ GET /whatsapp/webhook?hub.mode=subscribe&hub.verify_token=...
 
 ### Rate Limits (Meta)
 
-| Tier | Mensagens/dia |
-|------|---------------|
-| Tier 1 | 1.000 |
-| Tier 2 | 10.000 |
-| Tier 3 | 100.000 |
-| Unlimited | Sem limite |
+| Tier      | Mensagens/dia |
+| --------- | ------------- |
+| Tier 1    | 1.000         |
+| Tier 2    | 10.000        |
+| Tier 3    | 100.000       |
+| Unlimited | Sem limite    |
 
 ### Boas Práticas
+
 - ✅ Usar templates para mensagens recorrentes
 - ✅ Respeitar opt-out de clientes
 - ✅ Não enviar spam
@@ -329,18 +350,22 @@ GET /whatsapp/webhook?hub.mode=subscribe&hub.verify_token=...
 ## 🐛 Troubleshooting
 
 ### Problema: "Number is not a WhatsApp number"
+
 **Causa:** Número não tem WhatsApp ativo  
 **Solução:** Validar com `isWhatsAppNumber()` antes de enviar
 
 ### Problema: "Message failed after 3 attempts"
+
 **Causa:** Número inválido ou API offline  
 **Solução:** Verificar logs, validar credenciais, testar número manualmente
 
 ### Problema: "Webhook signature validation failed"
+
 **Causa:** APP_SECRET incorreto  
 **Solução:** Verificar variável `WHATSAPP_APP_SECRET`
 
 ### Problema: "Template not found"
+
 **Causa:** Template não aprovado ou nome incorreto  
 **Solução:** Verificar status no Meta Business Manager
 

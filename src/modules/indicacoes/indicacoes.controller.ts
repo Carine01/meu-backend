@@ -74,4 +74,3 @@ export class IndicacoesController {
     return this.indicacoesService.indicadoCompareceu(indicacaoId);
   }
 }
-
