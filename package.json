@@ -19,7 +19,12 @@
     "typeorm": "typeorm-ts-node-commonjs",
     "migration:generate": "npm run typeorm -- migration:generate -d ormconfig.ts",
     "migration:run": "npm run typeorm -- migration:run -d ormconfig.ts",
-    "migration:revert": "npm run typeorm -- migration:revert -d ormconfig.ts"
+    "migration:revert": "npm run typeorm -- migration:revert -d ormconfig.ts",
+    "elevare:autofix": "bash scripts/elevare_auto_fix.sh",
+    "elevare:ci-local": "bash scripts/elevare_ci_local.sh",
+    "typecheck": "tsc --noEmit",
+    "lint": "echo 'Lint not configured yet'",
+    "format": "echo 'Format not configured yet'"
   },
   "dependencies": {
     "@hapi/boom": "^10.0.1",

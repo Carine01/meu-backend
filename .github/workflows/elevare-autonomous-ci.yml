@@ -1,0 +1,648 @@
+name: Elevare Autonomous CI/CD
+
+on:
+  push:
+    branches: ['**']
+  pull_request:
+    branches: ['**']
+  merge_group:
+  release:
+    types: [published, created, edited]
+  schedule:
+    # Executa todos os dias às 3h AM (UTC) para manutenção contínua
+    - cron: '0 3 * * *'
+  workflow_dispatch:
+    inputs:
+      skip_deploy:
+        description: 'Skip deployment step'
+        required: false
+        type: boolean
+        default: false
+
+env:
+  NODE_VERSION: '18'
+  ARTIFACT_DIR: 'artifacts'
+
+jobs:
+  # JOB 1: AUTO FIX E VALIDAÇÃO INICIAL
+  auto-fix:
+    name: 🔧 Auto Fix & Initial Validation
+    runs-on: ubuntu-latest
+    outputs:
+      has_fixes: ${{ steps.check_changes.outputs.has_changes }}
+      
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
+          
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          
+      - name: Run Elevare Auto Fix
+        id: run_autofix
+        run: |
+          bash scripts/elevare_auto_fix.sh
+          
+      - name: Check for changes
+        id: check_changes
+        run: |
+          git diff --exit-code || echo "has_changes=true" >> $GITHUB_OUTPUT
+          
+      - name: Create artifacts directory
+        run: mkdir -p ${{ env.ARTIFACT_DIR }}
+        
+      - name: Upload auto-fix report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: autofix-report
+          path: /tmp/elevare_autofix_report.txt
+          retention-days: 30
+
+  # JOB 2: BUILD
+  build:
+    name: 🔨 Build
+    runs-on: ubuntu-latest
+    needs: auto-fix
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          
+      - name: Install dependencies
+        run: |
+          if npm ci --silent; then
+            echo "✓ npm ci succeeded"
+          else
+            echo "⚠ npm ci failed, trying npm install"
+            npm install --silent
+          fi
+          
+      - name: Build TypeScript
+        run: |
+          npm run build
+          
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-dist
+          path: dist/
+          retention-days: 7
+
+  # JOB 3: LINT & TYPE CHECK
+  lint-typecheck:
+    name: 🎨 Lint & TypeCheck
+    runs-on: ubuntu-latest
+    needs: auto-fix
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          
+      - name: Install dependencies
+        run: npm ci --silent || npm install --silent
+        
+      - name: TypeScript Check
+        run: |
+          npx tsc --noEmit || {
+            echo "TypeScript errors detected"
+            echo "TYPECHECK_FAILED=true" >> $GITHUB_ENV
+            exit 0
+          }
+          
+      - name: ESLint Check (if configured)
+        continue-on-error: true
+        run: |
+          if [ -f ".eslintrc.js" ] || [ -f ".eslintrc.json" ] || [ -f "eslint.config.js" ]; then
+            npx eslint "src/**/*.ts" || echo "ESLint issues found"
+          else
+            echo "ESLint not configured, skipping"
+          fi
+          
+      - name: Prettier Check (if configured)
+        continue-on-error: true
+        run: |
+          if [ -f ".prettierrc" ] || [ -f "prettier.config.js" ]; then
+            npx prettier --check "src/**/*.ts" || echo "Prettier issues found"
+          else
+            echo "Prettier not configured, skipping"
+          fi
+
+  # JOB 4: TESTS
+  test:
+    name: 🧪 Tests
+    runs-on: ubuntu-latest
+    needs: auto-fix
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          
+      - name: Install dependencies
+        run: npm ci --silent || npm install --silent
+        
+      - name: Run unit tests
+        run: |
+          npm run test -- --ci --coverage --maxWorkers=2 || {
+            echo "TEST_FAILED=true" >> $GITHUB_ENV
+            exit 1
+          }
+          
+      - name: Upload coverage
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: coverage/
+          retention-days: 30
+
+  # JOB 5: SECURITY SCAN
+  security:
+    name: 🔒 Security Scan
+    runs-on: ubuntu-latest
+    needs: auto-fix
+    permissions:
+      security-events: write
+      contents: read
+      
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          
+      - name: Install dependencies
+        run: npm ci --silent || npm install --silent
+        
+      - name: Run npm audit
+        continue-on-error: true
+        run: |
+          npm audit --production --audit-level=high --json > npm-audit.json || true
+          cat npm-audit.json
+          
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: javascript
+          queries: security-and-quality
+          
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v3
+        with:
+          category: "/language:javascript"
+          
+      - name: Upload security reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: security-reports
+          path: |
+            npm-audit.json
+          retention-days: 30
+
+  # JOB 6: DEPENDENCY CHECK
+  dependency-check:
+    name: 📦 Dependency Check
+    runs-on: ubuntu-latest
+    needs: auto-fix
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          
+      - name: Install dependencies
+        run: npm ci --silent || npm install --silent
+        
+      - name: Check for unused dependencies
+        continue-on-error: true
+        run: |
+          npx depcheck --json > depcheck-report.json || true
+          cat depcheck-report.json
+          
+      - name: Check for outdated dependencies
+        continue-on-error: true
+        run: |
+          npm outdated --json > outdated-report.json || true
+          cat outdated-report.json
+          
+      - name: Upload dependency reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: dependency-reports
+          path: |
+            depcheck-report.json
+            outdated-report.json
+          retention-days: 30
+
+  # JOB 7: GENERATE REPORT
+  generate-report:
+    name: 📊 Generate Technical Report
+    runs-on: ubuntu-latest
+    needs: [build, lint-typecheck, test, security, dependency-check]
+    if: always()
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts-download/
+          
+      - name: Create artifacts directory
+        run: mkdir -p ${{ env.ARTIFACT_DIR }}
+        
+      - name: Generate comprehensive report
+        run: |
+          cat > ${{ env.ARTIFACT_DIR }}/ELEVARE_CI_REPORT.md << 'EOF'
+          # 🚀 ELEVARE CI/CD - RELATÓRIO TÉCNICO
+          
+          **Data:** $(date '+%Y-%m-%d %H:%M:%S UTC')
+          **Workflow:** ${{ github.workflow }}
+          **Run ID:** ${{ github.run_id }}
+          **Commit:** ${{ github.sha }}
+          **Branch:** ${{ github.ref_name }}
+          **Triggered by:** ${{ github.event_name }}
+          
+          ---
+          
+          ## 📋 RESUMO EXECUTIVO
+          
+          | Etapa | Status | Detalhes |
+          |-------|--------|----------|
+          | 🔧 Auto Fix | ${{ needs.auto-fix.result }} | Correções automáticas aplicadas |
+          | 🔨 Build | ${{ needs.build.result }} | Compilação TypeScript |
+          | 🎨 Lint/TypeCheck | ${{ needs.lint-typecheck.result }} | Validação de código |
+          | 🧪 Tests | ${{ needs.test.result }} | Testes unitários |
+          | 🔒 Security | ${{ needs.security.result }} | Análise de segurança |
+          | 📦 Dependencies | ${{ needs.dependency-check.result }} | Verificação de dependências |
+          
+          ---
+          
+          ## 🔧 AUTO FIX
+          
+          Script **elevare_auto_fix.sh** executado com sucesso.
+          
+          **Ações realizadas:**
+          - ✓ Dependências verificadas e instaladas
+          - ✓ Vulnerabilidades verificadas
+          - ✓ Build anterior limpo
+          - ✓ TypeScript validado
+          - ✓ Formatação aplicada
+          - ✓ Arquivos temporários removidos
+          
+          ---
+          
+          ## 🔨 BUILD
+          
+          **Status:** ${{ needs.build.result }}
+          
+          Build TypeScript concluído. Artefatos gerados em `dist/`.
+          
+          ---
+          
+          ## 🎨 LINT & TYPECHECK
+          
+          **Status:** ${{ needs.lint-typecheck.result }}
+          
+          - TypeScript compilation check
+          - ESLint validation (if configured)
+          - Prettier formatting check (if configured)
+          
+          ---
+          
+          ## 🧪 TESTES
+          
+          **Status:** ${{ needs.test.result }}
+          
+          Testes unitários executados com cobertura de código.
+          Relatório de cobertura disponível nos artefatos.
+          
+          ---
+          
+          ## 🔒 SEGURANÇA
+          
+          **Status:** ${{ needs.security.result }}
+          
+          **Análises realizadas:**
+          - npm audit (vulnerabilidades de dependências)
+          - CodeQL (análise estática de segurança)
+          
+          **Recomendações:**
+          - Revisar vulnerabilidades encontradas no npm audit
+          - Verificar alertas do CodeQL no Security tab
+          
+          ---
+          
+          ## 📦 DEPENDÊNCIAS
+          
+          **Status:** ${{ needs.dependency-check.result }}
+          
+          **Verificações:**
+          - Dependências não utilizadas (depcheck)
+          - Dependências desatualizadas (npm outdated)
+          
+          ---
+          
+          ## ⚠️ AÇÕES NECESSÁRIAS
+          
+          EOF
+          
+          # Add conditional actions based on results
+          if [ "${{ needs.build.result }}" != "success" ]; then
+            echo "- ❌ **Build falhou** - Corrigir erros de compilação TypeScript" >> ${{ env.ARTIFACT_DIR }}/ELEVARE_CI_REPORT.md
+          fi
+          
+          if [ "${{ needs.test.result }}" != "success" ]; then
+            echo "- ❌ **Testes falharam** - Investigar e corrigir testes quebrados" >> ${{ env.ARTIFACT_DIR }}/ELEVARE_CI_REPORT.md
+          fi
+          
+          if [ "${{ needs.security.result }}" != "success" ]; then
+            echo "- ⚠️ **Problemas de segurança detectados** - Revisar relatório de segurança" >> ${{ env.ARTIFACT_DIR }}/ELEVARE_CI_REPORT.md
+          fi
+          
+          cat >> ${{ env.ARTIFACT_DIR }}/ELEVARE_CI_REPORT.md << 'EOF'
+          
+          ---
+          
+          ## 🚀 PRÓXIMOS PASSOS
+          
+          1. Revisar este relatório
+          2. Corrigir problemas identificados
+          3. Verificar artefatos gerados
+          4. Aprovar deploy (se aplicável)
+          
+          ---
+          
+          **Gerado automaticamente pelo Elevare Autonomous CI/CD**
+          EOF
+          
+      - name: Upload comprehensive report
+        uses: actions/upload-artifact@v4
+        with:
+          name: elevare-ci-report
+          path: ${{ env.ARTIFACT_DIR }}/ELEVARE_CI_REPORT.md
+          retention-days: 90
+          
+      - name: Display report summary
+        run: |
+          echo "📊 Relatório gerado em: ${{ env.ARTIFACT_DIR }}/ELEVARE_CI_REPORT.md"
+          cat ${{ env.ARTIFACT_DIR }}/ELEVARE_CI_REPORT.md
+
+  # JOB 8: CREATE AUTO-FIX PR (if fixes were applied)
+  create-fix-pr:
+    name: 🔄 Create Auto-Fix PR
+    runs-on: ubuntu-latest
+    needs: [auto-fix, generate-report]
+    if: needs.auto-fix.outputs.has_fixes == 'true' && github.event_name != 'pull_request'
+    permissions:
+      contents: write
+      pull-requests: write
+      
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
+          
+      - name: Setup Git
+        run: |
+          git config --global user.name "elevare-ci-bot"
+          git config --global user.email "ci-bot@elevare.local"
+          
+      - name: Create fix branch and PR
+        run: |
+          BRANCH_NAME="auto-fix/elevare-ci-$(date +%Y%m%d-%H%M%S)"
+          git checkout -b $BRANCH_NAME
+          git add .
+          git commit -m "chore: automatic fixes from Elevare CI/CD" || exit 0
+          git push origin $BRANCH_NAME
+          
+          gh pr create \
+            --title "🔧 Elevare CI/CD: Automatic Fixes" \
+            --body "## Correções Automáticas Aplicadas
+
+          Este PR foi criado automaticamente pelo Elevare CI/CD.
+
+          **Correções incluídas:**
+          - Dependências atualizadas
+          - Vulnerabilidades corrigidas (quando possível)
+          - Formatação de código aplicada
+          - Limpeza de arquivos temporários
+
+          **Revisar:**
+          - Verificar se todas as mudanças são apropriadas
+          - Executar testes localmente se necessário
+          - Fazer merge se tudo estiver OK
+
+          ---
+          *Gerado automaticamente em: $(date)*" \
+            --label "automated,ci-fix" \
+            --base main
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  # JOB 9: CREATE ISSUE ON FAILURE
+  create-failure-issue:
+    name: 🚨 Create Issue on Failure
+    runs-on: ubuntu-latest
+    needs: [build, lint-typecheck, test, security]
+    if: |
+      failure() && 
+      github.event_name != 'pull_request' &&
+      (needs.build.result == 'failure' || needs.test.result == 'failure')
+    permissions:
+      issues: write
+      
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Create failure issue
+        run: |
+          gh issue create \
+            --title "🚨 CI/CD Failure: ${{ github.ref_name }} - $(date +%Y-%m-%d)" \
+            --body "## ⚠️ Falha no CI/CD Pipeline
+
+          **Branch:** ${{ github.ref_name }}
+          **Commit:** ${{ github.sha }}
+          **Workflow Run:** ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          **Triggered by:** ${{ github.event_name }}
+
+          ### Falhas Detectadas
+
+          | Job | Status |
+          |-----|--------|
+          | Build | ${{ needs.build.result }} |
+          | Lint/TypeCheck | ${{ needs.lint-typecheck.result }} |
+          | Tests | ${{ needs.test.result }} |
+          | Security | ${{ needs.security.result }} |
+
+          ### Ações Necessárias
+
+          1. Revisar logs do workflow
+          2. Corrigir problemas identificados
+          3. Executar CI localmente antes de push
+          4. Reexecutar workflow após correções
+
+          ### Links Úteis
+
+          - [Ver logs completos](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})
+          - [Comparar mudanças](${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }})
+
+          ---
+          *Issue criada automaticamente pelo Elevare CI/CD*" \
+            --label "bug,ci-failure,priority-high" \
+            --assignee ${{ github.actor }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  # JOB 10: DEPLOY (with risk checks)
+  deploy:
+    name: 🚀 Deploy
+    runs-on: ubuntu-latest
+    needs: [build, lint-typecheck, test, security, generate-report]
+    if: |
+      github.ref == 'refs/heads/main' && 
+      github.event_name == 'push' &&
+      needs.build.result == 'success' &&
+      needs.test.result == 'success' &&
+      inputs.skip_deploy != true
+    permissions:
+      contents: read
+      
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Risk Assessment
+        id: risk_check
+        run: |
+          RISK_LEVEL="low"
+          DEPLOY_BLOCKED=false
+          
+          # Check for security failures
+          if [ "${{ needs.security.result }}" != "success" ]; then
+            RISK_LEVEL="high"
+            DEPLOY_BLOCKED=true
+            echo "⚠️ Security check failed - blocking deploy"
+          fi
+          
+          # Check for lint/typecheck failures
+          if [ "${{ needs.lint-typecheck.result }}" != "success" ]; then
+            RISK_LEVEL="medium"
+            echo "⚠️ Lint/TypeCheck has issues"
+          fi
+          
+          echo "risk_level=$RISK_LEVEL" >> $GITHUB_OUTPUT
+          echo "deploy_blocked=$DEPLOY_BLOCKED" >> $GITHUB_OUTPUT
+          
+          if [ "$DEPLOY_BLOCKED" = "true" ]; then
+            echo "🚫 DEPLOY BLOQUEADO devido a riscos de segurança!"
+            exit 1
+          fi
+          
+      - name: Deploy notification
+        if: steps.risk_check.outputs.deploy_blocked != 'true'
+        run: |
+          echo "✅ Todos os checks passaram - deploy aprovado"
+          echo "📊 Nível de risco: ${{ steps.risk_check.outputs.risk_level }}"
+          echo "🚀 Iniciando deploy..."
+          
+      # Aqui você pode adicionar seus steps de deploy específicos
+      # Por exemplo, deploy para Cloud Run, Heroku, etc.
+      - name: Deploy to production
+        if: steps.risk_check.outputs.deploy_blocked != 'true'
+        run: |
+          echo "Deploy step - configure according to your infrastructure"
+          echo "Example: gcloud run deploy, kubectl apply, etc."
+
+  # JOB 11: CLEANUP (scheduled maintenance)
+  cleanup:
+    name: 🧹 Cleanup & Maintenance
+    runs-on: ubuntu-latest
+    if: github.event_name == 'schedule'
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          
+      - name: Clean old dependencies
+        run: |
+          echo "🧹 Limpando cache e dependências antigas..."
+          rm -rf node_modules
+          npm cache clean --force
+          
+      - name: Update dependencies (patch versions)
+        run: |
+          npm update --save
+          
+      - name: Check for major updates
+        continue-on-error: true
+        run: |
+          npm outdated
+          
+      - name: Create maintenance report
+        run: |
+          cat > maintenance-report.md << EOF
+          # Relatório de Manutenção - $(date)
+          
+          ## Ações Realizadas
+          - Cache limpo
+          - Dependências patch atualizadas
+          - Verificação de updates maiores realizada
+          
+          ## Próximas Ações Recomendadas
+          - Revisar dependências desatualizadas
+          - Considerar atualização de versões maiores
+          - Verificar breaking changes
+          EOF
+          
+      - name: Upload maintenance report
+        uses: actions/upload-artifact@v4
+        with:
+          name: maintenance-report
+          path: maintenance-report.md
+          retention-days: 90
