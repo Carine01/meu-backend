@@ -17,7 +17,7 @@ import { SelectQueryBuilder, ObjectLiteral } from 'typeorm';
 export function applyClinicIdFilter<T extends ObjectLiteral>(
   qb: SelectQueryBuilder<T>,
   clinicId: string,
-  column = 'clinicId'
+  column = 'clinicId',
 ): SelectQueryBuilder<T> {
   const alias = qb.expressionMap.mainAlias!.name;
   return qb.andWhere(`${alias}.${column} = :clinicId`, { clinicId });

@@ -99,9 +99,7 @@ describe('ProfileService', () => {
         clinica_nome: 'Teste',
       } as any;
 
-      await expect(service.savePerfilData(dadosSemId)).rejects.toThrow(
-        'clinicId é obrigatório',
-      );
+      await expect(service.savePerfilData(dadosSemId)).rejects.toThrow('clinicId é obrigatório');
     });
 
     it('deve rejeitar dados muito grandes', async () => {
@@ -110,9 +108,7 @@ describe('ProfileService', () => {
         clinica_nome: 'a'.repeat(1000001), // Mais de 1MB
       };
 
-      await expect(service.savePerfilData(dadosGrandes)).rejects.toThrow(
-        HttpException,
-      );
+      await expect(service.savePerfilData(dadosGrandes)).rejects.toThrow(HttpException);
     });
   });
 
@@ -196,10 +192,8 @@ describe('ProfileService', () => {
       ];
 
       const mockSnapshot = {
-        forEach: jest.fn((callback) => {
-          mockPerfis.forEach((perfil) =>
-            callback({ data: () => perfil }),
-          );
+        forEach: jest.fn(callback => {
+          mockPerfis.forEach(perfil => callback({ data: () => perfil }));
         }),
       };
 
@@ -214,4 +208,3 @@ describe('ProfileService', () => {
     });
   });
 });
-

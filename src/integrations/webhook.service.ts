@@ -29,19 +29,12 @@ export class WebhookService {
    * @param customToken Token customizado (opcional, sobrescreve WEBHOOK_TOKEN do env)
    * @returns Response data do webhook
    */
-  async sendWebhook(
-    payload: any,
-    customUrl?: string,
-    customToken?: string,
-  ): Promise<any> {
+  async sendWebhook(payload: any, customUrl?: string, customToken?: string): Promise<any> {
     const url = customUrl || this.webhookUrl;
     const token = customToken || this.webhookToken;
 
     if (!url) {
-      throw new HttpException(
-        'WEBHOOK_URL não configurado',
-        HttpStatus.INTERNAL_SERVER_ERROR,
-      );
+      throw new HttpException('WEBHOOK_URL não configurado', HttpStatus.INTERNAL_SERVER_ERROR);
     }
 
     this.logger.log(`Enviando webhook para ${url.substring(0, 50)}...`);
@@ -116,4 +109,3 @@ export class WebhookService {
     return this.sendWebhook(payload, zapierUrl);
   }
 }
-

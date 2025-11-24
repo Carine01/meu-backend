@@ -28,7 +28,9 @@ export class CronService {
     this.logger.debug('🔄 Processando fila de envio...');
 
     try {
-      const resultado: { sent: number; failed: number } = await this.filaService.processarFila(10) as any;
+      const resultado: { sent: number; failed: number } = (await this.filaService.processarFila(
+        10,
+      )) as any;
 
       if (resultado.sent > 0 || resultado.failed > 0) {
         this.logger.log(
@@ -50,7 +52,8 @@ export class CronService {
     this.logger.log('📅 Executando agenda semanal do dia...');
 
     try {
-      const resultado: { leadCount: number; mensagens: number } = await this.agendaSemanalService.executarAgendaDoDia() as any;
+      const resultado: { leadCount: number; mensagens: number } =
+        (await this.agendaSemanalService.executarAgendaDoDia()) as any;
 
       this.logger.log(
         `✅ Agenda executada: ${resultado.leadCount} leads, ${resultado.mensagens} mensagens adicionadas`,
@@ -82,4 +85,3 @@ export class CronService {
     }
   }
 }
-

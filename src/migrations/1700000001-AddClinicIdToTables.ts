@@ -83,4 +83,3 @@ export class AddClinicIdToTables1700000001 implements MigrationInterface {
     await queryRunner.query(`ALTER TABLE indicacoes DROP COLUMN IF EXISTS clinic_id;`);
   }
 }
-

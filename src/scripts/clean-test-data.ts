@@ -60,7 +60,7 @@ async function cleanTestData() {
 
         // Verifica se algum campo corresponde aos padrões de teste
         const isTestData = testPatterns.some(
-          (pattern) =>
+          pattern =>
             pattern.test(nome) ||
             pattern.test(email) ||
             pattern.test(phone) ||
@@ -88,7 +88,9 @@ async function cleanTestData() {
       }
 
       if (deletedInCollection > 0) {
-        console.log(`   ✅ ${deletedInCollection} registros de teste deletados de ${collectionName}`);
+        console.log(
+          `   ✅ ${deletedInCollection} registros de teste deletados de ${collectionName}`,
+        );
         totalDeleted += deletedInCollection;
       } else {
         console.log(`   ✅ Nenhum dado de teste encontrado em ${collectionName}`);
@@ -123,4 +125,3 @@ readline.question('Digite "SIM" para confirmar a limpeza: ', (answer: string) =>
     process.exit(0);
   }
 });
-

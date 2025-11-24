@@ -5,12 +5,7 @@ import { FilaModule } from '../modules/fila/fila.module';
 import { CampanhasModule } from '../modules/campanhas/campanhas.module';
 
 @Module({
-  imports: [
-    ScheduleModule.forRoot(),
-    FilaModule,
-    CampanhasModule,
-  ],
+  imports: [ScheduleModule.forRoot(), FilaModule, CampanhasModule],
   providers: [CronService],
 })
 export class CronModule {}
-

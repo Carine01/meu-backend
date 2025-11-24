@@ -73,11 +73,7 @@ describe('WebhookService', () => {
       const mockResponse = { status: 200, data: { ok: true } };
       jest.spyOn(httpService, 'post').mockReturnValue(of(mockResponse) as any);
 
-      await service.sendWebhook(
-        { test: true },
-        'https://custom-url.com/hook',
-        'custom-token-789',
-      );
+      await service.sendWebhook({ test: true }, 'https://custom-url.com/hook', 'custom-token-789');
 
       expect(httpService.post).toHaveBeenCalledWith(
         'https://custom-url.com/hook',
@@ -118,9 +114,7 @@ describe('WebhookService', () => {
         message: 'Request failed',
       } as AxiosError;
 
-      jest
-        .spyOn(httpService, 'post')
-        .mockReturnValue(throwError(() => axiosError) as any);
+      jest.spyOn(httpService, 'post').mockReturnValue(throwError(() => axiosError) as any);
 
       await expect(service.sendWebhook({ test: true })).rejects.toThrow(HttpException);
       await expect(service.sendWebhook({ test: true })).rejects.toThrow(
@@ -133,9 +127,7 @@ describe('WebhookService', () => {
         message: 'Network timeout',
       } as AxiosError;
 
-      jest
-        .spyOn(httpService, 'post')
-        .mockReturnValue(throwError(() => networkError) as any);
+      jest.spyOn(httpService, 'post').mockReturnValue(throwError(() => networkError) as any);
 
       await expect(service.sendWebhook({ test: true })).rejects.toThrow(HttpException);
       await expect(service.sendWebhook({ test: true })).rejects.toThrow(
@@ -221,12 +213,10 @@ describe('WebhookService', () => {
         ],
       }).compile();
 
-      const serviceWithoutZapier =
-        moduleWithoutZapier.get<WebhookService>(WebhookService);
+      const serviceWithoutZapier = moduleWithoutZapier.get<WebhookService>(WebhookService);
       const result = await serviceWithoutZapier.sendToZapier({ test: true });
 
       expect(result).toEqual({ ok: false, message: 'Zapier não configurado' });
     });
   });
 });
-
