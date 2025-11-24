@@ -3,11 +3,15 @@ dist/
 .env
 .env.local
 *.log
-firebase-config.jsnode_modules/
-dist/
-.env
+firebase-config.js
+
 # Firebase service account (do not commit)
 *.serviceAccount.json
 service-account.json
 *.firebase-admin.json
 *.credentials.json
+
+# ELEVARE SUPER-AGENT generated files
+.elevare_current_auto_branch
+.elevare_validation_report/
+.depcheck.json
