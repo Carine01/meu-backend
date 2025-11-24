@@ -5,6 +5,10 @@ on:
   schedule:
     - cron: '0 3 * * *' # diariamente às 03:00 UTC (ajuste se quiser)
 
+permissions:
+  contents: write
+  pull-requests: write
+
 jobs:
   autofix:
     runs-on: ubuntu-latest
