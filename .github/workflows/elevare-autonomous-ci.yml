@@ -167,10 +167,7 @@ jobs:
         
       - name: Run unit tests
         run: |
-          npm run test -- --ci --coverage --maxWorkers=2 || {
-            echo "TEST_FAILED=true" >> $GITHUB_ENV
-            exit 1
-          }
+          npm run test -- --ci --coverage --maxWorkers=2
           
       - name: Upload coverage
         if: always()
@@ -445,7 +442,7 @@ jobs:
       - name: Setup Git
         run: |
           git config --global user.name "elevare-ci-bot"
-          git config --global user.email "ci-bot@elevare.local"
+          git config --global user.email "elevare-ci-bot@users.noreply.github.com"
           
       - name: Create fix branch and PR
         run: |

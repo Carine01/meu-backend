@@ -62,7 +62,13 @@ if npm audit --production --audit-level=high 2>/dev/null; then
     log_success "Nenhuma vulnerabilidade crítica encontrada"
 else
     log_warning "Vulnerabilidades encontradas, tentando corrigir..."
-    npm audit fix --force || log_warning "Algumas vulnerabilidades não podem ser corrigidas automaticamente"
+    # Try without force first
+    if npm audit fix 2>/dev/null; then
+        log_success "Vulnerabilidades corrigidas"
+    else
+        log_warning "Algumas vulnerabilidades não podem ser corrigidas automaticamente"
+        log_warning "Execute 'npm audit fix --force' manualmente se necessário"
+    fi
 fi
 
 # 4. LIMPAR BUILD ANTERIOR
@@ -91,14 +97,26 @@ echo ""
 echo "🎨 Aplicando formatação automática..."
 if [ -f ".eslintrc.js" ] || [ -f ".eslintrc.json" ] || [ -f "eslint.config.js" ]; then
     if command -v eslint &> /dev/null; then
-        eslint --fix "src/**/*.ts" 2>/dev/null || log_warning "Alguns arquivos não puderam ser corrigidos automaticamente"
+        # Try to find TypeScript files in src or common directories
+        if [ -d "src" ]; then
+            eslint --fix "src/**/*.ts" 2>/dev/null || log_warning "Alguns arquivos não puderam ser corrigidos automaticamente"
+        elif [ -d "lib" ]; then
+            eslint --fix "lib/**/*.ts" 2>/dev/null || log_warning "Alguns arquivos não puderam ser corrigidos automaticamente"
+        else
+            log_warning "Diretório de código não encontrado (src/ ou lib/)"
+        fi
         log_success "ESLint auto-fix aplicado"
     fi
 fi
 
 if [ -f ".prettierrc" ] || [ -f "prettier.config.js" ]; then
     if command -v prettier &> /dev/null; then
-        prettier --write "src/**/*.ts" 2>/dev/null || log_warning "Prettier encontrou alguns problemas"
+        # Try to find TypeScript files in src or common directories
+        if [ -d "src" ]; then
+            prettier --write "src/**/*.ts" 2>/dev/null || log_warning "Prettier encontrou alguns problemas"
+        elif [ -d "lib" ]; then
+            prettier --write "lib/**/*.ts" 2>/dev/null || log_warning "Prettier encontrou alguns problemas"
+        fi
         log_success "Prettier aplicado"
     fi
 fi

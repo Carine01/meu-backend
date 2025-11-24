@@ -10,6 +10,10 @@ echo "=================================================="
 # Create artifacts directory
 mkdir -p artifacts
 
+# Create temp directory in project
+TEMP_DIR="$(pwd)/.elevare-temp"
+mkdir -p "$TEMP_DIR"
+
 # Run auto-fix first
 echo "🔧 Executando auto-fix..."
 bash scripts/elevare_auto_fix.sh
@@ -18,7 +22,7 @@ bash scripts/elevare_auto_fix.sh
 echo ""
 echo "🔨 Verificando build..."
 BUILD_STATUS="success"
-if npm run build 2>&1 | tee /tmp/build.log; then
+if npm run build 2>&1 | tee "$TEMP_DIR/build.log"; then
     echo "✓ Build: SUCCESS"
 else
     BUILD_STATUS="failure"
@@ -29,7 +33,7 @@ fi
 echo ""
 echo "📝 Verificando TypeScript..."
 TYPECHECK_STATUS="success"
-if npx tsc --noEmit 2>&1 | tee /tmp/typecheck.log; then
+if npx tsc --noEmit 2>&1 | tee "$TEMP_DIR/typecheck.log"; then
     echo "✓ TypeCheck: SUCCESS"
 else
     TYPECHECK_STATUS="failure"
@@ -40,7 +44,7 @@ fi
 echo ""
 echo "🧪 Executando testes..."
 TEST_STATUS="success"
-if npm run test -- --ci 2>&1 | tee /tmp/test.log; then
+if npm run test -- --ci 2>&1 | tee "$TEMP_DIR/test.log"; then
     echo "✓ Tests: SUCCESS"
 else
     TEST_STATUS="failure"
@@ -104,7 +108,7 @@ if [ "$BUILD_STATUS" = "failure" ]; then
 ## ❌ BUILD - FALHOU
 
 \`\`\`
-$(tail -20 /tmp/build.log)
+$(tail -20 "$TEMP_DIR/build.log")
 \`\`\`
 
 **Ações necessárias:**
@@ -130,7 +134,7 @@ if [ "$TYPECHECK_STATUS" = "failure" ]; then
 ## ❌ TYPECHECK - FALHOU
 
 \`\`\`
-$(tail -20 /tmp/typecheck.log)
+$(tail -20 "$TEMP_DIR/typecheck.log")
 \`\`\`
 
 **Ações necessárias:**
@@ -156,7 +160,7 @@ if [ "$TEST_STATUS" = "failure" ]; then
 ## ❌ TESTS - FALHARAM
 
 \`\`\`
-$(tail -30 /tmp/test.log)
+$(tail -30 "$TEMP_DIR/test.log")
 \`\`\`
 
 **Ações necessárias:**
@@ -268,7 +272,7 @@ echo ""
 cat artifacts/ELEVARE_CI_REPORT.md
 
 # Cleanup temp files
-rm -f /tmp/build.log /tmp/typecheck.log /tmp/test.log
+rm -rf "$TEMP_DIR"
 
 # Exit with appropriate code
 if [ "$BUILD_STATUS" = "failure" ] || [ "$TEST_STATUS" = "failure" ]; then
