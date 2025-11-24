@@ -91,8 +91,9 @@ EOF
 # 4. VERIFICAR PADRÕES DE NOMENCLATURA
 log_info "Verificando padrões de nomenclatura..."
 
-# Verificar se arquivos seguem kebab-case
-NON_KEBAB_FILES=$(find src/ -type f -name "*.ts" ! -name "*[a-z0-9-.]*.ts" 2>/dev/null | head -20 || echo "")
+# Verificar se arquivos seguem kebab-case (lowercase, hyphens, dots only before extension)
+# Proper kebab-case: lowercase letters, numbers, hyphens (not at start/end), dot before .ts
+NON_KEBAB_FILES=$(find src/ -type f -name "*.ts" | grep -v -E "^.*/[a-z0-9]+(-[a-z0-9]+)*(\.[a-z0-9]+)*\.ts$" 2>/dev/null | head -20 || echo "")
 
 if [ -n "$NON_KEBAB_FILES" ]; then
     log_warning "Alguns arquivos não seguem kebab-case:"
