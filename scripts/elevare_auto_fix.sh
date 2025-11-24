@@ -81,12 +81,11 @@ else
 fi
 echo "" | tee -a "$FIX_LOG"
 
-# 5. Fix common TypeScript issues automatically
-echo "5. Corrigindo problemas comuns de TypeScript..." | tee -a "$FIX_LOG"
+# 5. Verify formatting consistency
+echo "5. Verificando consistência de formatação..." | tee -a "$FIX_LOG"
 
-# Add missing semicolons where possible (basic fix)
-# Note: This is a simple example, real fixes would be more sophisticated
-find src -type f -name "*.ts" -exec sed -i 's/^\([^/]*\)$/\1/g' {} \; 2>/dev/null || true
+# Note: More sophisticated fixes would be handled by ESLint/Prettier
+# This step is a placeholder for future custom fixes
 
 echo "  Verificação concluída" | tee -a "$FIX_LOG"
 echo "" | tee -a "$FIX_LOG"

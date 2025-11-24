@@ -97,7 +97,10 @@ echo "6. Criando Pull Request..."
 
 PR_TITLE="🤖 Auto-fix: Correções automáticas - $(date +%Y-%m-%d)"
 
-cat > /tmp/pr-body.md << EOFPR
+# Create temporary file securely
+PR_BODY_FILE=$(mktemp) || PR_BODY_FILE="/tmp/pr-body-$$.md"
+
+cat > "$PR_BODY_FILE" << EOFPR
 # 🤖 Correções Automáticas - Elevare Auto-Fix
 
 Este PR foi gerado automaticamente pelo sistema de auto-fix do Elevare.
@@ -140,7 +143,7 @@ EOFPR
 
 if gh pr create \
     --title "$PR_TITLE" \
-    --body-file /tmp/pr-body.md \
+    --body-file "$PR_BODY_FILE" \
     --base "$CURRENT_BRANCH" \
     --head "$NEW_BRANCH" \
     --label "auto-fix,automated,bot"; then
@@ -177,6 +180,6 @@ else
 fi
 
 # Cleanup
-rm -f /tmp/pr-body.md
+rm -f "$PR_BODY_FILE"
 
 exit 0

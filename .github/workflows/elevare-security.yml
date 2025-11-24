@@ -30,7 +30,12 @@ jobs:
           
           SECRETS_FOUND=0
           
-          # Check for common secret patterns
+          # Basic secret pattern detection
+          # Note: This is a simple pattern check that may produce false positives
+          # For production use, consider integrating tools like:
+          # - GitLeaks: https://github.com/gitleaks/gitleaks
+          # - TruffleHog: https://github.com/trufflesecurity/trufflehog
+          # - detect-secrets: https://github.com/Yelp/detect-secrets
           if grep -r -i -E "(password|passwd|pwd|secret|token|api[-_]?key|apikey|access[-_]?key)" --include="*.ts" --include="*.js" --include="*.json" --exclude-dir=node_modules --exclude-dir=dist . | grep -v "\.example\|\.md\|//\|/\*" | grep -E "=|:" > secrets.log 2>&1; then
             SECRETS_FOUND=$(wc -l < secrets.log)
             echo "⚠️ Possíveis segredos encontrados: $SECRETS_FOUND" >> $GITHUB_STEP_SUMMARY

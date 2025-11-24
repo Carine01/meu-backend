@@ -121,10 +121,15 @@ TOTAL_CHECKS=$((TOTAL_CHECKS + 1))
 
 SECURITY_ISSUES=0
 
+# Initialize security log
+echo "# Security Check Report" > "$REPORT_DIR/security.log"
+echo "Generated: $(date -u)" >> "$REPORT_DIR/security.log"
+echo "" >> "$REPORT_DIR/security.log"
+
 # Check for .env files
 if find . -name ".env" -not -path "*/node_modules/*" -not -name ".env.example" 2>/dev/null | grep -q .; then
     SECURITY_ISSUES=$((SECURITY_ISSUES + 1))
-    echo "❌ Arquivos .env encontrados no repo" > "$REPORT_DIR/security.log"
+    echo "❌ Arquivos .env encontrados no repo" >> "$REPORT_DIR/security.log"
 fi
 
 # Check for hardcoded secrets

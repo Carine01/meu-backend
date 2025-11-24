@@ -26,6 +26,8 @@ jobs:
         id: install
         run: |
           echo "## 📦 Instalação de Dependências" >> $GITHUB_STEP_SUMMARY
+          # Note: Using --legacy-peer-deps due to @nestjs/swagger peer dependency conflict
+          # TODO: Investigate and resolve peer dependency issues in the future
           if npm ci --legacy-peer-deps 2>&1 | tee install.log; then
             echo "✅ Instalação bem-sucedida" >> $GITHUB_STEP_SUMMARY
             echo "status=success" >> $GITHUB_OUTPUT
