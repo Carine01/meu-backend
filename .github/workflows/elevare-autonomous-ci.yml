@@ -28,6 +28,8 @@ jobs:
   auto-fix:
     name: 🔧 Auto Fix & Initial Validation
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     outputs:
       has_fixes: ${{ steps.check_changes.outputs.has_changes }}
       
@@ -70,6 +72,8 @@ jobs:
     name: 🔨 Build
     runs-on: ubuntu-latest
     needs: auto-fix
+    permissions:
+      contents: read
     
     steps:
       - name: Checkout code
@@ -106,6 +110,8 @@ jobs:
     name: 🎨 Lint & TypeCheck
     runs-on: ubuntu-latest
     needs: auto-fix
+    permissions:
+      contents: read
     
     steps:
       - name: Checkout code
@@ -153,6 +159,8 @@ jobs:
     name: 🧪 Tests
     runs-on: ubuntu-latest
     needs: auto-fix
+    permissions:
+      contents: read
     
     steps:
       - name: Checkout code
@@ -232,6 +240,8 @@ jobs:
     name: 📦 Dependency Check
     runs-on: ubuntu-latest
     needs: auto-fix
+    permissions:
+      contents: read
     
     steps:
       - name: Checkout code
@@ -274,6 +284,8 @@ jobs:
     runs-on: ubuntu-latest
     needs: [build, lint-typecheck, test, security, dependency-check]
     if: always()
+    permissions:
+      contents: read
     
     steps:
       - name: Checkout code
@@ -598,6 +610,8 @@ jobs:
     name: 🧹 Cleanup & Maintenance
     runs-on: ubuntu-latest
     if: github.event_name == 'schedule'
+    permissions:
+      contents: read
     
     steps:
       - name: Checkout code
