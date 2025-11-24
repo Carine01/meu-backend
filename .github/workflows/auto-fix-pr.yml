@@ -1,0 +1,58 @@
+name: Auto fix & PR
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 3 * * *' # diariamente às 03:00 UTC (ajuste se quiser)
+
+jobs:
+  autofix:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install deps
+        run: npm ci
+
+      - name: Apply eslint fix
+        run: npx eslint . --ext .js,.ts,.tsx --fix || true
+
+      - name: Prettier write
+        run: npx prettier --write "**/*.{js,ts,tsx,json,md}" || true
+
+      - name: NPM audit fix
+        run: npm audit fix || true
+
+      - name: Commit changes
+        id: commit_changes
+        run: |
+          git config user.name "elevare-bot"
+          git config user.email "no-reply@elevare"
+          if [ -n "$(git status --porcelain)" ]; then
+            BR="automated/fixes/$(date +%Y%m%d%H%M)"
+            git checkout -b $BR
+            git add -A
+            git commit -m "Automated: lint & format fixes"
+            git push -u origin $BR
+            echo "Created branch $BR with fixes"
+            echo "pr_needed=true" >> $GITHUB_OUTPUT
+          else
+            echo "No changes after fixes"
+            echo "pr_needed=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Create Pull Request
+        if: steps.commit_changes.outputs.pr_needed == 'true'
+        uses: peter-evans/create-pull-request@v5
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          commit-message: "Automated: lint & format fixes"
+          branch: ${{ github.head_ref }}
+          title: "Automated fixes (lint & format)"
+          body: "PR gerado automaticamente com correções de lint e formatação. Revise e merge se OK."

@@ -1,21 +1,45 @@
-name: CI
+name: CI Validate
 
 on:
-  push:
-    branches: [main]
   pull_request:
-    branches: [main]
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: read
+  pull-requests: write
 
 jobs:
-  build-and-test:
+  validate:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - name: Use Node.js 18.x
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 18
+          node-version: 20
+
       - name: Install dependencies
-        run: npm install
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint --if-present
+
+      - name: Format check
+        run: npm run format:check --if-present
+
       - name: Run tests
-        run: npm run test
+        run: npm test --if-present -- --silent
+
+      - name: TypeScript check
+        run: npx tsc --noEmit --if-present
+
+      - name: Run depcheck
+        run: npx depcheck --json > depcheck.json || true
+
+      - name: Upload depcheck
+        uses: actions/upload-artifact@v4
+        with:
+          name: depcheck
+          path: depcheck.json
