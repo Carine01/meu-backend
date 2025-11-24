@@ -1,0 +1,179 @@
+name: Elevare - Validação Completa
+
+on:
+  push:
+    branches: ['**']
+  pull_request:
+    branches: ['**']
+  workflow_dispatch:
+
+jobs:
+  validate:
+    name: Validação Automática
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+      
+      - name: Install dependencies
+        id: install
+        run: |
+          echo "## 📦 Instalação de Dependências" >> $GITHUB_STEP_SUMMARY
+          if npm ci --legacy-peer-deps 2>&1 | tee install.log; then
+            echo "✅ Instalação bem-sucedida" >> $GITHUB_STEP_SUMMARY
+            echo "status=success" >> $GITHUB_OUTPUT
+          else
+            echo "❌ Falha na instalação" >> $GITHUB_STEP_SUMMARY
+            cat install.log >> $GITHUB_STEP_SUMMARY
+            echo "status=failed" >> $GITHUB_OUTPUT
+            exit 1
+          fi
+      
+      - name: Check for unused dependencies
+        id: depcheck
+        continue-on-error: true
+        run: |
+          echo "## 🔍 Verificação de Dependências" >> $GITHUB_STEP_SUMMARY
+          npx depcheck --json > depcheck.json 2>&1 || true
+          
+          if [ -f depcheck.json ]; then
+            UNUSED=$(cat depcheck.json | grep -o '"dependencies":\[.*\]' | grep -c ',' || echo "0")
+            MISSING=$(cat depcheck.json | grep -o '"missing":{.*}' | grep -c ':' || echo "0")
+            
+            echo "- Dependências não usadas: $UNUSED" >> $GITHUB_STEP_SUMMARY
+            echo "- Dependências faltando: $MISSING" >> $GITHUB_STEP_SUMMARY
+            
+            if [ "$UNUSED" -gt 0 ] || [ "$MISSING" -gt 0 ]; then
+              echo "status=warning" >> $GITHUB_OUTPUT
+              echo "⚠️ Problemas detectados nas dependências" >> $GITHUB_STEP_SUMMARY
+            else
+              echo "status=success" >> $GITHUB_OUTPUT
+              echo "✅ Dependências OK" >> $GITHUB_STEP_SUMMARY
+            fi
+          fi
+      
+      - name: Run ESLint
+        id: eslint
+        continue-on-error: true
+        run: |
+          echo "## 🔧 Análise ESLint" >> $GITHUB_STEP_SUMMARY
+          if npx eslint . --format=json --output-file=eslint-report.json 2>&1; then
+            echo "✅ ESLint passou sem erros" >> $GITHUB_STEP_SUMMARY
+            echo "status=success" >> $GITHUB_OUTPUT
+          else
+            ERRORS=$(cat eslint-report.json 2>/dev/null | grep -o '"errorCount":[0-9]*' | awk -F: '{sum+=$2} END {print sum}' || echo "0")
+            WARNINGS=$(cat eslint-report.json 2>/dev/null | grep -o '"warningCount":[0-9]*' | awk -F: '{sum+=$2} END {print sum}' || echo "0")
+            echo "- Erros: $ERRORS" >> $GITHUB_STEP_SUMMARY
+            echo "- Avisos: $WARNINGS" >> $GITHUB_STEP_SUMMARY
+            echo "❌ ESLint detectou problemas" >> $GITHUB_STEP_SUMMARY
+            echo "status=failed" >> $GITHUB_OUTPUT
+            echo "errors=$ERRORS" >> $GITHUB_OUTPUT
+          fi
+      
+      - name: TypeScript Compilation Check
+        id: tsc
+        continue-on-error: true
+        run: |
+          echo "## 📝 Verificação TypeScript" >> $GITHUB_STEP_SUMMARY
+          if npx tsc --noEmit 2>&1 | tee tsc.log; then
+            echo "✅ TypeScript compilou sem erros" >> $GITHUB_STEP_SUMMARY
+            echo "status=success" >> $GITHUB_OUTPUT
+          else
+            ERRORS=$(grep -c "error TS" tsc.log || echo "0")
+            echo "- Erros de compilação: $ERRORS" >> $GITHUB_STEP_SUMMARY
+            echo "❌ Erros de TypeScript detectados" >> $GITHUB_STEP_SUMMARY
+            echo "status=failed" >> $GITHUB_OUTPUT
+            echo "errors=$ERRORS" >> $GITHUB_OUTPUT
+          fi
+      
+      - name: Run Tests
+        id: tests
+        continue-on-error: true
+        run: |
+          echo "## 🧪 Execução de Testes" >> $GITHUB_STEP_SUMMARY
+          if npm test 2>&1 | tee test.log; then
+            echo "✅ Todos os testes passaram" >> $GITHUB_STEP_SUMMARY
+            echo "status=success" >> $GITHUB_OUTPUT
+          else
+            FAILED=$(grep -c "FAIL" test.log || echo "0")
+            echo "- Testes falhados: $FAILED" >> $GITHUB_STEP_SUMMARY
+            echo "❌ Testes falharam" >> $GITHUB_STEP_SUMMARY
+            echo "status=failed" >> $GITHUB_OUTPUT
+            echo "failed=$FAILED" >> $GITHUB_OUTPUT
+          fi
+      
+      - name: Generate Validation Report
+        if: always()
+        run: |
+          cat > VALIDATION_REPORT.md << 'EOF'
+          # Relatório de Validação Elevare
+          
+          **Data:** $(date -u +"%Y-%m-%d %H:%M:%S UTC")
+          **Branch:** ${{ github.ref_name }}
+          **Commit:** ${{ github.sha }}
+          
+          ## Status dos Checks
+          
+          | Check | Status | Detalhes |
+          |-------|--------|----------|
+          | Instalação | ${{ steps.install.outputs.status || 'unknown' }} | Dependências npm |
+          | Depcheck | ${{ steps.depcheck.outputs.status || 'unknown' }} | Dependências não usadas |
+          | ESLint | ${{ steps.eslint.outputs.status || 'unknown' }} | Erros: ${{ steps.eslint.outputs.errors || '0' }} |
+          | TypeScript | ${{ steps.tsc.outputs.status || 'unknown' }} | Erros: ${{ steps.tsc.outputs.errors || '0' }} |
+          | Testes | ${{ steps.tests.outputs.status || 'unknown' }} | Falhados: ${{ steps.tests.outputs.failed || '0' }} |
+          
+          ## Critério de Aprovação
+          
+          EOF
+          
+          if [ "${{ steps.install.outputs.status }}" = "success" ] && \
+             [ "${{ steps.eslint.outputs.status }}" = "success" ] && \
+             [ "${{ steps.tsc.outputs.status }}" = "success" ] && \
+             [ "${{ steps.tests.outputs.status }}" = "success" ]; then
+            echo "✅ **APROVADO** - Todos os checks passaram" >> VALIDATION_REPORT.md
+            echo "integrity=100" >> $GITHUB_OUTPUT
+          else
+            echo "❌ **REPROVADO** - Checks falharam" >> VALIDATION_REPORT.md
+            
+            # Calculate integrity percentage
+            TOTAL=4
+            PASSED=0
+            [ "${{ steps.install.outputs.status }}" = "success" ] && PASSED=$((PASSED + 1))
+            [ "${{ steps.eslint.outputs.status }}" = "success" ] && PASSED=$((PASSED + 1))
+            [ "${{ steps.tsc.outputs.status }}" = "success" ] && PASSED=$((PASSED + 1))
+            [ "${{ steps.tests.outputs.status }}" = "success" ] && PASSED=$((PASSED + 1))
+            
+            INTEGRITY=$((PASSED * 100 / TOTAL))
+            echo "integrity=$INTEGRITY" >> $GITHUB_OUTPUT
+            echo "" >> VALIDATION_REPORT.md
+            echo "**Integridade da Branch:** ${INTEGRITY}%" >> VALIDATION_REPORT.md
+          fi
+          
+          cat VALIDATION_REPORT.md >> $GITHUB_STEP_SUMMARY
+      
+      - name: Upload Artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: validation-logs-${{ github.sha }}
+          path: |
+            install.log
+            depcheck.json
+            eslint-report.json
+            tsc.log
+            test.log
+            VALIDATION_REPORT.md
+          retention-days: 30
+      
+      - name: Fail if critical checks failed
+        if: steps.install.outputs.status != 'success' || steps.eslint.outputs.status != 'success' || steps.tsc.outputs.status != 'success' || steps.tests.outputs.status != 'success'
+        run: |
+          echo "❌ Validação falhou - Checks críticos não passaram"
+          exit 1

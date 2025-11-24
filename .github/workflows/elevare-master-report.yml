@@ -1,0 +1,330 @@
+name: Elevare - Relatório Completo
+
+on:
+  push:
+    branches: ['**']
+  pull_request:
+    branches: ['**']
+  workflow_dispatch:
+
+jobs:
+  generate-master-report:
+    name: Gerar Relatório Master
+    runs-on: ubuntu-latest
+    needs: []
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+      
+      - name: Install dependencies
+        continue-on-error: true
+        run: |
+          npm ci --legacy-peer-deps || npm install --legacy-peer-deps
+      
+      - name: Run All Checks
+        id: all-checks
+        continue-on-error: true
+        run: |
+          mkdir -p reports
+          
+          # 1. Installation Check
+          echo "🔍 Checking installation..." >> reports/summary.txt
+          if npm ci --legacy-peer-deps 2>&1 | tee reports/install.log; then
+            INSTALL_STATUS="✅ SUCCESS"
+          else
+            INSTALL_STATUS="❌ FAILED"
+          fi
+          echo "Installation: $INSTALL_STATUS" >> reports/summary.txt
+          
+          # 2. Lint Check
+          echo "🔍 Running ESLint..." >> reports/summary.txt
+          LINT_ERRORS=0
+          LINT_WARNINGS=0
+          if npx eslint . --format=json --output-file=reports/eslint.json 2>&1; then
+            LINT_STATUS="✅ SUCCESS"
+          else
+            LINT_STATUS="❌ FAILED"
+            LINT_ERRORS=$(cat reports/eslint.json 2>/dev/null | grep -o '"errorCount":[0-9]*' | awk -F: '{sum+=$2} END {print sum}' || echo "0")
+            LINT_WARNINGS=$(cat reports/eslint.json 2>/dev/null | grep -o '"warningCount":[0-9]*' | awk -F: '{sum+=$2} END {print sum}' || echo "0")
+          fi
+          echo "Lint: $LINT_STATUS (Errors: $LINT_ERRORS, Warnings: $LINT_WARNINGS)" >> reports/summary.txt
+          
+          # 3. TypeScript Check
+          echo "🔍 Checking TypeScript..." >> reports/summary.txt
+          TSC_ERRORS=0
+          if npx tsc --noEmit 2>&1 | tee reports/tsc.log; then
+            TSC_STATUS="✅ SUCCESS"
+          else
+            TSC_STATUS="❌ FAILED"
+            TSC_ERRORS=$(grep -c "error TS" reports/tsc.log || echo "0")
+          fi
+          echo "TypeScript: $TSC_STATUS (Errors: $TSC_ERRORS)" >> reports/summary.txt
+          
+          # 4. Tests
+          echo "🔍 Running tests..." >> reports/summary.txt
+          TEST_FAILED=0
+          if npm test 2>&1 | tee reports/test.log; then
+            TEST_STATUS="✅ SUCCESS"
+          else
+            TEST_STATUS="❌ FAILED"
+            TEST_FAILED=$(grep -c "FAIL" reports/test.log || echo "0")
+          fi
+          echo "Tests: $TEST_STATUS (Failed: $TEST_FAILED)" >> reports/summary.txt
+          
+          # 5. Security Check
+          echo "🔍 Security scan..." >> reports/summary.txt
+          SECURITY_ISSUES=0
+          
+          # Check for .env files
+          if find . -name ".env" -not -path "*/node_modules/*" -not -name ".env.example" 2>/dev/null | grep -q .; then
+            SECURITY_ISSUES=$((SECURITY_ISSUES + 1))
+            echo "❌ .env files found in repo" >> reports/security.log
+          fi
+          
+          # Check for hardcoded secrets
+          if grep -r "password\s*=\s*['\"]" --include="*.ts" --include="*.js" --exclude-dir=node_modules --exclude-dir=dist . 2>/dev/null | grep -v "\.example\|\.md" | head -1; then
+            SECURITY_ISSUES=$((SECURITY_ISSUES + 1))
+            echo "❌ Possible hardcoded credentials" >> reports/security.log
+          fi
+          
+          # NPM Audit
+          npm audit --json > reports/audit.json 2>&1 || true
+          CRITICAL=$(cat reports/audit.json 2>/dev/null | grep -o '"critical":[0-9]*' | head -1 | awk -F: '{print $2}' || echo "0")
+          HIGH=$(cat reports/audit.json 2>/dev/null | grep -o '"high":[0-9]*' | head -1 | awk -F: '{print $2}' || echo "0")
+          
+          if [ "$CRITICAL" -gt 0 ] || [ "$HIGH" -gt 0 ]; then
+            SECURITY_ISSUES=$((SECURITY_ISSUES + 1))
+          fi
+          
+          if [ "$SECURITY_ISSUES" -eq 0 ]; then
+            SECURITY_STATUS="✅ SUCCESS"
+          else
+            SECURITY_STATUS="❌ FAILED"
+          fi
+          echo "Security: $SECURITY_STATUS (Issues: $SECURITY_ISSUES, Critical: $CRITICAL, High: $HIGH)" >> reports/summary.txt
+          
+          # 6. Depcheck
+          echo "🔍 Checking dependencies..." >> reports/summary.txt
+          npx depcheck --json > reports/depcheck.json 2>&1 || true
+          UNUSED_DEPS=0
+          if [ -f reports/depcheck.json ]; then
+            UNUSED_DEPS=$(cat reports/depcheck.json | grep -o '"dependencies":\[.*\]' | grep -c ',' || echo "0")
+          fi
+          if [ "$UNUSED_DEPS" -gt 0 ]; then
+            DEPCHECK_STATUS="⚠️ WARNING"
+          else
+            DEPCHECK_STATUS="✅ SUCCESS"
+          fi
+          echo "Dependencies: $DEPCHECK_STATUS (Unused: $UNUSED_DEPS)" >> reports/summary.txt
+          
+          # Calculate integrity percentage
+          TOTAL_CHECKS=5
+          PASSED_CHECKS=0
+          
+          [[ "$INSTALL_STATUS" == "✅ SUCCESS" ]] && PASSED_CHECKS=$((PASSED_CHECKS + 1))
+          [[ "$LINT_STATUS" == "✅ SUCCESS" ]] && PASSED_CHECKS=$((PASSED_CHECKS + 1))
+          [[ "$TSC_STATUS" == "✅ SUCCESS" ]] && PASSED_CHECKS=$((PASSED_CHECKS + 1))
+          [[ "$TEST_STATUS" == "✅ SUCCESS" ]] && PASSED_CHECKS=$((PASSED_CHECKS + 1))
+          [[ "$SECURITY_STATUS" == "✅ SUCCESS" ]] && PASSED_CHECKS=$((PASSED_CHECKS + 1))
+          
+          INTEGRITY=$((PASSED_CHECKS * 100 / TOTAL_CHECKS))
+          
+          echo "integrity=$INTEGRITY" >> $GITHUB_OUTPUT
+          echo "lint_errors=$LINT_ERRORS" >> $GITHUB_OUTPUT
+          echo "tsc_errors=$TSC_ERRORS" >> $GITHUB_OUTPUT
+          echo "test_failed=$TEST_FAILED" >> $GITHUB_OUTPUT
+          echo "security_issues=$SECURITY_ISSUES" >> $GITHUB_OUTPUT
+          echo "unused_deps=$UNUSED_DEPS" >> $GITHUB_OUTPUT
+      
+      - name: Generate ELEVARE_GIT_AGENT_REPORT.md
+        if: always()
+        run: |
+          cat > ELEVARE_GIT_AGENT_REPORT.md << 'EOFR'
+          # ELEVARE GIT AGENT REPORT
+          
+          ---
+          
+          **Data de Execução:** $(date -u +"%Y-%m-%d %H:%M:%S UTC")
+          **Branch:** ${{ github.ref_name }}
+          **Commit SHA:** ${{ github.sha }}
+          **Executado por:** ${{ github.actor }}
+          **Workflow:** ${{ github.workflow }}
+          **Run ID:** ${{ github.run_id }}
+          
+          ---
+          
+          ## RESUMO EXECUTIVO
+          
+          | Métrica | Valor |
+          |---------|-------|
+          | **Integridade da Branch** | **${{ steps.all-checks.outputs.integrity || '0' }}%** |
+          | Erros de Lint | ${{ steps.all-checks.outputs.lint_errors || '0' }} |
+          | Erros TypeScript | ${{ steps.all-checks.outputs.tsc_errors || '0' }} |
+          | Testes Falhados | ${{ steps.all-checks.outputs.test_failed || '0' }} |
+          | Problemas de Segurança | ${{ steps.all-checks.outputs.security_issues || '0' }} |
+          | Dependências Não Usadas | ${{ steps.all-checks.outputs.unused_deps || '0' }} |
+          
+          ---
+          
+          ## CHECKS EXECUTADOS
+          
+          ### 1. Instalação de Dependências
+          EOFR
+          
+          cat reports/install.log >> ELEVARE_GIT_AGENT_REPORT.md 2>/dev/null || echo "Log não disponível" >> ELEVARE_GIT_AGENT_REPORT.md
+          
+          cat >> ELEVARE_GIT_AGENT_REPORT.md << 'EOFR'
+          
+          ### 2. ESLint
+          EOFR
+          
+          if [ -f reports/eslint.json ]; then
+            echo '```json' >> ELEVARE_GIT_AGENT_REPORT.md
+            head -50 reports/eslint.json >> ELEVARE_GIT_AGENT_REPORT.md
+            echo '```' >> ELEVARE_GIT_AGENT_REPORT.md
+          fi
+          
+          cat >> ELEVARE_GIT_AGENT_REPORT.md << 'EOFR'
+          
+          ### 3. TypeScript Compilation
+          EOFR
+          
+          echo '```' >> ELEVARE_GIT_AGENT_REPORT.md
+          head -50 reports/tsc.log >> ELEVARE_GIT_AGENT_REPORT.md 2>/dev/null || echo "Nenhum erro" >> ELEVARE_GIT_AGENT_REPORT.md
+          echo '```' >> ELEVARE_GIT_AGENT_REPORT.md
+          
+          cat >> ELEVARE_GIT_AGENT_REPORT.md << 'EOFR'
+          
+          ### 4. Testes
+          EOFR
+          
+          echo '```' >> ELEVARE_GIT_AGENT_REPORT.md
+          tail -100 reports/test.log >> ELEVARE_GIT_AGENT_REPORT.md 2>/dev/null || echo "Log não disponível" >> ELEVARE_GIT_AGENT_REPORT.md
+          echo '```' >> ELEVARE_GIT_AGENT_REPORT.md
+          
+          cat >> ELEVARE_GIT_AGENT_REPORT.md << 'EOFR'
+          
+          ### 5. Segurança
+          EOFR
+          
+          echo '```' >> ELEVARE_GIT_AGENT_REPORT.md
+          cat reports/security.log >> ELEVARE_GIT_AGENT_REPORT.md 2>/dev/null || echo "Nenhum problema crítico" >> ELEVARE_GIT_AGENT_REPORT.md
+          echo '```' >> ELEVARE_GIT_AGENT_REPORT.md
+          
+          cat >> ELEVARE_GIT_AGENT_REPORT.md << 'EOFR'
+          
+          ### 6. Audit NPM
+          EOFR
+          
+          echo '```json' >> ELEVARE_GIT_AGENT_REPORT.md
+          head -100 reports/audit.json >> ELEVARE_GIT_AGENT_REPORT.md 2>/dev/null || echo "{}" >> ELEVARE_GIT_AGENT_REPORT.md
+          echo '```' >> ELEVARE_GIT_AGENT_REPORT.md
+          
+          cat >> ELEVARE_GIT_AGENT_REPORT.md << 'EOFR'
+          
+          ---
+          
+          ## CRITÉRIO DE APROVAÇÃO
+          
+          EOFR
+          
+          INTEGRITY="${{ steps.all-checks.outputs.integrity || '0' }}"
+          
+          if [ "$INTEGRITY" -eq 100 ]; then
+            cat >> ELEVARE_GIT_AGENT_REPORT.md << 'EOFR'
+          ### ✅ APROVADO
+          
+          Todos os checks críticos passaram:
+          - ✅ CI 100% verde
+          - ✅ Lint 0 erros
+          - ✅ TSC sem falhas
+          - ✅ Testes passando
+          - ✅ Nenhum segredo vazando
+          - ✅ Nenhum warning crítico
+          
+          Branch está pronta para merge/deploy.
+          EOFR
+          else
+            cat >> ELEVARE_GIT_AGENT_REPORT.md << 'EOFR'
+          ### ❌ REPROVADO
+          
+          Branch não atende aos critérios mínimos de qualidade.
+          
+          **Ações Necessárias:**
+          EOFR
+            
+            if [ "${{ steps.all-checks.outputs.lint_errors || '0' }}" -gt 0 ]; then
+              echo "- Corrigir ${{ steps.all-checks.outputs.lint_errors }} erros de lint" >> ELEVARE_GIT_AGENT_REPORT.md
+            fi
+            
+            if [ "${{ steps.all-checks.outputs.tsc_errors || '0' }}" -gt 0 ]; then
+              echo "- Corrigir ${{ steps.all-checks.outputs.tsc_errors }} erros TypeScript" >> ELEVARE_GIT_AGENT_REPORT.md
+            fi
+            
+            if [ "${{ steps.all-checks.outputs.test_failed || '0' }}" -gt 0 ]; then
+              echo "- Corrigir ${{ steps.all-checks.outputs.test_failed }} testes falhados" >> ELEVARE_GIT_AGENT_REPORT.md
+            fi
+            
+            if [ "${{ steps.all-checks.outputs.security_issues || '0' }}" -gt 0 ]; then
+              echo "- Resolver ${{ steps.all-checks.outputs.security_issues }} problemas de segurança" >> ELEVARE_GIT_AGENT_REPORT.md
+            fi
+          fi
+          
+          cat >> ELEVARE_GIT_AGENT_REPORT.md << 'EOFR'
+          
+          ---
+          
+          ## SUGESTÕES
+          
+          1. Execute os auto-fixes disponíveis: workflow `elevare-auto-fix`
+          2. Revise logs detalhados nos artifacts deste workflow
+          3. Corrija manualmente problemas que não podem ser automatizados
+          4. Re-execute este workflow após correções
+          
+          ---
+          
+          **Fim do Relatório**
+          EOFR
+          
+          # Add to step summary
+          cat ELEVARE_GIT_AGENT_REPORT.md >> $GITHUB_STEP_SUMMARY
+      
+      - name: Upload Complete Report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: elevare-master-report-${{ github.sha }}
+          path: |
+            ELEVARE_GIT_AGENT_REPORT.md
+            reports/
+          retention-days: 90
+      
+      - name: Commit Report to Repo
+        if: github.event_name == 'push' && github.ref_name != 'main'
+        continue-on-error: true
+        run: |
+          git config user.name "Elevare Reporter Bot"
+          git config user.email "reporter@elevare.dev"
+          
+          cp ELEVARE_GIT_AGENT_REPORT.md ./
+          git add ELEVARE_GIT_AGENT_REPORT.md
+          
+          if ! git diff --cached --quiet; then
+            git commit -m "📊 Update Elevare Git Agent Report [skip ci]"
+            git push origin ${{ github.ref_name }} || echo "Push failed or not needed"
+          fi
+      
+      - name: Block if integrity too low
+        if: steps.all-checks.outputs.integrity < 80
+        run: |
+          echo "❌ Integridade da branch (${{ steps.all-checks.outputs.integrity }}%) abaixo do mínimo (80%)"
+          exit 1
