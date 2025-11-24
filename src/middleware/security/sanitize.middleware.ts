@@ -35,40 +35,11 @@ export class SanitizeMiddleware implements NestMiddleware {
     if (typeof value !== 'string') {
       return value;
     }
-
-    // Sanitização mais robusta - remove todos os caracteres potencialmente perigosos
-    // em vez de usar regex simples que podem ser contornados
-    let sanitized = value;
-
-    // Remove null bytes que podem truncar strings
-    sanitized = sanitized.replace(/\0/g, '');
-
-    // Codifica caracteres HTML especiais para prevenir XSS
-    sanitized = sanitized
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;')
-      .replace(/'/g, '&#x27;')
-      .replace(/\//g, '&#x2F;');
-
-    // Remove protocolos perigosos (javascript:, data:, vbscript:, etc)
-    // usando uma abordagem mais segura
-    const dangerousProtocols = [
-      'javascript:',
-      'data:',
-      'vbscript:',
-      'file:',
-      'about:',
-    ];
-    const lowerValue = sanitized.toLowerCase();
-    for (const protocol of dangerousProtocols) {
-      if (lowerValue.includes(protocol)) {
-        // Remove completamente o valor se contiver protocolos perigosos
-        return '';
-      }
-    }
-
-    return sanitized;
+    
+    // Remove caracteres perigosos básicos
+    return value
+      .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
+      .replace(/javascript:/gi, '')
+      .replace(/on\w+\s*=/gi, '');
   }
 }

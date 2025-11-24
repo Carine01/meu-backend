@@ -4,13 +4,13 @@ export const securityConfig = {
     ttl: 60,
     limit: 100,
   },
-
+  
   // CORS Configuration
   cors: {
     origin: process.env.ALLOWED_ORIGINS?.split(',') || ['http://localhost:3000'],
     credentials: true,
   },
-
+  
   // Helmet Configuration
   helmet: {
     contentSecurityPolicy: {
@@ -27,13 +27,13 @@ export const securityConfig = {
       preload: true,
     },
   },
-
+  
   // JWT Configuration
   jwt: {
     expiresIn: process.env.JWT_EXPIRES_IN || '1d',
     refreshExpiresIn: process.env.JWT_REFRESH_EXPIRES_IN || '7d',
   },
-
+  
   // Password Policy
   password: {
     minLength: 8,

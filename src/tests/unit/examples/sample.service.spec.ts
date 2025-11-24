@@ -6,7 +6,7 @@ describe('SampleService (Example)', () => {
 
   beforeEach(async () => {
     userFactory = new UserFactory();
-
+    
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         // Add your service here
