@@ -11,3 +11,12 @@ dist/
 service-account.json
 *.firebase-admin.json
 *.credentials.json
+
+# Reports directory (generated locally)
+reports/
+
+# Auto-fix logs
+auto-fix-*.log
+
+# Generated reports
+ELEVARE_GIT_AGENT_REPORT.md
