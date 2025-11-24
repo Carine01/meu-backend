@@ -4,7 +4,7 @@ import { BiController } from './bi.controller';
 
 /**
  * Módulo de Business Intelligence
- * 
+ *
  * Funcionalidades:
  * - Dashboard com métricas 30d/7d/hoje
  * - Métricas Prometheus (/bi/metrics)

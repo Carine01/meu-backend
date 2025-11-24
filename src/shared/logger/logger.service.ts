@@ -4,7 +4,7 @@ import pino from 'pino';
 
 const baseLogger = pino({
   level: process.env.LOG_LEVEL || 'info',
-  transport: process.env.NODE_ENV !== 'production' 
+  transport: process.env.NODE_ENV !== 'production'
     ? {
         target: 'pino-pretty',
         options: {
@@ -33,10 +33,10 @@ export class CustomLoggerService implements NestLoggerService {
   constructor(serviceName: string, correlationId?: string) {
     this.serviceName = serviceName;
     this.correlationId = correlationId;
-    
+
     const bindings: Record<string, any> = { service: serviceName };
     if (correlationId) bindings.correlationId = correlationId;
-    
+
     this.logger = baseLogger.child(bindings);
   }
 

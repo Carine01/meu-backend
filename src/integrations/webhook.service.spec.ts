@@ -103,7 +103,7 @@ describe('WebhookService', () => {
       }).compile();
 
       const serviceWithoutUrl = moduleWithoutUrl.get<WebhookService>(WebhookService);
-      
+
       await expect(serviceWithoutUrl.sendWebhook({ test: true })).rejects.toThrow(
         'WEBHOOK_URL não configurado',
       );

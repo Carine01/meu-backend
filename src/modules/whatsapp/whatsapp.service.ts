@@ -24,7 +24,7 @@ export class WhatsAppService {
   async sendTextMessage(to: string, message: string): Promise<SendMessageResult> {
     try {
       const messageId = await this.provider.sendMessage(to, message);
-      
+
       return {
         messageId,
         status: MessageStatus.SENT,
@@ -41,7 +41,7 @@ export class WhatsAppService {
    */
   async sendMediaMessage(to: string, mediaUrl: string, caption?: string): Promise<SendMessageResult> {
     const messageId = await this.provider.sendMedia(to, mediaUrl, caption);
-    
+
     return {
       messageId,
       status: MessageStatus.SENT,
@@ -54,7 +54,7 @@ export class WhatsAppService {
    */
   async sendTemplateMessage(to: string, templateName: string, params: any[]): Promise<SendMessageResult> {
     const messageId = await this.provider.sendTemplate(to, templateName, params);
-    
+
     return {
       messageId,
       status: MessageStatus.SENT,
@@ -89,7 +89,7 @@ export class WhatsAppService {
       } catch (error: any) {
         lastError = error;
         this.logger.warn(`Tentativa ${attempt} falhou: ${error.message}`);
-        
+
         if (attempt < maxRetries) {
           await this.sleep(2000 * attempt); // Backoff exponencial
         }

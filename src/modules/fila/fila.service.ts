@@ -8,14 +8,14 @@ import { MensagemResolverService } from '../mensagens/mensagem-resolver.service'
 
 /**
  * Service de Fila de Envio WhatsApp
- * 
+ *
  * Funcionalidades:
  * - Adicionar mensagens na fila com agendamento
  * - Processar fila em batches (10 por vez)
  * - Retry automático (3 tentativas com backoff)
  * - Integração com webhook Make.com/Zapier
  * - Status tracking: pending → sent/failed
- * 
+ *
  * Baseado na lógica original do Google Apps Script evento "fila_add"
  */
 @Injectable()
@@ -36,7 +36,7 @@ export class FilaService {
 
   /**
    * Adiciona nova mensagem à fila de envio
-   * 
+   *
    * @param leadId - ID do lead destinatário
    * @param leadNome - Nome do destinatário
    * @param leadTelefone - Telefone E.164 (+5511999999999)
@@ -44,7 +44,7 @@ export class FilaService {
    * @param variaveisExtras - Variáveis adicionais para interpolar
    * @param scheduledFor - Data/hora para envio agendado (opcional, padrão: agora)
    * @param clinicId - ID da clínica (opcional, padrão: elevare-01)
-   * 
+   *
    * @example
    * ```typescript
    * await filaService.adicionarNaFila(
@@ -139,14 +139,14 @@ export class FilaService {
 
   /**
    * Processa fila de envio em batch
-   * 
+   *
    * Busca até `batchSize` itens com status 'pending' e scheduledFor <= agora
    * Tenta enviar cada um, atualiza status para 'sent' ou 'failed'
    * Retry automático: até 3 tentativas com delay de 2s entre elas
-   * 
+   *
    * @param batchSize - Quantidade de mensagens a processar (padrão: 10)
    * @returns Quantidade de mensagens enviadas com sucesso
-   * 
+   *
    * @example
    * ```typescript
    * // Executar em CronJob a cada 1 minuto
@@ -239,10 +239,10 @@ export class FilaService {
 
   /**
    * Envia mensagem via webhook WhatsApp (Make.com/Zapier/n8n)
-   * 
+   *
    * Integração com sistema de webhooks criado anteriormente
    * Usa WEBHOOK_MAKE_URL ou WEBHOOK_URL como fallback
-   * 
+   *
    * @param item - Item da fila a enviar
    * @private
    */
@@ -305,7 +305,7 @@ export class FilaService {
 
   /**
    * Cancela mensagem pendente na fila
-   * 
+   *
    * @param filaId - ID do item da fila
    * @returns true se cancelado, false se não encontrado
    */
@@ -346,7 +346,7 @@ export class FilaService {
 
   /**
    * Busca itens da fila por status
-   * 
+   *
    * @param status - Status a filtrar (pending, sent, failed, cancelled)
    * @param limit - Quantidade máxima de resultados (padrão: 50)
    * @returns Array de itens da fila
@@ -376,7 +376,7 @@ export class FilaService {
 
   /**
    * Estatísticas da fila de envio
-   * 
+   *
    * @returns Contadores por status
    */
   async getEstatisticas(): Promise<Record<FilaEnvio['status'], number>> {

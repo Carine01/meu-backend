@@ -26,8 +26,8 @@ export class AuthService {
   ) {}
 
   async login(loginDto: LoginDto): Promise<{ access_token: string; user: any }> {
-    const usuario = await this.usuarioRepo.findOne({ 
-      where: { email: loginDto.email, ativo: true } 
+    const usuario = await this.usuarioRepo.findOne({
+      where: { email: loginDto.email, ativo: true }
     });
 
     if (!usuario) {
@@ -39,8 +39,8 @@ export class AuthService {
       throw new UnauthorizedException('Credenciais inválidas');
     }
 
-    const payload = { 
-      sub: usuario.id, 
+    const payload = {
+      sub: usuario.id,
       email: usuario.email,
       clinicId: usuario.clinicId,
       roles: usuario.roles,
@@ -61,8 +61,8 @@ export class AuthService {
   }
 
   async register(registerDto: RegisterDto): Promise<Usuario> {
-    const existe = await this.usuarioRepo.findOne({ 
-      where: { email: registerDto.email } 
+    const existe = await this.usuarioRepo.findOne({
+      where: { email: registerDto.email }
     });
 
     if (existe) {

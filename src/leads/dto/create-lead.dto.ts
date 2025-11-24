@@ -19,8 +19,8 @@ export class CreateLeadDto {
     return e164 || value; // Retorna original se conversão falhar (validação vai pegar)
   })
   @IsString({ message: 'Telefone inválido' })
-  @Matches(/^\+55\d{10,11}$/, { 
-    message: 'Telefone deve estar no formato +5511999999999' 
+  @Matches(/^\+55\d{10,11}$/, {
+    message: 'Telefone deve estar no formato +5511999999999'
   })
   phone!: string;
 
@@ -59,8 +59,8 @@ export class UpdateLeadDto {
     return e164 || value;
   })
   @IsString({ message: 'Telefone inválido' })
-  @Matches(/^\+55\d{10,11}$/, { 
-    message: 'Telefone deve estar no formato +5511999999999' 
+  @Matches(/^\+55\d{10,11}$/, {
+    message: 'Telefone deve estar no formato +5511999999999'
   })
   phone?: string;
 

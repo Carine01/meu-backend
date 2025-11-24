@@ -63,7 +63,7 @@ export interface PerfilProfissional {
 
 /**
  * Service responsável por resolver variáveis nos templates de mensagens
- * 
+ *
  * Interpolação de variáveis no formato {{variavel}}:
  * - {{nome}} → nome do lead
  * - {{clinica}} → nome da clínica (perfil)
@@ -122,11 +122,11 @@ export class MensagemResolverService {
 
   /**
    * Resolve todas as variáveis de um template de mensagem
-   * 
+   *
    * @param template - Template com variáveis {{var}}
    * @param variaveis - Objeto com valores customizados para sobrescrever defaults
    * @returns String com variáveis interpoladas
-   * 
+   *
    * @example
    * ```typescript
    * resolverMensagem('Oi {{nome}}, bem-vinda à {{clinica}}!', { nome: 'Maria' })
@@ -169,7 +169,7 @@ export class MensagemResolverService {
 
   /**
    * Resolve mensagem buscando template por key da biblioteca
-   * 
+   *
    * @param mensagemKey - Chave da mensagem (ex: BOASVINDAS_01)
    * @param variaveis - Variáveis customizadas
    * @returns Objeto com template e mensagem resolvida

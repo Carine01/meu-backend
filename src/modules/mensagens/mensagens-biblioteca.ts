@@ -2,10 +2,10 @@ import { MensagemTemplate } from './entities/mensagem.entity';
 
 /**
  * BIBLIOTECA DE MENSAGENS IARA - 119 MENSAGENS HUMANIZADAS
- * 
+ *
  * Baseada na "alma" do sistema original Google Sheets
  * Cada mensagem preserva: tom humanizado, objetivo estratégico, stage apropriado
- * 
+ *
  * CATEGORIAS:
  * - BOASVINDAS: Primeiro contato (frio/morno)
  * - AUTH_SUPREMA: Autoridade + scarcity + decisão (quente)
@@ -29,7 +29,7 @@ export const BIBLIOTECA_MENSAGENS: Record<string, MensagemTemplate> = {
     template: '{{nome}}, aqui é da {{clinica}} 🌸. Quero te ajudar em {{objetivo}} sem correria. Prefere manhã, tarde ou sábado? Eu encaixo no VIP.',
     descricao: 'Primeiro contato imediato, tom consultivo e flexibilidade'
   },
-  
+
   BOASVINDAS_02: {
     key: 'BOASVINDAS_02',
     stage: 'frio',
@@ -39,7 +39,7 @@ export const BIBLIOTECA_MENSAGENS: Record<string, MensagemTemplate> = {
     template: 'Passei pra facilitar: me diz 2 janelas desta semana e eu organizo tudo pra você focar em {{objetivo}} sem perder tempo.',
     descricao: 'Foco na praticidade e economia de tempo do cliente'
   },
-  
+
   BOASVINDAS_03: {
     key: 'BOASVINDAS_03',
     stage: 'morno',
@@ -1269,13 +1269,13 @@ export function getMensagemByKey(key: string): MensagemTemplate | undefined {
  */
 export function getEstatisticasBiblioteca(): Record<string, number> {
   const stats: Record<string, number> = {};
-  
+
   Object.values(BIBLIOTECA_MENSAGENS).forEach(msg => {
     if (msg.categoria) {
       stats[msg.categoria] = (stats[msg.categoria] || 0) + 1;
     }
   });
-  
+
   return stats;
 }
 

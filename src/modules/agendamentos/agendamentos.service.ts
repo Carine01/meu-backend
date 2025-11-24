@@ -147,7 +147,7 @@ export class AgendamentosService {
   /**
    * Busca agendamento por id e clinicId
    */
-  async buscarPorIdEClinica(id: string, clinicId: string): Promise<Agendamento | undefined> {
+  async buscarPorIdEClinica(id: string, clinicId: string): Promise<Agendamento | null> {
     if (!clinicId || clinicId.trim() === '') {
       throw new Error('clinicId é obrigatório');
     }

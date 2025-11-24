@@ -17,10 +17,10 @@ export class Bloqueio {
   @Column({ nullable: true })
   endTime?: string; // HH:mm
 
-  @Column({ 
-    type: 'enum', 
-    enum: ['almoco', 'feriado', 'sabado', 'intervalo', 'personalizado'], 
-    default: 'personalizado' 
+  @Column({
+    type: 'enum',
+    enum: ['almoco', 'feriado', 'sabado', 'intervalo', 'personalizado'],
+    default: 'personalizado'
   })
   tipo!: 'almoco' | 'feriado' | 'sabado' | 'intervalo' | 'personalizado';
 

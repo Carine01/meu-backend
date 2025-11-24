@@ -44,7 +44,7 @@ describe('AgendaSemanalService', () => {
 
   it('deve criar campanha semanal', async () => {
     mockFirestore.add.mockResolvedValue({ id: 'campanha-123' });
-    
+
     const campanha = {
       titulo: 'Lembrete Semanal',
       diaSemana: 'segunda',

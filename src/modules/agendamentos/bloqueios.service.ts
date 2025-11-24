@@ -15,7 +15,7 @@ export class BloqueiosService {
       return;
     }
   private readonly logger = new Logger(BloqueiosService.name);
-  
+
   private readonly FERIADOS_NACIONAIS = [
     '2025-01-01', // Ano Novo
     '2025-04-21', // Tiradentes

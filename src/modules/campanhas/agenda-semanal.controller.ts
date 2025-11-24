@@ -14,11 +14,11 @@ export class AgendaSemanalController {
   async getRegrasSemanais() {
     const dias = ['Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado', 'Domingo'];
     const regras: any = {};
-    
+
     for (const dia of dias) {
       regras[dia] = await this.agendaSemanalService['getRegrasSemanais']()[dia];
     }
-    
+
     return regras;
   }
 }

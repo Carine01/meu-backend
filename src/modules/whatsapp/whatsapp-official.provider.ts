@@ -39,7 +39,7 @@ export class WhatsAppOfficialProvider implements WhatsAppProvider {
       );
 
       this.logger.log(`✅ Mensagem enviada via API oficial: ${response.data.messages[0].id}`);
-      
+
       return response.data.messages[0].id;
     } catch (error: any) {
       this.logger.error(`Erro na API oficial: ${error.response?.data || error.message}`);
@@ -116,7 +116,7 @@ export class WhatsAppOfficialProvider implements WhatsAppProvider {
       );
 
       const status = response.data.status;
-      
+
       switch (status) {
         case 'sent':
           return MessageStatus.SENT;

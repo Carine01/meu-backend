@@ -34,11 +34,11 @@ export class BaileysProvider implements WhatsAppProvider {
 
     this.socket.ev.on('connection.update', (update: any) => {
       const { connection, lastDisconnect } = update;
-      
+
       if (connection === 'close') {
         const shouldReconnect = (lastDisconnect?.error as Boom)?.output?.statusCode !== DisconnectReason.loggedOut;
         this.logger.warn('Connection closed. Reconnecting...', shouldReconnect);
-        
+
         if (shouldReconnect) {
           setTimeout(() => this.initialize(), 3000);
         }
@@ -57,9 +57,9 @@ export class BaileysProvider implements WhatsAppProvider {
     try {
       const formattedNumber = this.formatPhoneNumber(to);
       const result = await this.socket.sendMessage(formattedNumber, { text: message });
-      
+
       this.logger.log(`📤 Mensagem enviada para ${to}`);
-      
+
       return result.key.id;
     } catch (error: any) {
       this.logger.error(`Erro ao enviar mensagem: ${error.message}`);
@@ -73,21 +73,21 @@ export class BaileysProvider implements WhatsAppProvider {
     }
 
     const formattedNumber = this.formatPhoneNumber(to);
-    
+
     const result = await this.socket.sendMessage(formattedNumber, {
       image: { url: mediaUrl },
       caption: caption || '',
     });
 
     this.logger.log(`📷 Mídia enviada para ${to}`);
-    
+
     return result.key.id;
   }
 
   async sendTemplate(to: string, templateName: string, params: any[]): Promise<string> {
     // Baileys não suporta templates - fallback para mensagem de texto
     this.logger.warn('Templates não suportados no Baileys. Enviando mensagem de texto.');
-    
+
     const message = this.buildTemplateMessage(templateName, params);
     return this.sendMessage(to, message);
   }
@@ -101,7 +101,7 @@ export class BaileysProvider implements WhatsAppProvider {
     try {
       const formattedNumber = this.formatPhoneNumber(phoneNumber);
       const [result] = await this.socket.onWhatsApp(formattedNumber);
-      
+
       return result?.exists || false;
     } catch (error: any) {
       this.logger.error(`Erro ao verificar número: ${error.message}`);
@@ -114,11 +114,11 @@ export class BaileysProvider implements WhatsAppProvider {
    */
   private formatPhoneNumber(phoneNumber: string): string {
     const cleaned = phoneNumber.replace(/\D/g, '');
-    
+
     if (!cleaned.startsWith('55')) {
       return `55${cleaned}@s.whatsapp.net`;
     }
-    
+
     return `${cleaned}@s.whatsapp.net`;
   }
 

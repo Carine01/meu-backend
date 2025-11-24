@@ -53,7 +53,7 @@ export interface DashboardMetrics {
 
 /**
  * Service de Business Intelligence e Métricas
- * 
+ *
  * Funcionalidades:
  * - Dashboard com métricas 30d/7d/hoje
  * - Métricas Prometheus para scraping
@@ -263,7 +263,7 @@ export class BiService {
   /**
    * Retorna métricas no formato Prometheus (text/plain)
    * Compatível com scraping do Prometheus
-   * 
+   *
    * @example
    * ```
    * # HELP elevare_leads_total Total de leads
@@ -358,8 +358,8 @@ elevare_leads_por_stage{stage="frio"} ${metrics.percentualFrio}
       // TODO: Adicionar etapa "4. Comprou" quando módulo financeiro estiver pronto
     ];
 
-    const taxaConversaoGeral = metrics.leads30d > 0 
-      ? Math.round((metrics.compareceu30d / metrics.leads30d) * 100) 
+    const taxaConversaoGeral = metrics.leads30d > 0
+      ? Math.round((metrics.compareceu30d / metrics.leads30d) * 100)
       : 0;
 
     return { etapas, taxaConversaoGeral };

@@ -73,7 +73,7 @@ export class IndicacoesService {
     // A cada 3 pontos, ganhar 1 sessão grátis
     const novasSessoes = Math.floor(recompensa.pontosAcumulados / 3);
     const sessoesAnteriores = Math.floor((recompensa.pontosAcumulados - 1) / 3);
-    
+
     if (novasSessoes > sessoesAnteriores) {
       recompensa.sessoesGratisDisponiveis += (novasSessoes - sessoesAnteriores);
       this.logger.log(
@@ -136,11 +136,11 @@ export class IndicacoesService {
 
     if (recompensa) {
       recompensa.pontosAcumulados += 2; // Bônus extra
-      
+
       // Verificar se ganhou nova sessão
       const novasSessoes = Math.floor(recompensa.pontosAcumulados / 3);
       const sessoesAnteriores = Math.floor((recompensa.pontosAcumulados - 2) / 3);
-      
+
       if (novasSessoes > sessoesAnteriores) {
         recompensa.sessoesGratisDisponiveis += (novasSessoes - sessoesAnteriores);
       }
@@ -162,9 +162,9 @@ export class IndicacoesService {
     });
 
     if (!recompensa || recompensa.sessoesGratisDisponiveis <= 0) {
-      return { 
-        sucesso: false, 
-        mensagem: 'Você não tem sessões gratuitas disponíveis' 
+      return {
+        sucesso: false,
+        mensagem: 'Você não tem sessões gratuitas disponíveis'
       };
     }
 
@@ -176,9 +176,9 @@ export class IndicacoesService {
       `🎁 Sessão grátis resgatada: ${leadId} (${recompensa.sessoesGratisDisponiveis} restantes)`,
     );
 
-    return { 
-      sucesso: true, 
-      mensagem: 'Sessão grátis resgatada com sucesso!' 
+    return {
+      sucesso: true,
+      mensagem: 'Sessão grátis resgatada com sucesso!'
     };
   }
 

@@ -8,7 +8,7 @@ import { IARA_CONFIG_TOKEN, IaraConfig } from './iara-config.interface';
 @Module({
   imports: [
     HttpModule,
-    ConfigModule, 
+    ConfigModule,
   ],
   controllers: [LeadsController],
   providers: [

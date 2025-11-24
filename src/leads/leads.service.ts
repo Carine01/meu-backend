@@ -85,7 +85,7 @@ export class LeadsService {
         },
       }).pipe(
         this.exponentialBackoffRetry(MAX_RETRIES, RETRY_DELAY_MS),
-        
+
         catchError((error: AxiosError<any>) => {
           if (error.response) {
             this.logger.error(`Falha final na requisição HTTP para IARA: Status ${error.response.status} - ${JSON.stringify(error.response.data)}`);
@@ -105,7 +105,7 @@ export class LeadsService {
       );
 
       const response = await firstValueFrom(request$);
-      
+
       this.logger.log(`Lead enviado com sucesso para Supabase/IARA: ${JSON.stringify(response.data)}`);
       return { ok: true, id: response.data.id };
 

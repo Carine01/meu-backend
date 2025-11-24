@@ -25,14 +25,14 @@ interface RegraDisparo {
 
 /**
  * Service de Agenda Semanal Automatizada
- * 
+ *
  * Implementa disparos automáticos baseados em:
  * - Dia da semana (Segunda a Domingo)
  * - Etiquetas do lead (segmentação)
  * - Objetivo da campanha (reativação, nutrição, etc)
- * 
+ *
  * Baseado na aba "Agenda_Semanal_Disparos" do Google Sheets original
- * 
+ *
  * REGRAS:
  * - Segunda: Repescagem de leads frios (NovoCliente, Ocasional)
  * - Terça: Qualificação de leads mornos (Morno stage)
@@ -75,7 +75,7 @@ export class AgendaSemanalService {
   /**
    * Executa agenda automática do dia atual
    * Deve ser chamado por CronJob diariamente (ex: 9h da manhã)
-   * 
+   *
    * @example
    * ```typescript
    * // Em AgendaSemanalController ou CronJob
@@ -140,7 +140,7 @@ export class AgendaSemanalService {
 
   /**
    * Busca leads que possuem TODAS as etiquetas especificadas
-   * 
+   *
    * @param etiquetas - Array de etiquetas necessárias
    * @returns Array de leads que correspondem
    */
@@ -148,7 +148,7 @@ export class AgendaSemanalService {
     try {
       // Firestore não suporta array-contains-all nativamente
       // Solução: buscar todos e filtrar em memória (ou usar array-contains para 1 etiqueta)
-      
+
       const snapshot = await this.firestore.collection('leads').get();
 
       const leadsCorrespondentes: Lead[] = [];
@@ -177,7 +177,7 @@ export class AgendaSemanalService {
   /**
    * Retorna regras semanais completas
    * Baseado na lógica original do Google Sheets
-   * 
+   *
    * TODO: Mover para Firestore collection 'agenda_semanal' para edição via admin
    */
   private getRegrasSemanais(): Record<string, RegraDisparo[]> {
@@ -313,7 +313,7 @@ export class AgendaSemanalService {
   /**
    * Retorna regras ativas para um dia específico
    * Útil para visualização no admin
-   * 
+   *
    * @param diaSemana - Nome do dia (Segunda, Terça, etc)
    * @returns Array de regras do dia
    */
@@ -331,7 +331,7 @@ export class AgendaSemanalService {
 
   /**
    * Executa regra específica manualmente (teste)
-   * 
+   *
    * @param diaSemana - Dia da regra
    * @param objetivo - Objetivo da regra para identificar
    */

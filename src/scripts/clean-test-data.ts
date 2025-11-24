@@ -31,14 +31,14 @@ async function cleanTestData() {
 
   try {
     const db = admin.firestore();
-    
+
     // Coleções para limpar
     const collections = ['leads', 'agendamentos', 'mensagens'];
     let totalDeleted = 0;
 
     for (const collectionName of collections) {
       console.log(`\n📂 Verificando coleção: ${collectionName}`);
-      
+
       const collectionRef = db.collection(collectionName);
       const snapshot = await collectionRef.get();
 
@@ -115,7 +115,7 @@ const readline = require('readline').createInterface({
 
 readline.question('Digite "SIM" para confirmar a limpeza: ', (answer: string) => {
   readline.close();
-  
+
   if (answer.trim().toUpperCase() === 'SIM') {
     cleanTestData();
   } else {

@@ -60,7 +60,7 @@ export class ProfileService {
 
     try {
       this.logger.log(`Buscando perfil para clinicId: ${clinicId}`);
-      
+
       const docRef = this.db.collection(this.collection).doc(clinicId);
       const doc = await docRef.get();
 
@@ -175,7 +175,7 @@ export class ProfileService {
       return { status: 'success', message: 'Perfil limpo com sucesso!' };
     } catch (error: any) {
       if (error instanceof HttpException) throw error;
-      
+
       const err = error as Error;
       this.logger.error(`Erro ao limpar perfil: ${err.message}`);
       throw new HttpException(
