@@ -1,0 +1,165 @@
+name: Elevare Weekly Milestone
+
+on:
+  schedule:
+    # Runs every Monday at 00:00 UTC
+    - cron: '0 0 * * 1'
+  workflow_dispatch: # Allow manual trigger
+
+permissions:
+  issues: write
+  contents: read
+
+jobs:
+  create-weekly-milestone:
+    name: 📅 Criar Milestone Semanal
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: 📅 Calculate Week Dates
+        id: dates
+        run: |
+          # Get current date
+          CURRENT_DATE=$(date +%Y-%m-%d)
+          WEEK_NUMBER=$(date +%V)
+          YEAR=$(date +%Y)
+          
+          # Calculate start of week (Monday)
+          START_DATE=$(date -d "last monday" +%Y-%m-%d)
+          
+          # Calculate end of week (Sunday)
+          END_DATE=$(date -d "next sunday" +%Y-%m-%d)
+          
+          # Format milestone title
+          MILESTONE_TITLE="Semana $WEEK_NUMBER - $YEAR"
+          
+          echo "week_number=$WEEK_NUMBER" >> $GITHUB_OUTPUT
+          echo "year=$YEAR" >> $GITHUB_OUTPUT
+          echo "start_date=$START_DATE" >> $GITHUB_OUTPUT
+          echo "end_date=$END_DATE" >> $GITHUB_OUTPUT
+          echo "milestone_title=$MILESTONE_TITLE" >> $GITHUB_OUTPUT
+          
+          echo "📅 Criando milestone para: $MILESTONE_TITLE"
+          echo "📅 Período: $START_DATE até $END_DATE"
+
+      - name: 🏁 Create Milestone
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const title = "${{ steps.dates.outputs.milestone_title }}";
+            const dueDate = "${{ steps.dates.outputs.end_date }}T23:59:59Z";
+            const startDate = "${{ steps.dates.outputs.start_date }}";
+            const endDate = "${{ steps.dates.outputs.end_date }}";
+            
+            // Check if milestone already exists
+            const milestones = await github.rest.issues.listMilestones({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open'
+            });
+            
+            const existingMilestone = milestones.data.find(m => m.title === title);
+            
+            if (existingMilestone) {
+              console.log(`✅ Milestone "${title}" já existe (ID: ${existingMilestone.number})`);
+              return;
+            }
+            
+            // Create milestone
+            const milestone = await github.rest.issues.createMilestone({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: title,
+              due_on: dueDate,
+              description: `
+            🗓️ **Milestone Semanal Automática**
+            
+            Criado pelo Agente Elevare
+            
+            **Período:** ${startDate} até ${endDate}
+            
+            ## Objetivos da Semana
+            - [ ] Resolver issues críticas
+            - [ ] Revisar PRs pendentes
+            - [ ] Atualizar dependências se necessário
+            - [ ] Manter cobertura de testes > 80%
+            
+            ---
+            _Criado automaticamente pelo Elevare Agent_
+            `
+            });
+            
+            console.log(`✅ Milestone criada: ${milestone.data.title} (ID: ${milestone.data.number})`);
+            console.log(`🔗 URL: ${milestone.data.html_url}`);
+
+      - name: 🏷️ Auto-assign Open Issues
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const title = "${{ steps.dates.outputs.milestone_title }}";
+            
+            // Get the milestone
+            const milestones = await github.rest.issues.listMilestones({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open'
+            });
+            
+            const milestone = milestones.data.find(m => m.title === title);
+            
+            if (!milestone) {
+              console.log('⚠️ Milestone não encontrada');
+              return;
+            }
+            
+            // Get open issues without milestone
+            const issues = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              per_page: 100
+            });
+            
+            const issuesWithoutMilestone = issues.data.filter(
+              issue => !issue.milestone && !issue.pull_request
+            );
+            
+            console.log(`📋 Encontradas ${issuesWithoutMilestone.length} issues sem milestone`);
+            
+            // Assign priority issues to this week's milestone (max 10)
+            const priorityLabels = ['bug', 'critical', 'high-priority', 'blocker'];
+            const priorityIssues = issuesWithoutMilestone.filter(issue =>
+              issue.labels.some(label => 
+                priorityLabels.includes(label.name.toLowerCase())
+              )
+            ).slice(0, 10);
+            
+            for (const issue of priorityIssues) {
+              await github.rest.issues.update({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issue.number,
+                milestone: milestone.number
+              });
+              
+              console.log(`✅ Issue #${issue.number} atribuída ao milestone`);
+            }
+            
+            console.log(`✅ ${priorityIssues.length} issues prioritárias atribuídas`);
+
+      - name: 📊 Update Elevare Report
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const fs = require('fs');
+            const path = require('path');
+            
+            console.log('📊 Atualizando relatório do Elevare Agent...');
+            
+            // Note: This is a placeholder - actual report update would require
+            // checking out the repo and committing changes
+            console.log('✅ Milestone criada com sucesso');
+            console.log('ℹ️ Para atualizar o relatório completo, execute o workflow de atualização');
