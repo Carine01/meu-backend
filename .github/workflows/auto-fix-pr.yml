@@ -33,7 +33,7 @@ jobs:
         id: commit_changes
         run: |
           git config user.name "elevare-bot"
-          git config user.email "no-reply@elevare"
+          git config user.email "noreply@github.com"
           if [ -n "$(git status --porcelain)" ]; then
             BR="automated/fixes/$(date +%Y%m%d%H%M)"
             git checkout -b $BR
@@ -42,6 +42,7 @@ jobs:
             git push -u origin $BR
             echo "Created branch $BR with fixes"
             echo "pr_needed=true" >> $GITHUB_OUTPUT
+            echo "branch_name=$BR" >> $GITHUB_OUTPUT
           else
             echo "No changes after fixes"
             echo "pr_needed=false" >> $GITHUB_OUTPUT
@@ -53,6 +54,6 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           commit-message: "Automated: lint & format fixes"
-          branch: ${{ github.head_ref }}
+          branch: ${{ steps.commit_changes.outputs.branch_name }}
           title: "Automated fixes (lint & format)"
           body: "PR gerado automaticamente com correções de lint e formatação. Revise e merge se OK."
