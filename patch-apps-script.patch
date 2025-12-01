@@ -1,0 +1,358 @@
+*** Begin Patch
+*** Add File: src/whatsapp/WhatsAppService.gs
++/**
++ * Serviço de envio de mensagens WhatsApp (API externa ou Make.com)
++ */
++class WhatsAppService {
++  constructor(apiUrl, token) {
++    this.apiUrl = apiUrl;
++    this.token = token;
++  }
++
++  sendMessage(phone, message) {
++    try {
++      const payload = JSON.stringify({ phone, message });
++      const options = {
++        method: 'post',
++        contentType: 'application/json',
++        headers: { Authorization: `Bearer ${this.token}` },
++        payload,
++        muteHttpExceptions: true,
++      };
++      const response = UrlFetchApp.fetch(this.apiUrl, options);
++      const result = JSON.parse(response.getContentText());
++      this.logEvent('sendMessage', { phone, message, result });
++      return result;
++    } catch (error) {
++      this.logError('sendMessage', error, { phone, message });
++      throw error;
++    }
++  }
++
++  logEvent(action, data) {
++    Logger.log(`[WhatsAppService] ${action}: ${JSON.stringify(data)}`);
++    // Cloud Logging
++    console.info(JSON.stringify({ action, ...data }));
++  }
++
++  logError(action, error, data) {
++    Logger.log(`[WhatsAppService][ERROR] ${action}: ${error} | ${JSON.stringify(data)}`);
++    // Cloud Logging
++    console.error(JSON.stringify({ action, error: error.message, ...data }));
++  }
++}
++
++// export for CommonJS-style tests
++if (typeof module !== 'undefined') {
++  module.exports = { WhatsAppService };
++}
++
+*** End Patch
+*** Begin Patch
+*** Add File: src/whatsapp/QueueService.gs
++/**
++ * Gerencia a fila de mensagens a serem enviadas (Google Sheets)
++ */
++class QueueService {
++  constructor(sheetName = 'FilaEnvio') {
++    this.sheet = SpreadsheetApp.getActive().getSheetByName(sheetName);
++  }
++
++  getNextMessage() {
++    const data = this.sheet.getDataRange().getValues();
++    for (let i = 1; i < data.length; i++) {
++      if (data[i][3] === 'Pendente') { // status na coluna D (índice 3)
++        return { row: i + 1, phone: data[i][0], message: data[i][1] };
++      }
++    }
++    return null;
++  }
++
++  markAsSent(row) {
++    this.sheet.getRange(row, 4).setValue('Enviado');
++  }
++}
++
++if (typeof module !== 'undefined') {
++  module.exports = { QueueService };
++}
++
+*** End Patch
+*** Begin Patch
+*** Add File: src/whatsapp/EventService.gs
++/**
++ * Dispara eventos e registra logs; consome a fila e envia via WhatsAppService
++ */
++class EventService {
++  static triggerSend() {
++    const queue = new QueueService();
++    const ws = new WhatsAppService('https://api.make.com/whatsapp', 'SEU_TOKEN');
++    const next = queue.getNextMessage();
++    if (!next) return;
++    try {
++      ws.sendMessage(next.phone, next.message);
++      queue.markAsSent(next.row);
++      console.info(JSON.stringify({ event: 'message_sent', phone: next.phone }));
++    } catch (e) {
++      console.error(JSON.stringify({ event: 'send_error', error: e.message }));
++    }
++  }
++}
++
++if (typeof module !== 'undefined') {
++  module.exports = { EventService };
++}
++
+*** End Patch
+*** Begin Patch
+*** Add File: src/whatsapp/tests/whatsapp.test.js
++const { WhatsAppService } = require('../WhatsAppService');
++const { QueueService } = require('../QueueService');
++const { EventService } = require('../EventService');
++
++describe('WhatsAppService + Queue + Event', () => {
++  beforeEach(() => {
++    // mock UrlFetchApp
++    global.UrlFetchApp = {
++      fetch: jest.fn(() => ({ getContentText: () => '{"ok":true}' })),
++    };
++    // mock Logger
++    global.Logger = { log: jest.fn() };
++    // mock SpreadsheetApp
++    global.SpreadsheetApp = {
++      getActive: () => ({
++        getSheetByName: () => ({
++          getDataRange: () => ({
++            getValues: () => [
++              ['phone', 'message', 'meta', 'status'],
++              ['5511999999999', 'Oi', '', 'Pendente'],
++            ],
++          }),
++          getRange: () => ({ setValue: jest.fn() }),
++        }),
++      }),
++    };
++    global.console = { info: jest.fn(), error: jest.fn() };
++  });
++
++  it('WhatsAppService should send and return ok', () => {
++    const ws = new WhatsAppService('https://mock.api/whatsapp', 'token');
++    const res = ws.sendMessage('5511999999999', 'Olá!');
++    expect(res.ok).toBe(true);
++    expect(global.console.info).toHaveBeenCalled();
++  });
++
++  it('QueueService should return next message', () => {
++    const q = new QueueService('FilaEnvio');
++    const m = q.getNextMessage();
++    expect(m).toBeDefined();
++    expect(m.phone).toBe('5511999999999');
++  });
++
++  it('EventService.triggerSend processes queue', () => {
++    EventService.triggerSend();
++    expect(global.console.info).toHaveBeenCalled();
++  });
++});
++
+*** End Patch
+*** Begin Patch
+*** Add File: src/reports/ReportService.gs
++/**
++ * Gera relatórios de conversão e funil do WhatsApp
++ */
++class ReportService {
++  constructor(sheetName = 'Mensagens_Disparadas') {
++    this.sheet = SpreadsheetApp.getActive().getSheetByName(sheetName);
++  }
++
++  getConversionRate() {
++    const data = this.sheet.getDataRange().getValues();
++    let sent = 0, responded = 0;
++    for (let i = 1; i < data.length; i++) {
++      if (data[i][2] === 'Enviado') sent++;
++      if (data[i][3] === 'Respondido') responded++;
++    }
++    const rate = sent ? responded / sent : 0;
++    console.info(JSON.stringify({ metric: 'conversion_rate', value: rate }));
++    return rate;
++  }
++
++  getFunnel() {
++    const data = this.sheet.getDataRange().getValues();
++    let enviados = 0, entregues = 0, respondidos = 0;
++    for (let i = 1; i < data.length; i++) {
++      if (data[i][2] === 'Enviado') enviados++;
++      if (data[i][2] === 'Entregue') entregues++;
++      if (data[i][3] === 'Respondido') respondidos++;
++    }
++    const funnel = { enviados, entregues, respondidos };
++    console.info(JSON.stringify({ metric: 'funnel', ...funnel }));
++    return funnel;
++  }
++}
++
++if (typeof module !== 'undefined') {
++  module.exports = { ReportService };
++}
++
+*** End Patch
+*** Begin Patch
+*** Add File: src/reports/tests/reports.test.js
++const { ReportService } = require('../ReportService');
++
++describe('ReportService', () => {
++  beforeEach(() => {
++    global.SpreadsheetApp = {
++      getActive: () => ({
++        getSheetByName: () => ({
++          getDataRange: () => ({
++            getValues: () => [
++              ['Telefone', 'Mensagem', 'Status', 'Resposta'],
++              ['5511...', 'Oi', 'Enviado', 'Respondido'],
++              ['5511...', 'Oi', 'Enviado', ''],
++            ],
++          }),
++        }),
++      }),
++    };
++    global.console = { info: jest.fn() };
++  });
++
++  it('should calculate conversion rate', () => {
++    const rs = new ReportService();
++    expect(rs.getConversionRate()).toBe(0.5);
++  });
++
++  it('should return funnel object', () => {
++    const rs = new ReportService();
++    const funnel = rs.getFunnel();
++    expect(funnel.enviados).toBe(2);
++    expect(funnel.respondidos).toBe(1);
++  });
++});
++
+*** End Patch
+*** Begin Patch
+*** Add File: src/scheduler/SchedulerService.gs
++/**
++ * Agenda envios automáticos com base em gatilhos (ex: novo lead)
++ */
++class SchedulerService {
++  constructor(sheetName = 'Agendamentos') {
++    this.sheet = SpreadsheetApp.getActive().getSheetByName(sheetName);
++  }
++
++  scheduleMessage(phone, message, dateTime) {
++    this.sheet.appendRow([phone, message, dateTime, 'Pendente']);
++    console.info(JSON.stringify({ event: 'scheduled', phone, dateTime }));
++  }
++
++  processDueMessages() {
++    const now = new Date();
++    const data = this.sheet.getDataRange().getValues();
++    for (let i = 1; i < data.length; i++) {
++      if (data[i][3] === 'Pendente' && new Date(data[i][2]) <= now) {
++        try {
++          new WhatsAppService('https://api.make.com/whatsapp', 'SEU_TOKEN').sendMessage(data[i][0], data[i][1]);
++          this.sheet.getRange(i + 1, 4).setValue('Enviado');
++          console.info(JSON.stringify({ event: 'auto_sent', phone: data[i][0] }));
++        } catch (e) {
++          console.error(JSON.stringify({ event: 'auto_send_error', error: e.message }));
++        }
++      }
++    }
++  }
++}
++
++if (typeof module !== 'undefined') {
++  module.exports = { SchedulerService };
++}
++
+*** End Patch
+*** Begin Patch
+*** Add File: src/scheduler/tests/scheduler.test.js
++const { SchedulerService } = require('../SchedulerService');
++
++describe('SchedulerService', () => {
++  beforeEach(() => {
++    global.SpreadsheetApp = {
++      getActive: () => ({
++        getSheetByName: () => ({ appendRow: jest.fn() }),
++      }),
++    };
++    global.console = { info: jest.fn() };
++  });
++
++  it('should schedule a message and log event', () => {
++    const ss = new SchedulerService();
++    ss.scheduleMessage('5511...', 'Oi!', new Date());
++    const sheet = SpreadsheetApp.getActive().getSheetByName();
++    expect(sheet.appendRow).toHaveBeenCalled();
++    expect(global.console.info).toHaveBeenCalled();
++  });
++});
++
+*** End Patch
+*** Begin Patch
+*** Add File: src/dashboard/DashboardService.gs
++/**
++ * Gera métricas agregadas por clínica para dashboard multi-clínica.
++ */
++class DashboardService {
++  constructor(sheetName = 'Mensagens_Disparadas') {
++    this.sheet = SpreadsheetApp.getActive().getSheetByName(sheetName);
++  }
++
++  getMetricsByClinic() {
++    const data = this.sheet.getDataRange().getValues();
++    const clinics = {};
++    for (let i = 1; i < data.length; i++) {
++      const clinicId = data[i][4]; // coluna E = clinicId
++      if (!clinics[clinicId]) clinics[clinicId] = { enviados: 0, respondidos: 0 };
++      if (data[i][2] === 'Enviado') clinics[clinicId].enviados++;
++      if (data[i][3] === 'Respondido') clinics[clinicId].respondidos++;
++    }
++    console.info(JSON.stringify({ metric: 'multi_clinic_dashboard', clinics }));
++    return clinics;
++  }
++}
++
++if (typeof module !== 'undefined') {
++  module.exports = { DashboardService };
++}
++
+*** End Patch
+*** Begin Patch
+*** Add File: src/dashboard/tests/dashboard.test.js
++const { DashboardService } = require('../DashboardService');
++
++describe('DashboardService', () => {
++  beforeEach(() => {
++    global.SpreadsheetApp = {
++      getActive: () => ({
++        getSheetByName: () => ({
++          getDataRange: () => ({
++            getValues: () => [
++              ['Telefone','Mensagem','Status','Resposta','ClinicId'],
++              ['5511...','Oi','Enviado','Respondido','A'],
++              ['5511...','Oi','Enviado','','B'],
++              ['5511...','Oi','Enviado','Respondido','A'],
++            ],
++          }),
++        }),
++      }),
++    };
++    global.console = { info: jest.fn() };
++  });
++
++  it('should aggregate metrics by clinic', () => {
++    const ds = new DashboardService();
++    const metrics = ds.getMetricsByClinic();
++    expect(metrics['A'].enviados).toBe(2);
++    expect(metrics['A'].respondidos).toBe(2);
++    expect(metrics['B'].enviados).toBe(1);
++  });
++});
++
+*** End Patch

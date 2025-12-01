@@ -1,0 +1,292 @@
+*** Begin Patch
+*** Add File: src/entities/whatsapp-message.entity.ts
++import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, Index } from 'typeorm';
++
++@Entity('whatsapp_messages')
++@Index(['clinicId'])
++@Index(['phone'])
++@Index(['status'])
++export class WhatsAppMessage {
++  @PrimaryGeneratedColumn('uuid')
++  id: string;
++
++  @Column()
++  @Index()
++  clinicId: string;
++
++  @Column()
++  phone: string;
++
++  @Column('text')
++  message: string;
++
++  @Column({ default: 'pending' })
++  status: string; // pending, sent, delivered, failed
++
++  @Column({ type: 'jsonb', nullable: true })
++  metadata: any;
++
++  @Column({ nullable: true })
++  messageId: string;
++
++  @Column({ nullable: true })
++  error: string;
++
++  @CreateDateColumn()
++  createdAt: Date;
++
++  @UpdateDateColumn()
++  updatedAt: Date;
++}
++
+*** End Patch
+*** Begin Patch
+*** Add File: src/dto/send-whatsapp.dto.ts
++import { IsString, IsNotEmpty, IsPhoneNumber, IsOptional, MaxLength } from 'class-validator';
++import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
++
++export class SendWhatsAppDto {
++  @ApiProperty({ description: 'Clinic ID', example: 'clinic-123' })
++  @IsString()
++  @IsNotEmpty()
++  clinicId: string;
++
++  @ApiProperty({ description: 'Phone number with country code', example: '5511999999999' })
++  @IsString()
++  @IsNotEmpty()
++  @IsPhoneNumber('BR')
++  phone: string;
++
++  @ApiProperty({ description: 'Message content', example: 'Hello from clinic!' })
++  @IsString()
++  @IsNotEmpty()
++  @MaxLength(4096)
++  message: string;
++
++  @ApiPropertyOptional({ description: 'Additional metadata', example: { campaign: 'welcome' } })
++  @IsOptional()
++  metadata?: any;
++}
++
+*** End Patch
+*** Begin Patch
+*** Add File: src/services/whatsapp.service.ts
++import { Injectable, Logger } from '@nestjs/common';
++import { InjectRepository } from '@nestjs/typeorm';
++import { Repository } from 'typeorm';
++import { WhatsAppMessage } from '../entities/whatsapp-message.entity';
++import { SendWhatsAppDto } from '../dto/send-whatsapp.dto';
++import { FilaService } from './fila.service';
++
++@Injectable()
++export class WhatsAppService {
++  private readonly logger = new Logger(WhatsAppService.name);
++
++  constructor(
++    @InjectRepository(WhatsAppMessage)
++    private readonly whatsappRepository: Repository<WhatsAppMessage>,
++    private readonly filaService: FilaService,
++  ) {}
++
++  async sendMessage(dto: SendWhatsAppDto): Promise<WhatsAppMessage> {
++    this.logger.log(`Sending message to ${dto.phone} for clinic ${dto.clinicId}`);
++
++    // Persist message
++    const message = this.whatsappRepository.create({
++      clinicId: dto.clinicId,
++      phone: dto.phone,
++      message: dto.message,
++      metadata: dto.metadata,
++      status: 'pending',
++    });
++
++    const saved = await this.whatsappRepository.save(message);
++
++    // Enqueue for sending
++    try {
++      await this.filaService.enqueueMessage({
++        id: saved.id,
++        phone: dto.phone,
++        message: dto.message,
++      });
++      this.logger.log(`Message ${saved.id} enqueued successfully`);
++    } catch (error) {
++      this.logger.error(`Failed to enqueue message ${saved.id}: ${error.message}`);
++      saved.status = 'failed';
++      saved.error = error.message;
++      await this.whatsappRepository.save(saved);
++    }
++
++    return saved;
++  }
++
++  async getMessagesByClinic(clinicId: string): Promise<WhatsAppMessage[]> {
++    return this.whatsappRepository.find({
++      where: { clinicId },
++      order: { createdAt: 'DESC' },
++      take: 100,
++    });
++  }
++
++  async updateMessageStatus(id: string, status: string, messageId?: string, error?: string): Promise<void> {
++    await this.whatsappRepository.update(id, {
++      status,
++      messageId,
++      error,
++    });
++  }
++}
++
+*** End Patch
+*** Begin Patch
+*** Add File: src/services/fila.service.ts
++import { Injectable, Logger, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
++import makeWASocket, { DisconnectReason, useMultiFileAuthState } from '@whiskeysockets/baileys';
++import { Boom } from '@hapi/boom';
++import PQueue from 'p-queue';
++
++interface QueueMessage {
++  id: string;
++  phone: string;
++  message: string;
++}
++
++@Injectable()
++export class FilaService implements OnModuleInit, OnModuleDestroy {
++  private readonly logger = new Logger(FilaService.name);
++  private sock: any;
++  private queue: PQueue;
++  private authPath: string;
++
++  constructor() {
++    this.authPath = process.env.WHATSAPP_AUTH_PATH || './auth_info';
++    this.queue = new PQueue({ concurrency: 1, interval: 1000, intervalCap: 1 });
++  }
++
++  async onModuleInit() {
++    await this.connectWhatsApp();
++  }
++
++  async onModuleDestroy() {
++    if (this.sock) {
++      await this.sock.logout();
++    }
++  }
++
++  private async connectWhatsApp() {
++    try {
++      const { state, saveCreds } = await useMultiFileAuthState(this.authPath);
++
++      this.sock = makeWASocket({
++        auth: state,
++        printQRInTerminal: true,
++      });
++
++      this.sock.ev.on('creds.update', saveCreds);
++
++      this.sock.ev.on('connection.update', (update) => {
++        const { connection, lastDisconnect } = update;
++        if (connection === 'close') {
++          const shouldReconnect =
++            (lastDisconnect?.error as Boom)?.output?.statusCode !== DisconnectReason.loggedOut;
++          this.logger.log(`Connection closed, reconnecting: ${shouldReconnect}`);
++          if (shouldReconnect) {
++            this.connectWhatsApp();
++          }
++        } else if (connection === 'open') {
++          this.logger.log('WhatsApp connection opened');
++        }
++      });
++    } catch (error) {
++      this.logger.error(`Failed to connect WhatsApp: ${error.message}`);
++    }
++  }
++
++  async enqueueMessage(msg: QueueMessage): Promise<void> {
++    return this.queue.add(async () => {
++      try {
++        const jid = `${msg.phone}@s.whatsapp.net`;
++        await this.sock.sendMessage(jid, { text: msg.message });
++        this.logger.log(`Message ${msg.id} sent to ${msg.phone}`);
++      } catch (error) {
++        this.logger.error(`Failed to send message ${msg.id}: ${error.message}`);
++        throw error;
++      }
++    });
++  }
++
++  getQueueStatus() {
++    return {
++      pending: this.queue.pending,
++      size: this.queue.size,
++    };
++  }
++}
++
+*** End Patch
+*** Begin Patch
+*** Add File: src/controllers/whatsapp.controller.ts
++import { Controller, Post, Get, Body, Headers, UseGuards, HttpStatus } from '@nestjs/common';
++import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiHeader } from '@nestjs/swagger';
++import { WhatsAppService } from '../services/whatsapp.service';
++import { FilaService } from '../services/fila.service';
++import { SendWhatsAppDto } from '../dto/send-whatsapp.dto';
++
++@ApiTags('whatsapp')
++@Controller('whatsapp')
++export class WhatsAppController {
++  constructor(
++    private readonly whatsappService: WhatsAppService,
++    private readonly filaService: FilaService,
++  ) {}
++
++  @Post('send')
++  @ApiOperation({ summary: 'Send WhatsApp message' })
++  @ApiHeader({ name: 'x-clinic-id', required: false, description: 'Clinic ID (alternative to body)' })
++  @ApiResponse({ status: HttpStatus.CREATED, description: 'Message enqueued successfully' })
++  @ApiResponse({ status: HttpStatus.BAD_REQUEST, description: 'Invalid input' })
++  async sendMessage(
++    @Body() dto: SendWhatsAppDto,
++    @Headers('x-clinic-id') clinicIdHeader?: string,
++  ) {
++    // Priority: body.clinicId > header x-clinic-id
++    const clinicId = dto.clinicId || clinicIdHeader;
++    if (!clinicId) {
++      throw new Error('clinicId is required (body or header)');
++    }
++
++    dto.clinicId = clinicId;
++    return this.whatsappService.sendMessage(dto);
++  }
++
++  @Get('health')
++  @ApiOperation({ summary: 'WhatsApp health check' })
++  @ApiResponse({ status: HttpStatus.OK, description: 'Service healthy' })
++  async healthCheck() {
++    const queueStatus = this.filaService.getQueueStatus();
++    return {
++      status: 'ok',
++      queue: queueStatus,
++    };
++  }
++}
++
+*** End Patch
+*** Begin Patch
+*** Add File: src/module-whatsapp.ts
++import { Module } from '@nestjs/common';
++import { TypeOrmModule } from '@nestjs/typeorm';
++import { WhatsAppMessage } from './entities/whatsapp-message.entity';
++import { WhatsAppService } from './services/whatsapp.service';
++import { FilaService } from './services/fila.service';
++import { WhatsAppController } from './controllers/whatsapp.controller';
++
++@Module({
++  imports: [TypeOrmModule.forFeature([WhatsAppMessage])],
++  controllers: [WhatsAppController],
++  providers: [WhatsAppService, FilaService],
++  exports: [WhatsAppService, FilaService],
++})
++export class WhatsAppModule {}
++
+*** End Patch
