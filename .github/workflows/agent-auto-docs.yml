@@ -1,0 +1,54 @@
+name: Agent Auto-Docs
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'docs/**'
+      - 'src/**'
+      - '.github/**'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  generate-docs:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Run docs generation script (if exists)
+        id: check_docs_script
+        run: |
+          if [ -x "./scripts/generate-docs.sh" ]; then
+            ./scripts/generate-docs.sh
+            git config user.name "github-actions"
+            git config user.email "actions@github.com"
+            git add docs || true
+            if [ -n "$(git status --porcelain)" ]; then
+              git commit -m "chore(docs): update generated docs [ci]" || true
+              git push origin HEAD:${{ github.ref_name }}
+            else
+              echo "No docs changes generated."
+            fi
+            echo "script_exists=true" >> $GITHUB_OUTPUT
+          else
+            echo "No docs generation script found; skipping."
+            echo "script_exists=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Create issue if docs generation missing
+        if: steps.check_docs_script.outputs.script_exists == 'false'
+        uses: peter-evans/create-issue@v4
+        with:
+          title: 'Docs generator missing'
+          body: |
+            O workflow Agent Auto-Docs detectou que o script `./scripts/generate-docs.sh` não existe.
+            Se você deseja geração automática de documentação, adicione o script e rode novamente.
