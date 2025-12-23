@@ -1,0 +1,215 @@
+name: Elevare - Auto Fix
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 2 * * *'  # Runs daily at 2 AM UTC
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+
+jobs:
+  auto-fix:
+    name: Correção Automática
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: |
+          npm ci --legacy-peer-deps || npm install --legacy-peer-deps
+      
+      - name: Configure Git
+        run: |
+          git config user.name "Elevare Auto-Fix Bot"
+          git config user.email "bot@elevare.dev"
+      
+      - name: Run ESLint Auto-Fix
+        id: eslint-fix
+        continue-on-error: true
+        run: |
+          echo "## 🔧 ESLint Auto-Fix" >> $GITHUB_STEP_SUMMARY
+          
+          if npx eslint . --fix 2>&1 | tee eslint-fix.log; then
+            echo "✅ ESLint auto-fix executado" >> $GITHUB_STEP_SUMMARY
+            echo "status=success" >> $GITHUB_OUTPUT
+          else
+            echo "⚠️ ESLint auto-fix com problemas" >> $GITHUB_STEP_SUMMARY
+            echo "status=partial" >> $GITHUB_OUTPUT
+          fi
+          
+          if git diff --quiet; then
+            echo "changes=false" >> $GITHUB_OUTPUT
+            echo "Nenhuma mudança necessária" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "changes=true" >> $GITHUB_OUTPUT
+            echo "Mudanças aplicadas" >> $GITHUB_STEP_SUMMARY
+          fi
+      
+      - name: Check for fixes
+        id: check-fixes
+        run: |
+          if git diff --quiet; then
+            echo "has_changes=false" >> $GITHUB_OUTPUT
+            echo "Nenhuma correção automática necessária" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "has_changes=true" >> $GITHUB_OUTPUT
+            
+            FILES_CHANGED=$(git diff --name-only | wc -l)
+            echo "files_changed=$FILES_CHANGED" >> $GITHUB_OUTPUT
+            
+            echo "## 📝 Arquivos Modificados" >> $GITHUB_STEP_SUMMARY
+            git diff --name-only >> $GITHUB_STEP_SUMMARY
+          fi
+      
+      - name: Create auto-fix branch and PR
+        if: steps.check-fixes.outputs.has_changes == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          BRANCH_NAME="auto-fix/$(date +%Y%m%d-%H%M%S)"
+          
+          git checkout -b "$BRANCH_NAME"
+          git add .
+          git commit -m "🤖 Auto-fix: Correções automáticas aplicadas
+
+          Correções aplicadas pelo Elevare Auto-Fix Bot:
+          - ESLint auto-fix executado
+          - Arquivos modificados: ${{ steps.check-fixes.outputs.files_changed }}
+          
+          Gerado automaticamente em $(date -u +"%Y-%m-%d %H:%M:%S UTC")"
+          
+          git push origin "$BRANCH_NAME"
+          
+          # Create PR
+          cat > pr-body.md << 'PRBODY'
+          # 🤖 Correções Automáticas - Elevare Auto-Fix
+          
+          Este PR foi gerado automaticamente pelo sistema de auto-fix do Elevare.
+          
+          ## Mudanças Aplicadas
+          
+          - ✅ ESLint auto-fix executado
+          - 📝 Arquivos modificados: ${{ steps.check-fixes.outputs.files_changed }}
+          
+          ## Arquivos Alterados
+          
+          ```
+          $(git diff origin/${{ github.ref_name }}...$BRANCH_NAME --name-only)
+          ```
+          
+          ## Próximos Passos
+          
+          1. Revisar as mudanças
+          2. Executar testes localmente se necessário
+          3. Merge se tudo estiver OK
+          
+          ---
+          *Gerado automaticamente em $(date -u +"%Y-%m-%d %H:%M:%S UTC")*
+          PRBODY
+          
+          gh pr create \
+            --title "🤖 Auto-fix: Correções automáticas $(date +%Y-%m-%d)" \
+            --body-file pr-body.md \
+            --base "${{ github.ref_name }}" \
+            --head "$BRANCH_NAME" \
+            --label "auto-fix,bot" \
+            || echo "PR creation failed or already exists"
+      
+      - name: Check for unfixable issues
+        id: unfixable
+        if: steps.check-fixes.outputs.has_changes == 'false'
+        run: |
+          echo "## 🔍 Verificando problemas não corrigíveis" >> $GITHUB_STEP_SUMMARY
+          
+          # Run checks again to identify issues
+          npx eslint . --format=json --output-file=eslint-issues.json 2>&1 || true
+          npx tsc --noEmit 2>&1 | tee tsc-issues.log || true
+          
+          ESLINT_ERRORS=0
+          TSC_ERRORS=0
+          
+          if [ -f eslint-issues.json ]; then
+            ESLINT_ERRORS=$(cat eslint-issues.json | grep -o '"errorCount":[0-9]*' | awk -F: '{sum+=$2} END {print sum}' || echo "0")
+          fi
+          
+          if [ -f tsc-issues.log ]; then
+            TSC_ERRORS=$(grep -c "error TS" tsc-issues.log || echo "0")
+          fi
+          
+          echo "eslint_errors=$ESLINT_ERRORS" >> $GITHUB_OUTPUT
+          echo "tsc_errors=$TSC_ERRORS" >> $GITHUB_OUTPUT
+          
+          if [ "$ESLINT_ERRORS" -gt 0 ] || [ "$TSC_ERRORS" -gt 0 ]; then
+            echo "has_unfixable=true" >> $GITHUB_OUTPUT
+            echo "⚠️ Problemas que requerem correção manual: ESLint=$ESLINT_ERRORS, TypeScript=$TSC_ERRORS" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "has_unfixable=false" >> $GITHUB_OUTPUT
+            echo "✅ Nenhum problema não corrigível detectado" >> $GITHUB_STEP_SUMMARY
+          fi
+      
+      - name: Create issue for manual fixes
+        if: steps.unfixable.outputs.has_unfixable == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          cat > issue-body.md << 'ISSUEBODY'
+          # ⚠️ Problemas Requerem Correção Manual
+          
+          O sistema de auto-fix detectou problemas que não podem ser corrigidos automaticamente.
+          
+          ## Erros Detectados
+          
+          - **ESLint:** ${{ steps.unfixable.outputs.eslint_errors }} erros
+          - **TypeScript:** ${{ steps.unfixable.outputs.tsc_errors }} erros
+          
+          ## Detalhes dos Erros ESLint
+          
+          ```json
+          $(cat eslint-issues.json | head -100)
+          ```
+          
+          ## Detalhes dos Erros TypeScript
+          
+          ```
+          $(head -50 tsc-issues.log)
+          ```
+          
+          ## Ações Necessárias
+          
+          Por favor, corrija manualmente os erros acima.
+          
+          ---
+          *Branch:* ${{ github.ref_name }}
+          *Commit:* ${{ github.sha }}
+          *Detectado em:* $(date -u +"%Y-%m-%d %H:%M:%S UTC")
+          ISSUEBODY
+          
+          gh issue create \
+            --title "🔴 BLOCKER: Correções manuais necessárias - $(date +%Y-%m-%d)" \
+            --body-file issue-body.md \
+            --label "BLOCKER,manual-required,auto-fix" \
+            || echo "Issue creation failed or already exists"
+      
+      - name: Upload Auto-Fix Report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: auto-fix-report-${{ github.sha }}
+          path: |
+            eslint-fix.log
+            eslint-issues.json
+            tsc-issues.log
+          retention-days: 30

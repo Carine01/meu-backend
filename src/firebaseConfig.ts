@@ -11,7 +11,7 @@ const firebaseConfig = {
   projectId: "flutter-ai-playground-61f8b",
   storageBucket: "flutter-ai-playground-61f8b.firebasestorage.app",
   messagingSenderId: "848117836010",
-  appId: "1:848117836010:web:2274290a6676a6de814f93"
+  appId: "1:848117836010:web:2274290a6676a6de814f93",
 };
 
 // Inicializar o Firebase
@@ -20,4 +20,3 @@ const app = initializeApp(firebaseConfig);
 // É uma boa prática exportar a instância 'app' para que outros módulos
 // do seu aplicativo possam usá-la facilmente.
 export { app };
-

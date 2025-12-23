@@ -1,4 +1,4 @@
-import { InjectionToken } from '@nestjs/common';
+import { InjectionToken } from "@nestjs/common";
 
 export interface IaraConfig {
   edgeUrl: string;
@@ -7,5 +7,4 @@ export interface IaraConfig {
   defaultOrigem: string;
 }
 
-export const IARA_CONFIG_TOKEN: InjectionToken = 'IARA_CONFIG_TOKEN';
-
+export const IARA_CONFIG_TOKEN: InjectionToken = "IARA_CONFIG_TOKEN";

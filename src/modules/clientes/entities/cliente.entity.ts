@@ -1,15 +1,20 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn } from 'typeorm';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  CreateDateColumn,
+} from "typeorm";
 
-@Entity('clientes')
+@Entity("clientes")
 export class Cliente {
-  @PrimaryGeneratedColumn('uuid')
-    id!: string;
+  @PrimaryGeneratedColumn("uuid")
+  id!: string;
 
   @Column()
-    nome!: string;
+  nome!: string;
 
   @Column()
-    telefone!: string;
+  telefone!: string;
 
   @Column({ nullable: true })
   dataNascimento?: string;
@@ -18,5 +23,5 @@ export class Cliente {
   clinicId?: string;
 
   @CreateDateColumn()
-    createdAt!: Date;
+  createdAt!: Date;
 }

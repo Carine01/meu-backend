@@ -1,8 +1,8 @@
-import { Injectable, HttpException, HttpStatus, Logger } from '@nestjs/common';
-import { HttpService } from '@nestjs/axios';
-import { ConfigService } from '@nestjs/config';
-import { firstValueFrom, catchError } from 'rxjs';
-import { AxiosError } from 'axios';
+import { Injectable, HttpException, HttpStatus, Logger } from "@nestjs/common";
+import { HttpService } from "@nestjs/axios";
+import { ConfigService } from "@nestjs/config";
+import { firstValueFrom, catchError } from "rxjs";
+import { AxiosError } from "axios";
 
 /**
  * Serviço genérico para envio de webhooks para APIs externas
@@ -18,8 +18,8 @@ export class WebhookService {
     private readonly httpService: HttpService,
     private readonly configService: ConfigService,
   ) {
-    this.webhookUrl = this.configService.get<string>('WEBHOOK_URL') || '';
-    this.webhookToken = this.configService.get<string>('WEBHOOK_TOKEN') || '';
+    this.webhookUrl = this.configService.get<string>("WEBHOOK_URL") || "";
+    this.webhookToken = this.configService.get<string>("WEBHOOK_TOKEN") || "";
   }
 
   /**
@@ -39,7 +39,7 @@ export class WebhookService {
 
     if (!url) {
       throw new HttpException(
-        'WEBHOOK_URL não configurado',
+        "WEBHOOK_URL não configurado",
         HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }
@@ -51,8 +51,8 @@ export class WebhookService {
         .post(url, payload, {
           headers: {
             Authorization: `Bearer ${token}`,
-            'Content-Type': 'application/json',
-            'User-Agent': 'Elevare-Backend/1.0',
+            "Content-Type": "application/json",
+            "User-Agent": "Elevare-Backend/1.0",
           },
           timeout: 10000, // 10 segundos
         })
@@ -63,13 +63,15 @@ export class WebhookService {
                 `Erro HTTP ${error.response.status} ao enviar webhook: ${JSON.stringify(error.response.data)}`,
               );
               throw new HttpException(
-                error.response.data || 'Erro ao enviar webhook',
+                error.response.data || "Erro ao enviar webhook",
                 error.response.status,
               );
             } else {
-              this.logger.error(`Erro de rede ao enviar webhook: ${error.message}`);
+              this.logger.error(
+                `Erro de rede ao enviar webhook: ${error.message}`,
+              );
               throw new HttpException(
-                'Falha de rede ao conectar com webhook',
+                "Falha de rede ao conectar com webhook",
                 HttpStatus.SERVICE_UNAVAILABLE,
               );
             }
@@ -89,12 +91,14 @@ export class WebhookService {
    * @param payload Dados do lead/evento
    */
   async sendToMake(payload: any): Promise<any> {
-    const makeUrl = this.configService.get<string>('MAKE_WEBHOOK_URL');
-    const makeToken = this.configService.get<string>('MAKE_TOKEN');
-    
+    const makeUrl = this.configService.get<string>("MAKE_WEBHOOK_URL");
+    const makeToken = this.configService.get<string>("MAKE_TOKEN");
+
     if (!makeUrl) {
-      this.logger.warn('MAKE_WEBHOOK_URL não configurado, pulando envio para Make.com');
-      return { ok: false, message: 'Make.com não configurado' };
+      this.logger.warn(
+        "MAKE_WEBHOOK_URL não configurado, pulando envio para Make.com",
+      );
+      return { ok: false, message: "Make.com não configurado" };
     }
 
     return this.sendWebhook(payload, makeUrl, makeToken);
@@ -105,15 +109,16 @@ export class WebhookService {
    * @param payload Dados do lead/evento
    */
   async sendToZapier(payload: any): Promise<any> {
-    const zapierUrl = this.configService.get<string>('ZAPIER_WEBHOOK_URL');
-    
+    const zapierUrl = this.configService.get<string>("ZAPIER_WEBHOOK_URL");
+
     if (!zapierUrl) {
-      this.logger.warn('ZAPIER_WEBHOOK_URL não configurado, pulando envio para Zapier');
-      return { ok: false, message: 'Zapier não configurado' };
+      this.logger.warn(
+        "ZAPIER_WEBHOOK_URL não configurado, pulando envio para Zapier",
+      );
+      return { ok: false, message: "Zapier não configurado" };
     }
 
     // Zapier geralmente não precisa de token, mas aceita se configurado
     return this.sendWebhook(payload, zapierUrl);
   }
 }
-

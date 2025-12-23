@@ -1,4 +1,4 @@
-import { MigrationInterface, QueryRunner } from 'typeorm';
+import { MigrationInterface, QueryRunner } from "typeorm";
 
 export class AddClinicIdToTables1700000001 implements MigrationInterface {
   public async up(queryRunner: QueryRunner): Promise<void> {
@@ -68,19 +68,36 @@ export class AddClinicIdToTables1700000001 implements MigrationInterface {
   public async down(queryRunner: QueryRunner): Promise<void> {
     // Remover índices
     await queryRunner.query(`DROP INDEX IF EXISTS idx_bloqueios_clinic_data;`);
-    await queryRunner.query(`DROP INDEX IF EXISTS idx_agendamentos_clinic_lead;`);
+    await queryRunner.query(
+      `DROP INDEX IF EXISTS idx_agendamentos_clinic_lead;`,
+    );
     await queryRunner.query(`DROP INDEX IF EXISTS idx_eventos_clinic_lead;`);
     await queryRunner.query(`DROP INDEX IF EXISTS idx_fila_clinic_status;`);
-    await queryRunner.query(`DROP INDEX IF EXISTS idx_recompensas_clinic_lead;`);
-    await queryRunner.query(`DROP INDEX IF EXISTS idx_indicacoes_clinic_indicador;`);
+    await queryRunner.query(
+      `DROP INDEX IF EXISTS idx_recompensas_clinic_lead;`,
+    );
+    await queryRunner.query(
+      `DROP INDEX IF EXISTS idx_indicacoes_clinic_indicador;`,
+    );
 
     // Remover colunas
-    await queryRunner.query(`ALTER TABLE bloqueios DROP COLUMN IF EXISTS clinic_id;`);
-    await queryRunner.query(`ALTER TABLE agendamentos DROP COLUMN IF EXISTS clinic_id;`);
-    await queryRunner.query(`ALTER TABLE eventos DROP COLUMN IF EXISTS clinic_id;`);
-    await queryRunner.query(`ALTER TABLE fila_envios DROP COLUMN IF EXISTS clinic_id;`);
-    await queryRunner.query(`ALTER TABLE recompensas DROP COLUMN IF EXISTS clinic_id;`);
-    await queryRunner.query(`ALTER TABLE indicacoes DROP COLUMN IF EXISTS clinic_id;`);
+    await queryRunner.query(
+      `ALTER TABLE bloqueios DROP COLUMN IF EXISTS clinic_id;`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE agendamentos DROP COLUMN IF EXISTS clinic_id;`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE eventos DROP COLUMN IF EXISTS clinic_id;`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE fila_envios DROP COLUMN IF EXISTS clinic_id;`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE recompensas DROP COLUMN IF EXISTS clinic_id;`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE indicacoes DROP COLUMN IF EXISTS clinic_id;`,
+    );
   }
 }
-

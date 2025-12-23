@@ -1,6 +1,6 @@
 // src/modules/eventos/events.service.spec.ts
-import { Test, TestingModule } from '@nestjs/testing';
-import { EventsService } from './events.service';
+import { Test, TestingModule } from "@nestjs/testing";
+import { EventsService } from "./events.service";
 
 const mockFirestore = {
   collection: jest.fn().mockReturnThis(),
@@ -11,7 +11,7 @@ const mockFirestore = {
   add: jest.fn(),
 };
 
-describe('EventsService', () => {
+describe("EventsService", () => {
   let service: EventsService;
 
   beforeEach(async () => {
@@ -25,11 +25,11 @@ describe('EventsService', () => {
       providers: [
         EventsService,
         {
-          provide: 'FIRESTORE',
+          provide: "FIRESTORE",
           useValue: mockFirestore,
         },
         {
-          provide: 'EventRepository',
+          provide: "EventRepository",
           useValue: mockRepo,
         },
       ],
@@ -42,19 +42,19 @@ describe('EventsService', () => {
     jest.clearAllMocks();
   });
 
-  it('should be defined', () => {
+  it("should be defined", () => {
     expect(service).toBeDefined();
   });
 
-  it('deve listar eventos recentes', async () => {
+  it("deve listar eventos recentes", async () => {
     const fakeEventos = [
-      { id: '1', tipo: 'lead_criado', data: new Date() },
-      { id: '2', tipo: 'mensagem_enviada', data: new Date() },
+      { id: "1", tipo: "lead_criado", data: new Date() },
+      { id: "2", tipo: "mensagem_enviada", data: new Date() },
     ];
 
     mockFirestore.get.mockResolvedValue({
       empty: false,
-      docs: fakeEventos.map(e => ({
+      docs: fakeEventos.map((e) => ({
         id: e.id,
         data: () => e,
       })),
@@ -62,35 +62,39 @@ describe('EventsService', () => {
 
     const resultado = await service.findAll();
     expect(resultado).toHaveLength(2);
-    expect(mockFirestore.collection).toHaveBeenCalledWith('eventos');
+    expect(mockFirestore.collection).toHaveBeenCalledWith("eventos");
   });
 
-  it('deve registrar novo evento', async () => {
-    mockFirestore.add.mockResolvedValue({ id: 'evento-123' });
+  it("deve registrar novo evento", async () => {
+    mockFirestore.add.mockResolvedValue({ id: "evento-123" });
 
     const evento = {
-      tipo: 'agendamento_criado',
-      payload: { leadId: 'lead-456' },
+      tipo: "agendamento_criado",
+      payload: { leadId: "lead-456" },
       timestamp: new Date(),
     };
 
     const resultado = await service.registrar(evento);
-    expect(resultado).toHaveProperty('id');
-    expect(mockFirestore.add).toHaveBeenCalledWith(expect.objectContaining({
-      tipo: 'agendamento_criado',
-    }));
+    expect(resultado).toHaveProperty("id");
+    expect(mockFirestore.add).toHaveBeenCalledWith(
+      expect.objectContaining({
+        tipo: "agendamento_criado",
+      }),
+    );
   });
 
-  it('deve filtrar eventos por tipo', async () => {
+  it("deve filtrar eventos por tipo", async () => {
     mockFirestore.get.mockResolvedValue({
       empty: false,
-      docs: [
-        { id: '1', data: () => ({ tipo: 'lead_criado' }) },
-      ],
+      docs: [{ id: "1", data: () => ({ tipo: "lead_criado" }) }],
     });
 
-    const resultado = await service.findByTipo('lead_criado');
-    expect(mockFirestore.where).toHaveBeenCalledWith('tipo', '==', 'lead_criado');
+    const resultado = await service.findByTipo("lead_criado");
+    expect(mockFirestore.where).toHaveBeenCalledWith(
+      "tipo",
+      "==",
+      "lead_criado",
+    );
     expect(resultado).toBeDefined();
   });
 });

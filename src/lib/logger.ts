@@ -1,14 +1,17 @@
 // src/lib/logger.ts
-import pino from 'pino';
+import pino from "pino";
 
-const isProd = process.env.NODE_ENV === 'production';
+const isProd = process.env.NODE_ENV === "production";
 
 const baseLogger = pino({
-  level: process.env.LOG_LEVEL || (isProd ? 'info' : 'debug'),
+  level: process.env.LOG_LEVEL || (isProd ? "info" : "debug"),
   transport: !isProd
     ? {
-        target: 'pino-pretty',
-        options: { ignore: 'pid,hostname', translateTime: 'SYS:yyyy-mm-dd HH:MM:ss.l o' },
+        target: "pino-pretty",
+        options: {
+          ignore: "pid,hostname",
+          translateTime: "SYS:yyyy-mm-dd HH:MM:ss.l o",
+        },
       }
     : undefined,
   timestamp: pino.stdTimeFunctions.isoTime,

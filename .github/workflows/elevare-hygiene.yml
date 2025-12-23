@@ -1,0 +1,260 @@
+name: Elevare - Higienização
+
+on:
+  push:
+    branches: ['**']
+  pull_request:
+    branches: ['**']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  hygiene-check:
+    name: Verificação de Higiene
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: |
+          npm ci --legacy-peer-deps || npm install --legacy-peer-deps
+      
+      - name: Check for orphaned files
+        id: orphaned
+        run: |
+          echo "## 📁 Verificação de Arquivos Órfãos" >> $GITHUB_STEP_SUMMARY
+          
+          # Find TypeScript files not imported anywhere
+          ORPHANED=0
+          
+          find src -name "*.ts" -not -name "*.spec.ts" -not -name "*.test.ts" > all-ts-files.txt
+          
+          while IFS= read -r file; do
+            filename=$(basename "$file" .ts)
+            # Check if file is imported anywhere
+            if ! grep -r "from.*$filename" --include="*.ts" src/ > /dev/null 2>&1 && \
+               ! grep -r "import.*$filename" --include="*.ts" src/ > /dev/null 2>&1; then
+              # Check if it's not main.ts or a module file
+              if [[ ! "$file" =~ main.ts$ ]] && [[ ! "$file" =~ module.ts$ ]]; then
+                echo "$file" >> orphaned-files.txt
+                ORPHANED=$((ORPHANED + 1))
+              fi
+            fi
+          done < all-ts-files.txt
+          
+          echo "orphaned=$ORPHANED" >> $GITHUB_OUTPUT
+          
+          if [ "$ORPHANED" -gt 0 ]; then
+            echo "⚠️ Arquivos possivelmente órfãos detectados: $ORPHANED" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "### Lista de arquivos:" >> $GITHUB_STEP_SUMMARY
+            head -20 orphaned-files.txt >> $GITHUB_STEP_SUMMARY 2>/dev/null || true
+            echo "status=warning" >> $GITHUB_OUTPUT
+          else
+            echo "✅ Nenhum arquivo órfão detectado" >> $GITHUB_STEP_SUMMARY
+            echo "status=success" >> $GITHUB_OUTPUT
+          fi
+      
+      - name: Check for unused dependencies
+        id: unused-deps
+        run: |
+          echo "## 📦 Dependências Não Usadas" >> $GITHUB_STEP_SUMMARY
+          
+          npx depcheck --json > depcheck-full.json 2>&1 || true
+          
+          if [ -f depcheck-full.json ]; then
+            # Extract unused dependencies
+            UNUSED=$(cat depcheck-full.json | grep -o '"dependencies":\[.*\]' || echo '[]')
+            
+            if echo "$UNUSED" | grep -q "\["; then
+              COUNT=$(echo "$UNUSED" | grep -o "," | wc -l)
+              COUNT=$((COUNT + 1))
+              
+              if [ "$COUNT" -gt 1 ]; then
+                echo "⚠️ Dependências não usadas: $COUNT" >> $GITHUB_STEP_SUMMARY
+                echo "" >> $GITHUB_STEP_SUMMARY
+                echo '```json' >> $GITHUB_STEP_SUMMARY
+                cat depcheck-full.json | grep -A 20 '"dependencies"' | head -25 >> $GITHUB_STEP_SUMMARY
+                echo '```' >> $GITHUB_STEP_SUMMARY
+                echo "status=warning" >> $GITHUB_OUTPUT
+                echo "count=$COUNT" >> $GITHUB_OUTPUT
+              else
+                echo "✅ Nenhuma dependência não usada" >> $GITHUB_STEP_SUMMARY
+                echo "status=success" >> $GITHUB_OUTPUT
+                echo "count=0" >> $GITHUB_OUTPUT
+              fi
+            else
+              echo "✅ Nenhuma dependência não usada" >> $GITHUB_STEP_SUMMARY
+              echo "status=success" >> $GITHUB_OUTPUT
+              echo "count=0" >> $GITHUB_OUTPUT
+            fi
+          fi
+      
+      - name: Check for TypeScript warnings
+        id: ts-warnings
+        run: |
+          echo "## ⚠️ Avisos TypeScript" >> $GITHUB_STEP_SUMMARY
+          
+          npx tsc --noEmit 2>&1 | tee tsc-warnings.log || true
+          
+          WARNINGS=$(grep -c "warning TS" tsc-warnings.log || echo "0")
+          ERRORS=$(grep -c "error TS" tsc-warnings.log || echo "0")
+          
+          echo "warnings=$WARNINGS" >> $GITHUB_OUTPUT
+          echo "errors=$ERRORS" >> $GITHUB_OUTPUT
+          
+          if [ "$ERRORS" -gt 0 ]; then
+            echo "❌ Erros TypeScript: $ERRORS" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            head -30 tsc-warnings.log >> $GITHUB_STEP_SUMMARY
+            echo "status=failed" >> $GITHUB_OUTPUT
+          elif [ "$WARNINGS" -gt 0 ]; then
+            echo "⚠️ Avisos TypeScript: $WARNINGS" >> $GITHUB_STEP_SUMMARY
+            echo "status=warning" >> $GITHUB_OUTPUT
+          else
+            echo "✅ Sem avisos ou erros TypeScript" >> $GITHUB_STEP_SUMMARY
+            echo "status=success" >> $GITHUB_OUTPUT
+          fi
+      
+      - name: Check for broken imports
+        id: broken-imports
+        run: |
+          echo "## 🔗 Verificação de Imports Quebrados" >> $GITHUB_STEP_SUMMARY
+          
+          BROKEN=0
+          
+          # Look for common import issues
+          if grep -r "from '\.\./\.\./\.\./\.\./\.\." --include="*.ts" src/ > broken-imports.txt 2>&1; then
+            BROKEN=$(wc -l < broken-imports.txt)
+          fi
+          
+          echo "broken=$BROKEN" >> $GITHUB_OUTPUT
+          
+          if [ "$BROKEN" -gt 0 ]; then
+            echo "⚠️ Imports com paths muito longos (possível problema): $BROKEN" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            head -10 broken-imports.txt >> $GITHUB_STEP_SUMMARY 2>/dev/null || true
+            echo "status=warning" >> $GITHUB_OUTPUT
+          else
+            echo "✅ Nenhum import suspeito detectado" >> $GITHUB_STEP_SUMMARY
+            echo "status=success" >> $GITHUB_OUTPUT
+          fi
+      
+      - name: Check for duplicate code
+        id: duplicates
+        continue-on-error: true
+        run: |
+          echo "## 🔄 Verificação de Código Duplicado" >> $GITHUB_STEP_SUMMARY
+          
+          # Simple duplicate detection - look for identical function signatures
+          find src -name "*.ts" -not -name "*.spec.ts" -exec grep -h "^\s*function\|^\s*const.*=.*=>" {} \; | sort | uniq -d > duplicates.txt 2>/dev/null || true
+          
+          DUPS=0
+          if [ -f duplicates.txt ]; then
+            DUPS=$(wc -l < duplicates.txt)
+          fi
+          
+          echo "duplicates=$DUPS" >> $GITHUB_OUTPUT
+          
+          if [ "$DUPS" -gt 5 ]; then
+            echo "⚠️ Possível código duplicado detectado: $DUPS ocorrências" >> $GITHUB_STEP_SUMMARY
+            echo "status=warning" >> $GITHUB_OUTPUT
+          else
+            echo "✅ Nível aceitável de duplicação" >> $GITHUB_STEP_SUMMARY
+            echo "status=success" >> $GITHUB_OUTPUT
+          fi
+      
+      - name: Check for TODO/FIXME comments
+        id: todos
+        run: |
+          echo "## 📝 TODOs e FIXMEs" >> $GITHUB_STEP_SUMMARY
+          
+          TODOS=$(grep -r "TODO\|FIXME\|HACK" --include="*.ts" --include="*.js" src/ | wc -l || echo "0")
+          
+          echo "todos=$TODOS" >> $GITHUB_OUTPUT
+          
+          if [ "$TODOS" -gt 20 ]; then
+            echo "⚠️ TODOs/FIXMEs encontrados: $TODOS" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "### Primeiros 10:" >> $GITHUB_STEP_SUMMARY
+            grep -r "TODO\|FIXME\|HACK" --include="*.ts" --include="*.js" src/ | head -10 >> $GITHUB_STEP_SUMMARY
+            echo "status=warning" >> $GITHUB_OUTPUT
+          elif [ "$TODOS" -gt 0 ]; then
+            echo "ℹ️ TODOs/FIXMEs: $TODOS (aceitável)" >> $GITHUB_STEP_SUMMARY
+            echo "status=success" >> $GITHUB_OUTPUT
+          else
+            echo "✅ Nenhum TODO/FIXME pendente" >> $GITHUB_STEP_SUMMARY
+            echo "status=success" >> $GITHUB_OUTPUT
+          fi
+      
+      - name: Generate Hygiene Report
+        if: always()
+        run: |
+          cat > HYGIENE_REPORT.md << 'EOF'
+          # Relatório de Higienização Elevare
+          
+          **Data:** $(date -u +"%Y-%m-%d %H:%M:%S UTC")
+          **Branch:** ${{ github.ref_name }}
+          **Commit:** ${{ github.sha }}
+          
+          ## Resultado das Verificações
+          
+          | Check | Status | Detalhes |
+          |-------|--------|----------|
+          | Arquivos Órfãos | ${{ steps.orphaned.outputs.status }} | Detectados: ${{ steps.orphaned.outputs.orphaned || '0' }} |
+          | Dependências Não Usadas | ${{ steps.unused-deps.outputs.status }} | Count: ${{ steps.unused-deps.outputs.count || '0' }} |
+          | Avisos TypeScript | ${{ steps.ts-warnings.outputs.status }} | Warnings: ${{ steps.ts-warnings.outputs.warnings || '0' }}, Errors: ${{ steps.ts-warnings.outputs.errors || '0' }} |
+          | Imports Quebrados | ${{ steps.broken-imports.outputs.status }} | Encontrados: ${{ steps.broken-imports.outputs.broken || '0' }} |
+          | Código Duplicado | ${{ steps.duplicates.outputs.status }} | Ocorrências: ${{ steps.duplicates.outputs.duplicates || '0' }} |
+          | TODOs/FIXMEs | ${{ steps.todos.outputs.status }} | Total: ${{ steps.todos.outputs.todos || '0' }} |
+          
+          ## Recomendações
+          
+          EOF
+          
+          if [ "${{ steps.orphaned.outputs.status }}" = "warning" ]; then
+            echo "- 🧹 Remover ou usar arquivos órfãos detectados" >> HYGIENE_REPORT.md
+          fi
+          
+          if [ "${{ steps.unused-deps.outputs.status }}" = "warning" ]; then
+            echo "- 📦 Remover dependências não utilizadas" >> HYGIENE_REPORT.md
+          fi
+          
+          if [ "${{ steps.ts-warnings.outputs.status }}" != "success" ]; then
+            echo "- ⚠️ Corrigir avisos/erros TypeScript" >> HYGIENE_REPORT.md
+          fi
+          
+          if [ "${{ steps.broken-imports.outputs.status }}" = "warning" ]; then
+            echo "- 🔗 Refatorar imports com paths muito longos" >> HYGIENE_REPORT.md
+          fi
+          
+          if [ "${{ steps.duplicates.outputs.status }}" = "warning" ]; then
+            echo "- 🔄 Refatorar código duplicado" >> HYGIENE_REPORT.md
+          fi
+          
+          cat HYGIENE_REPORT.md >> $GITHUB_STEP_SUMMARY
+      
+      - name: Upload Hygiene Report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: hygiene-report-${{ github.sha }}
+          path: |
+            HYGIENE_REPORT.md
+            orphaned-files.txt
+            depcheck-full.json
+            tsc-warnings.log
+            broken-imports.txt
+            duplicates.txt
+          retention-days: 30

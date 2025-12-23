@@ -1,0 +1,194 @@
+name: Elevare - Segurança
+
+on:
+  push:
+    branches: ['**']
+  pull_request:
+    branches: ['**']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  security-scan:
+    name: Scan de Segurança
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+      
+      - name: Scan for secrets in code
+        id: secret-scan
+        run: |
+          echo "## 🔒 Scan de Segredos" >> $GITHUB_STEP_SUMMARY
+          
+          SECRETS_FOUND=0
+          
+          # Basic secret pattern detection
+          # Note: This is a simple pattern check that may produce false positives
+          # For production use, consider integrating tools like:
+          # - GitLeaks: https://github.com/gitleaks/gitleaks
+          # - TruffleHog: https://github.com/trufflesecurity/trufflehog
+          # - detect-secrets: https://github.com/Yelp/detect-secrets
+          if grep -r -i -E "(password|passwd|pwd|secret|token|api[-_]?key|apikey|access[-_]?key)" --include="*.ts" --include="*.js" --include="*.json" --exclude-dir=node_modules --exclude-dir=dist . | grep -v "\.example\|\.md\|//\|/\*" | grep -E "=|:" > secrets.log 2>&1; then
+            SECRETS_FOUND=$(wc -l < secrets.log)
+            echo "⚠️ Possíveis segredos encontrados: $SECRETS_FOUND" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "### Arquivos com possíveis segredos:" >> $GITHUB_STEP_SUMMARY
+            head -20 secrets.log >> $GITHUB_STEP_SUMMARY
+            echo "status=warning" >> $GITHUB_OUTPUT
+            echo "secrets=$SECRETS_FOUND" >> $GITHUB_OUTPUT
+          else
+            echo "✅ Nenhum segredo aparente detectado" >> $GITHUB_STEP_SUMMARY
+            echo "status=success" >> $GITHUB_OUTPUT
+            echo "secrets=0" >> $GITHUB_OUTPUT
+          fi
+      
+      - name: Check for .env files
+        id: env-check
+        run: |
+          echo "## 📄 Verificação de arquivos .env" >> $GITHUB_STEP_SUMMARY
+          
+          if find . -name ".env" -not -path "*/node_modules/*" -not -name ".env.example" | grep -q .; then
+            echo "❌ Arquivos .env encontrados no repositório!" >> $GITHUB_STEP_SUMMARY
+            find . -name ".env" -not -path "*/node_modules/*" -not -name ".env.example" >> $GITHUB_STEP_SUMMARY
+            echo "status=failed" >> $GITHUB_OUTPUT
+            exit 1
+          else
+            echo "✅ Nenhum arquivo .env comprometedor encontrado" >> $GITHUB_STEP_SUMMARY
+            echo "status=success" >> $GITHUB_OUTPUT
+          fi
+      
+      - name: Check for Firebase credentials
+        id: firebase-check
+        run: |
+          echo "## 🔥 Verificação Firebase" >> $GITHUB_STEP_SUMMARY
+          
+          if grep -r "private_key" --include="*.ts" --include="*.js" --include="*.json" --exclude-dir=node_modules --exclude-dir=dist . 2>/dev/null | grep -v "\.example\|\.md" > firebase.log; then
+            echo "⚠️ Possíveis credenciais Firebase em texto" >> $GITHUB_STEP_SUMMARY
+            head -10 firebase.log >> $GITHUB_STEP_SUMMARY
+            echo "status=warning" >> $GITHUB_OUTPUT
+          else
+            echo "✅ Nenhuma credencial Firebase exposta" >> $GITHUB_STEP_SUMMARY
+            echo "status=success" >> $GITHUB_OUTPUT
+          fi
+      
+      - name: Check for hardcoded credentials
+        id: credentials-check
+        run: |
+          echo "## 🔑 Verificação de Credenciais Hardcoded" >> $GITHUB_STEP_SUMMARY
+          
+          PATTERNS=(
+            "password\s*=\s*['\"][^'\"]{3,}"
+            "token\s*=\s*['\"][^'\"]{10,}"
+            "api[-_]?key\s*=\s*['\"][^'\"]{10,}"
+            "secret\s*=\s*['\"][^'\"]{10,}"
+          )
+          
+          FOUND=0
+          for pattern in "${PATTERNS[@]}"; do
+            if grep -r -i -E "$pattern" --include="*.ts" --include="*.js" --exclude-dir=node_modules --exclude-dir=dist . 2>/dev/null | grep -v "\.example\|\.md\|//"; then
+              FOUND=$((FOUND + 1))
+            fi
+          done
+          
+          if [ "$FOUND" -gt 0 ]; then
+            echo "❌ Credenciais hardcoded detectadas" >> $GITHUB_STEP_SUMMARY
+            echo "status=failed" >> $GITHUB_OUTPUT
+            echo "found=$FOUND" >> $GITHUB_OUTPUT
+            exit 1
+          else
+            echo "✅ Nenhuma credencial hardcoded detectada" >> $GITHUB_STEP_SUMMARY
+            echo "status=success" >> $GITHUB_OUTPUT
+            echo "found=0" >> $GITHUB_OUTPUT
+          fi
+      
+      - name: NPM Audit
+        id: npm-audit
+        continue-on-error: true
+        run: |
+          echo "## 🛡️ NPM Audit" >> $GITHUB_STEP_SUMMARY
+          
+          npm audit --json > audit.json 2>&1 || true
+          
+          if [ -f audit.json ]; then
+            CRITICAL=$(cat audit.json | grep -o '"critical":[0-9]*' | head -1 | awk -F: '{print $2}' || echo "0")
+            HIGH=$(cat audit.json | grep -o '"high":[0-9]*' | head -1 | awk -F: '{print $2}' || echo "0")
+            MODERATE=$(cat audit.json | grep -o '"moderate":[0-9]*' | head -1 | awk -F: '{print $2}' || echo "0")
+            
+            echo "- Critical: $CRITICAL" >> $GITHUB_STEP_SUMMARY
+            echo "- High: $HIGH" >> $GITHUB_STEP_SUMMARY
+            echo "- Moderate: $MODERATE" >> $GITHUB_STEP_SUMMARY
+            
+            if [ "$CRITICAL" -gt 0 ] || [ "$HIGH" -gt 0 ]; then
+              echo "❌ Vulnerabilidades críticas ou altas detectadas" >> $GITHUB_STEP_SUMMARY
+              echo "status=failed" >> $GITHUB_OUTPUT
+              echo "critical=$CRITICAL" >> $GITHUB_OUTPUT
+              echo "high=$HIGH" >> $GITHUB_OUTPUT
+            else
+              echo "✅ Sem vulnerabilidades críticas" >> $GITHUB_STEP_SUMMARY
+              echo "status=success" >> $GITHUB_OUTPUT
+            fi
+          fi
+      
+      - name: Generate Security Report
+        if: always()
+        run: |
+          cat > SECURITY_REPORT.md << 'EOF'
+          # Relatório de Segurança Elevare
+          
+          **Data:** $(date -u +"%Y-%m-%d %H:%M:%S UTC")
+          **Branch:** ${{ github.ref_name }}
+          **Commit:** ${{ github.sha }}
+          
+          ## Resultados do Scan
+          
+          | Check | Status | Detalhes |
+          |-------|--------|----------|
+          | Scan de Segredos | ${{ steps.secret-scan.outputs.status }} | Encontrados: ${{ steps.secret-scan.outputs.secrets || '0' }} |
+          | Arquivos .env | ${{ steps.env-check.outputs.status }} | - |
+          | Firebase | ${{ steps.firebase-check.outputs.status }} | - |
+          | Credenciais Hardcoded | ${{ steps.credentials-check.outputs.status }} | Encontradas: ${{ steps.credentials-check.outputs.found || '0' }} |
+          | NPM Audit | ${{ steps.npm-audit.outputs.status }} | Critical: ${{ steps.npm-audit.outputs.critical || '0' }}, High: ${{ steps.npm-audit.outputs.high || '0' }} |
+          
+          ## Conclusão
+          
+          EOF
+          
+          if [ "${{ steps.env-check.outputs.status }}" = "failed" ] || \
+             [ "${{ steps.credentials-check.outputs.status }}" = "failed" ] || \
+             [ "${{ steps.npm-audit.outputs.status }}" = "failed" ]; then
+            echo "❌ **REPROVADO** - Problemas de segurança críticos detectados" >> SECURITY_REPORT.md
+          else
+            echo "✅ **APROVADO** - Nenhum problema de segurança crítico" >> SECURITY_REPORT.md
+          fi
+          
+          cat SECURITY_REPORT.md >> $GITHUB_STEP_SUMMARY
+      
+      - name: Upload Security Report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: security-report-${{ github.sha }}
+          path: |
+            SECURITY_REPORT.md
+            secrets.log
+            firebase.log
+            audit.json
+          retention-days: 90
+      
+      - name: Block on security failures
+        if: steps.env-check.outputs.status == 'failed' || steps.credentials-check.outputs.status == 'failed'
+        run: |
+          echo "❌ Build bloqueado por problemas de segurança críticos"
+          exit 1

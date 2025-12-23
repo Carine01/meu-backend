@@ -1,7 +1,7 @@
-import { Injectable, Logger, NotFoundException } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { Agendamento } from './entities/agendamento.entity';
+import { Injectable, Logger, NotFoundException } from "@nestjs/common";
+import { InjectRepository } from "@nestjs/typeorm";
+import { Repository } from "typeorm";
+import { Agendamento } from "./entities/agendamento.entity";
 
 @Injectable()
 export class AgendamentosService {
@@ -36,7 +36,7 @@ export class AgendamentosService {
       throw new NotFoundException(`Agendamento ${id} não encontrado`);
     }
 
-    agendamento.status = 'confirmado';
+    agendamento.status = "confirmado";
     await this.agendamentoRepo.save(agendamento);
 
     this.logger.log(`✅ Agendamento confirmado: ${id}`);
@@ -52,7 +52,7 @@ export class AgendamentosService {
       throw new NotFoundException(`Agendamento ${id} não encontrado`);
     }
 
-    agendamento.status = 'cancelado';
+    agendamento.status = "cancelado";
     if (motivo) {
       agendamento.observacoes = `Cancelado: ${motivo}`;
     }
@@ -71,7 +71,7 @@ export class AgendamentosService {
       throw new NotFoundException(`Agendamento ${id} não encontrado`);
     }
 
-    agendamento.status = 'compareceu';
+    agendamento.status = "compareceu";
     await this.agendamentoRepo.save(agendamento);
 
     this.logger.log(`✅ Comparecimento registrado: ${id}`);
@@ -87,7 +87,7 @@ export class AgendamentosService {
       throw new NotFoundException(`Agendamento ${id} não encontrado`);
     }
 
-    agendamento.status = 'no-show';
+    agendamento.status = "no-show";
     await this.agendamentoRepo.save(agendamento);
 
     this.logger.log(`⚠️ No-show registrado: ${id}`);
@@ -105,12 +105,14 @@ export class AgendamentosService {
 
     const antigoHorario = agendamento.startISO;
     agendamento.startISO = novoStartISO;
-    agendamento.status = 'agendado';
+    agendamento.status = "agendado";
     agendamento.observacoes = `Reagendado de ${antigoHorario} para ${novoStartISO}`;
 
     await this.agendamentoRepo.save(agendamento);
 
-    this.logger.log(`🔄 Agendamento reagendado: ${id} | Novo horário: ${novoStartISO}`);
+    this.logger.log(
+      `🔄 Agendamento reagendado: ${id} | Novo horário: ${novoStartISO}`,
+    );
   }
 
   /**
@@ -131,25 +133,31 @@ export class AgendamentosService {
    */
   async findAll(): Promise<Agendamento[]> {
     return this.agendamentoRepo.find({
-      order: { startISO: 'ASC' },
+      order: { startISO: "ASC" },
     });
   }
   /**
    * Lista agendamentos filtrando por clinicId
    */
   async listarPorClinica(clinicId: string): Promise<Agendamento[]> {
-    if (!clinicId || clinicId.trim() === '') {
-      throw new Error('clinicId é obrigatório');
+    if (!clinicId || clinicId.trim() === "") {
+      throw new Error("clinicId é obrigatório");
     }
-    return this.agendamentoRepo.find({ where: { clinicId }, order: { startISO: 'ASC' } });
+    return this.agendamentoRepo.find({
+      where: { clinicId },
+      order: { startISO: "ASC" },
+    });
   }
 
   /**
    * Busca agendamento por id e clinicId
    */
-  async buscarPorIdEClinica(id: string, clinicId: string): Promise<Agendamento | undefined> {
-    if (!clinicId || clinicId.trim() === '') {
-      throw new Error('clinicId é obrigatório');
+  async buscarPorIdEClinica(
+    id: string,
+    clinicId: string,
+  ): Promise<Agendamento | undefined> {
+    if (!clinicId || clinicId.trim() === "") {
+      throw new Error("clinicId é obrigatório");
     }
     return this.agendamentoRepo.findOne({ where: { id, clinicId } });
   }
@@ -157,17 +165,23 @@ export class AgendamentosService {
   /**
    * Confirma agendamento por id e clinicId
    */
-  async confirmarAgendamentoPorClinica(id: string, clinicId: string): Promise<void> {
-    if (!clinicId || clinicId.trim() === '') {
-      throw new Error('clinicId é obrigatório');
+  async confirmarAgendamentoPorClinica(
+    id: string,
+    clinicId: string,
+  ): Promise<void> {
+    if (!clinicId || clinicId.trim() === "") {
+      throw new Error("clinicId é obrigatório");
     }
-    const agendamento = await this.agendamentoRepo.findOne({ where: { id, clinicId } });
+    const agendamento = await this.agendamentoRepo.findOne({
+      where: { id, clinicId },
+    });
     if (!agendamento) {
-      throw new NotFoundException(`Agendamento ${id} não encontrado para clínica ${clinicId}`);
+      throw new NotFoundException(
+        `Agendamento ${id} não encontrado para clínica ${clinicId}`,
+      );
     }
-    agendamento.status = 'confirmado';
+    agendamento.status = "confirmado";
     await this.agendamentoRepo.save(agendamento);
     this.logger.log(`✅ Agendamento confirmado: ${id} | Clínica: ${clinicId}`);
   }
 }
-

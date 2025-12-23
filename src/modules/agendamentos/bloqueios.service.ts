@@ -1,30 +1,30 @@
-import { Injectable, Logger } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, Raw, MoreThan } from 'typeorm';
-import { Bloqueio } from './entities/bloqueio.entity';
+import { Injectable, Logger } from "@nestjs/common";
+import { InjectRepository } from "@nestjs/typeorm";
+import { Repository, Raw, MoreThan } from "typeorm";
+import { Bloqueio } from "./entities/bloqueio.entity";
 
 @Injectable()
 export class BloqueiosService {
-    async create(dto: Partial<Bloqueio>): Promise<Bloqueio> {
-      // Mock para teste
-      return { ...dto, id: 'mock-id' } as Bloqueio;
-    }
+  async create(dto: Partial<Bloqueio>): Promise<Bloqueio> {
+    // Mock para teste
+    return { ...dto, id: "mock-id" } as Bloqueio;
+  }
 
-    async remover(id: string): Promise<void> {
-      // Mock para teste
-      return;
-    }
+  async remover(id: string): Promise<void> {
+    // Mock para teste
+    return;
+  }
   private readonly logger = new Logger(BloqueiosService.name);
-  
+
   private readonly FERIADOS_NACIONAIS = [
-    '2025-01-01', // Ano Novo
-    '2025-04-21', // Tiradentes
-    '2025-05-01', // Dia do Trabalho
-    '2025-09-07', // Independência
-    '2025-10-12', // Nossa Senhora Aparecida
-    '2025-11-02', // Finados
-    '2025-11-15', // Proclamação República
-    '2025-12-25', // Natal
+    "2025-01-01", // Ano Novo
+    "2025-04-21", // Tiradentes
+    "2025-05-01", // Dia do Trabalho
+    "2025-09-07", // Independência
+    "2025-10-12", // Nossa Senhora Aparecida
+    "2025-11-02", // Finados
+    "2025-11-15", // Proclamação República
+    "2025-12-25", // Natal
   ];
 
   constructor(
@@ -45,11 +45,11 @@ export class BloqueiosService {
         // Segunda a sexta
         const bloqueio = this.bloqueioRepo.create({
           clinicId,
-          data: data.toISOString().split('T')[0],
-          startTime: '12:00',
-          endTime: '14:00',
-          tipo: 'almoco',
-          motivo: 'Horário de almoço',
+          data: data.toISOString().split("T")[0],
+          startTime: "12:00",
+          endTime: "14:00",
+          tipo: "almoco",
+          motivo: "Horário de almoço",
           recorrente: false,
         });
 
@@ -66,7 +66,7 @@ export class BloqueiosService {
   async bloquearSabados(clinicId: string): Promise<void> {
     for (let i = 0; i < 8; i++) {
       const data = new Date();
-      data.setDate(data.getDate() + (i * 7)); // Próximos 8 sábados
+      data.setDate(data.getDate() + i * 7); // Próximos 8 sábados
 
       // Encontrar próximo sábado
       while (data.getDay() !== 6) {
@@ -76,11 +76,11 @@ export class BloqueiosService {
       // Bloquear tarde (apenas 8h-14h funciona)
       const bloqueio = this.bloqueioRepo.create({
         clinicId,
-        data: data.toISOString().split('T')[0],
-        startTime: '14:00',
-        endTime: '23:59',
-        tipo: 'sabado',
-        motivo: 'Sábado só funciona até 14h',
+        data: data.toISOString().split("T")[0],
+        startTime: "14:00",
+        endTime: "23:59",
+        tipo: "sabado",
+        motivo: "Sábado só funciona até 14h",
         recorrente: false,
       });
 
@@ -98,18 +98,20 @@ export class BloqueiosService {
       const bloqueio = this.bloqueioRepo.create({
         clinicId,
         data: feriado,
-        startTime: '00:00',
-        endTime: '23:59',
-        tipo: 'feriado',
-        motivo: 'Feriado Nacional',
+        startTime: "00:00",
+        endTime: "23:59",
+        tipo: "feriado",
+        motivo: "Feriado Nacional",
         recorrente: true,
-        ateData: '2026-01-01',
+        ateData: "2026-01-01",
       });
 
       await this.bloqueioRepo.save(bloqueio);
     }
 
-    this.logger.log(`🏖️ Bloqueios de feriados nacionais criados para ${clinicId}`);
+    this.logger.log(
+      `🏖️ Bloqueios de feriados nacionais criados para ${clinicId}`,
+    );
   }
 
   /**
@@ -121,8 +123,8 @@ export class BloqueiosService {
     horaInicio: string,
     duracaoMinutos: number,
   ): Promise<{ bloqueado: boolean; motivo?: string; tipo?: string }> {
-    const data = new Date(dataISO).toISOString().split('T')[0];
-    const [hora, minuto] = horaInicio.split(':').map(Number);
+    const data = new Date(dataISO).toISOString().split("T")[0];
+    const [hora, minuto] = horaInicio.split(":").map(Number);
     const inicioMinutos = hora * 60 + minuto;
     const fimMinutos = inicioMinutos + duracaoMinutos;
 
@@ -138,8 +140,10 @@ export class BloqueiosService {
     for (const bloqueio of bloqueios) {
       if (!bloqueio.startTime || !bloqueio.endTime) continue;
 
-      const [bloqHoraIni, bloqMinIni] = bloqueio.startTime.split(':').map(Number);
-      const [bloqHoraFim, bloqMinFim] = bloqueio.endTime.split(':').map(Number);
+      const [bloqHoraIni, bloqMinIni] = bloqueio.startTime
+        .split(":")
+        .map(Number);
+      const [bloqHoraFim, bloqMinFim] = bloqueio.endTime.split(":").map(Number);
       const bloqInicioMin = bloqHoraIni * 60 + bloqMinIni;
       const bloqFimMin = bloqHoraFim * 60 + bloqMinFim;
 
@@ -174,7 +178,7 @@ export class BloqueiosService {
 
     for (let hora = inicio; hora < fim; hora++) {
       for (let minuto = 0; minuto < 60; minuto += 30) {
-        const horaStr = `${hora.toString().padStart(2, '0')}:${minuto.toString().padStart(2, '0')}`;
+        const horaStr = `${hora.toString().padStart(2, "0")}:${minuto.toString().padStart(2, "0")}`;
 
         const verificacao = await this.isHorarioBloqueado(
           clinicId,
@@ -198,7 +202,7 @@ export class BloqueiosService {
   async listarBloqueios(clinicId: string): Promise<Bloqueio[]> {
     return this.bloqueioRepo.find({
       where: { clinicId },
-      order: { data: 'ASC' },
+      order: { data: "ASC" },
     });
   }
 
@@ -210,4 +214,3 @@ export class BloqueiosService {
     this.logger.log(`🗑️ Bloqueio removido: ${bloqueioId}`);
   }
 }
-
