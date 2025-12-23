@@ -1,0 +1,45 @@
+name: Testes WhatsApp Automatizados
+
+on:
+  schedule:
+    - cron: '*/15 * * * *'
+
+jobs:
+  whatsapp-test:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Instalar dependências
+      run: npm ci
+
+    - name: Iniciar backend
+      run: NODE_ENV=production docker compose up -d --build
+
+    - name: Aguardar backend iniciar
+      run: |
+        echo "Aguardando backend iniciar..."
+        for i in {1..30}; do
+          if curl -s http://localhost:3000/health > /dev/null; then
+            echo "Backend pronto!"
+            exit 0
+          fi
+          echo "Tentativa $i/30..."
+          sleep 2
+        done
+        echo "Backend não iniciou a tempo"
+        docker compose logs
+        exit 1
+
+    - name: Testar endpoint WhatsApp
+      run: |
+        RESPONSE=$(curl -s "http://localhost:3000/whatsapp/test-bot")
+        echo "Resposta: $RESPONSE"
+        echo "$RESPONSE" | jq -e '.status == "ok"' > /dev/null || exit 1
+
+    - name: Cleanup
+      if: always()
+      run: docker compose down
