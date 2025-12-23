@@ -1,0 +1,66 @@
+name: Agent Orchestrator - run agent scripts in sequence
+
+on:
+  pull_request:
+    types: [opened, reopened, synchronize]
+  workflow_dispatch:
+    inputs:
+      auto_merge:
+        description: 'Enable automatic merge if all checks pass and approvals exist'
+        required: false
+        default: 'false'
+
+permissions:
+  contents: write
+  pull-requests: write
+  checks: read
+
+jobs:
+  orchestrate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      AUTO_MERGE: ${{ github.event.inputs.auto_merge || 'false' }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Ensure scripts are executable
+        run: |
+          chmod +x ./scripts/agent/run-all-checks.sh || true
+          chmod +x ./scripts/agent/auto-comment-and-assign.sh || true
+          chmod +x ./scripts/agent/auto-merge-if-ready.sh || true
+
+      - name: Run all checks (runs workflows)
+        run: |
+          echo "Executando run-all-checks.sh (dispara workflows: TypeScript Guardian, Register Fallback, Docker Builder, WhatsApp Monitor)..."
+          ./scripts/agent/run-all-checks.sh "${{ github.head_ref || github.ref }}" || echo "run-all-checks retornou não-zero; continuar para comentários"
+
+      - name: Post comment, labels and request reviewers
+        run: |
+          PR_NUMBER=${{ github.event.pull_request.number || '' }}
+          if [ -z "$PR_NUMBER" ]; then
+            echo "PR_NUMBER não encontrado no evento; tentando detectar pela branch..."
+            PR_NUMBER=$(gh pr list --head "${{ github.head_ref }}" --state open --json number --jq '.[0].number' || true)
+          fi
+          if [ -z "$PR_NUMBER" ]; then
+            echo "PR_NUMBER não detectado; abortando etapa de comentário."
+          else
+            echo "Chamando auto-comment-and-assign.sh para PR #${PR_NUMBER}"
+            ./scripts/agent/auto-comment-and-assign.sh "$PR_NUMBER" "devuser1,devuser2" "implementation,priority/high"
+          fi
+
+      - name: Optionally attempt auto-merge (guarded)
+        if: env.AUTO_MERGE == 'true'
+        run: |
+          PR_NUMBER=${{ github.event.pull_request.number || '' }}
+          if [ -z "$PR_NUMBER" ]; then
+            echo "PR_NUMBER não encontrado; abortando auto-merge."
+            exit 0
+          fi
+          echo "Tentando merge automático para PR #${PR_NUMBER} (via auto-merge-if-ready.sh)"
+          ./scripts/agent/auto-merge-if-ready.sh "$PR_NUMBER" "squash" || echo "Auto-merge não autorizado ou falhou; revisar manualmente."
+
+      - name: Final status note
+        run: echo "Agent Orchestrator run finalizada. AUTO_MERGE=${{ env.AUTO_MERGE }}"
