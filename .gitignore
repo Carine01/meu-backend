@@ -3,11 +3,24 @@ dist/
 .env
 .env.local
 *.log
-firebase-config.jsnode_modules/
-dist/
-.env
+firebase-config.json
 # Firebase service account (do not commit)
 *.serviceAccount.json
 service-account.json
 *.firebase-admin.json
 *.credentials.json
+
+# CI/CD artifacts
+artifacts/
+coverage/
+*.tmp
+*.cache
+.elevare-temp/
+
+# Test files
+*.sqlite
+*.db
+
+# OS files
+.DS_Store
+Thumbs.db
