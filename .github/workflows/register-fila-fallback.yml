@@ -1,0 +1,78 @@
+name: Register Fila Fallback (AST)
+
+on:
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: 'Branch, tag or SHA to check'
+        required: false
+        default: ''
+  push:
+    branches:
+      - main
+      - develop
+      - 'feat/*'
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  register-fila-fallback:
+    name: Register Fila Fallback via AST
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.ref || github.ref }}
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: |
+          echo "Installing dependencies..."
+          if npm ci --no-audit --prefer-offline --progress=false; then
+            echo "✅ npm ci succeeded"
+          else
+            echo "⚠️ npm ci failed, falling back to npm install"
+            npm install --no-audit --progress=false
+          fi
+      
+      - name: Check if register-fallback script exists
+        id: check_script
+        run: |
+          if [ -f "scripts/register-fallback.sh" ]; then
+            echo "exists=true" >> $GITHUB_OUTPUT
+            echo "✅ register-fallback.sh found"
+          else
+            echo "exists=false" >> $GITHUB_OUTPUT
+            echo "⚠️ register-fallback.sh not found"
+          fi
+      
+      - name: Run register-fallback script
+        if: steps.check_script.outputs.exists == 'true'
+        run: |
+          chmod +x scripts/register-fallback.sh
+          ./scripts/register-fallback.sh
+      
+      - name: Build TypeScript
+        run: |
+          echo "Building TypeScript..."
+          npm run build
+      
+      - name: Verify build artifacts
+        run: |
+          if [ -d "dist" ]; then
+            echo "✅ Build artifacts created successfully"
+            ls -la dist/
+          else
+            echo "❌ Build artifacts not found"
+            exit 1
+          fi

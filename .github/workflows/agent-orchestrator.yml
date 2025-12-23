@@ -1,0 +1,120 @@
+name: Agent Orchestrator - run agent scripts in sequence (robust)
+
+on:
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: 'Branch to run workflows on'
+        required: false
+        default: ''
+      pr_number:
+        description: 'PR number to post comments to'
+        required: false
+        default: ''
+      auto_merge:
+        description: 'Auto merge if all checks pass'
+        required: false
+        default: 'false'
+  push:
+    branches:
+      - 'feat/*'
+      - 'fix/*'
+
+jobs:
+  orchestrate:
+    name: Run Agent Orchestrator
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      actions: write
+      issues: write
+      pull-requests: write
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup GitHub CLI
+        run: |
+          # Check if gh is already installed
+          if type -p gh &>/dev/null; then
+            echo "GitHub CLI already installed"
+            gh --version
+            exit 0
+          fi
+          
+          # Install GitHub CLI using official method
+          echo "Installing GitHub CLI..."
+          type -p curl >/dev/null || sudo apt update && sudo apt install curl -y
+          
+          # Download and verify keyring
+          curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | \
+            sudo dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg
+          sudo chmod go+r /usr/share/keyrings/githubcli-archive-keyring.gpg
+          
+          # Add repository
+          echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | \
+            sudo tee /etc/apt/sources.list.d/github-cli.list > /dev/null
+          
+          # Install
+          sudo apt update
+          sudo apt install gh -y
+          
+          # Verify installation
+          gh --version
+      
+      - name: Authenticate GitHub CLI
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "$GITHUB_TOKEN" | gh auth login --with-token
+          gh auth status
+      
+      - name: Determine branch and PR
+        id: detect
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Use input branch or current branch
+          if [ -n "${{ github.event.inputs.branch }}" ]; then
+            BRANCH="${{ github.event.inputs.branch }}"
+          else
+            BRANCH="${GITHUB_REF#refs/heads/}"
+          fi
+          echo "branch=$BRANCH" >> $GITHUB_OUTPUT
+          
+          # Use input PR or auto-detect
+          if [ -n "${{ github.event.inputs.pr_number }}" ]; then
+            PR_NUMBER="${{ github.event.inputs.pr_number }}"
+          else
+            PR_NUMBER=$(gh pr list --state open --head "$BRANCH" --json number --jq '.[0].number' 2>/dev/null || echo "")
+          fi
+          echo "pr_number=$PR_NUMBER" >> $GITHUB_OUTPUT
+          
+          echo "Detected branch: $BRANCH"
+          echo "Detected PR: ${PR_NUMBER:-none}"
+      
+      - name: Run orchestrator script
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          chmod +x scripts/agent/run-agents-all.sh
+          ./scripts/agent/run-agents-all.sh \
+            "${{ steps.detect.outputs.branch }}" \
+            "${{ steps.detect.outputs.pr_number }}" \
+            "${{ github.event.inputs.auto_merge || 'false' }}"
+      
+      - name: Wait for workflows to complete
+        run: |
+          echo "Waiting for workflows to start and complete..."
+          sleep 60
+      
+      - name: Monitor and report failures
+        if: always()
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          chmod +x scripts/agent/monitor-and-report.sh
+          ./scripts/agent/monitor-and-report.sh \
+            "${{ steps.detect.outputs.branch }}" \
+            "${{ steps.detect.outputs.pr_number }}"

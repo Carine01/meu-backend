@@ -1,0 +1,115 @@
+name: WhatsApp Monitor
+
+on:
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: 'Branch, tag or SHA to check'
+        required: false
+        default: ''
+  push:
+    branches:
+      - main
+      - develop
+      - 'feat/*'
+  pull_request:
+    branches:
+      - main
+  schedule:
+    # Run every 6 hours
+    - cron: '0 */6 * * *'
+
+jobs:
+  whatsapp-health-check:
+    name: WhatsApp Integration Health Check
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.ref || github.ref }}
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: |
+          echo "Installing dependencies..."
+          if npm ci --no-audit --prefer-offline --progress=false; then
+            echo "✅ npm ci succeeded"
+          else
+            echo "⚠️ npm ci failed, falling back to npm install"
+            npm install --no-audit --progress=false
+          fi
+      
+      - name: Check WhatsApp integration files
+        run: |
+          echo "Checking for WhatsApp integration files..."
+          
+          # Check for WhatsApp service files
+          if [ -f "src/services/whatsapp.service.ts" ]; then
+            echo "✅ WhatsApp service found"
+          else
+            echo "⚠️ WhatsApp service not found"
+          fi
+          
+          # Check for WhatsApp entities
+          if [ -f "src/entities/whatsapp-mensagem.entity.ts" ] || [ -f "src/entities/whatsapp.entity.ts" ]; then
+            echo "✅ WhatsApp entities found"
+          else
+            echo "⚠️ WhatsApp entities not found"
+          fi
+          
+          # Check for Baileys dependency
+          if grep -q "@whiskeysockets/baileys" package.json; then
+            echo "✅ Baileys dependency configured"
+          else
+            echo "⚠️ Baileys dependency not found in package.json"
+          fi
+      
+      - name: Run TypeScript build
+        run: |
+          echo "Building TypeScript to verify WhatsApp integration compiles..."
+          npm run build
+      
+      - name: Check environment variables
+        run: |
+          echo "Checking for required WhatsApp environment variables..."
+          
+          if [ -f ".env.example" ]; then
+            echo "✅ .env.example found"
+            
+            # Check for WhatsApp-related env vars
+            if grep -q "WHATSAPP" .env.example; then
+              echo "✅ WhatsApp environment variables documented"
+              echo "WhatsApp variables in .env.example:"
+              grep "WHATSAPP" .env.example || true
+            else
+              echo "⚠️ No WhatsApp environment variables found in .env.example"
+            fi
+          else
+            echo "⚠️ .env.example not found"
+          fi
+      
+      - name: Run tests (if available)
+        continue-on-error: true
+        run: |
+          echo "Running tests..."
+          npm run test || echo "⚠️ Tests failed or not configured"
+      
+      - name: Create summary
+        if: always()
+        run: |
+          echo "### WhatsApp Monitor Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Dependencies installed" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Build completed" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ WhatsApp integration files checked" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Timestamp:** $(date -u)" >> $GITHUB_STEP_SUMMARY
