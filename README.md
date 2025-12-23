@@ -14,7 +14,16 @@ Backend NestJS com integração Firebase.
    ```
 
 ## Como fazer deploy
-Veja o arquivo `CHECKLIST_DEPLOY.md` para um passo a passo completo de deploy em produção.
+Para deployment rápido usando Docker Compose:
+```bash
+# Linux/Mac
+./deploy-docker.sh
+
+# Windows (PowerShell)
+.\deploy-docker.ps1
+```
+
+Veja o arquivo `CHECKLIST_DEPLOY.md` para um passo a passo completo de deploy em produção, ou `DOCKER.md` para mais opções de Docker Compose.
 
 ## Variáveis de ambiente
 Veja o arquivo `.env.example` para todas as variáveis necessárias (Firebase, URLs, segredos, etc.).
