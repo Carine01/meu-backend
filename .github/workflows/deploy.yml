@@ -4,7 +4,19 @@ on:
   push:
     branches:
       - main
-  workflow_dispatch: # Permite deploy manual via GitHub UI
+    paths:
+      - 'src/**'
+      - 'package*.json'
+      - 'tsconfig.json'
+      - 'Dockerfile'
+      - 'docker-compose.yml'
+      - '.github/workflows/deploy.yml'
+  workflow_dispatch: # Allows manual deploy via GitHub UI
+
+# Prevent concurrent deployments
+concurrency:
+  group: deploy-${{ github.ref }}
+  cancel-in-progress: false
 
 env:
   PROJECT_ID: elevare-iara

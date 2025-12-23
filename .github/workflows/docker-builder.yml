@@ -4,11 +4,28 @@ on:
   push:
     branches:
       - main
-      - develop
-      - feat/*
+    paths:
+      - 'src/**'
+      - 'package*.json'
+      - 'tsconfig.json'
+      - 'Dockerfile'
+      - 'docker-compose.yml'
+      - '.github/workflows/docker-builder.yml'
   pull_request:
     branches:
       - main
+    paths:
+      - 'src/**'
+      - 'package*.json'
+      - 'tsconfig.json'
+      - 'Dockerfile'
+      - 'docker-compose.yml'
+      - '.github/workflows/docker-builder.yml'
+
+# Prevent concurrent builds on the same ref
+concurrency:
+  group: docker-build-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   build:
