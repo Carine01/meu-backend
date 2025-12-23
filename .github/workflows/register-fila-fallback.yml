@@ -1,0 +1,55 @@
+name: Register Fila Fallback (AST)
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+      - feat/*
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  apply-fallback:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Check if register-fallback.sh exists
+        id: check_script
+        run: |
+          if [ -f "./scripts/register-fallback.sh" ]; then
+            echo "SCRIPT_EXISTS=true" >> $GITHUB_OUTPUT
+          else
+            echo "SCRIPT_EXISTS=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Run register fallback script
+        if: steps.check_script.outputs.SCRIPT_EXISTS == 'true'
+        run: |
+          chmod +x ./scripts/register-fallback.sh
+          ./scripts/register-fallback.sh || echo "register-fallback.sh não aplicável ou já aplicado"
+
+      - name: Verify FilaService fallback implementation
+        run: |
+          if [ -f "src/services/FilaService.ts" ]; then
+            if grep -q "fallback" src/services/FilaService.ts; then
+              echo "✅ FilaService contém implementação de fallback"
+            else
+              echo "⚠️ FilaService não contém fallback - verifique se é necessário"
+            fi
+          else
+            echo "ℹ️ FilaService.ts não encontrado - pulando verificação"
+          fi
+
+      - name: Report status
+        run: echo "Register Fila Fallback check finalizado"

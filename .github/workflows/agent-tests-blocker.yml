@@ -1,0 +1,70 @@
+name: Agent Tests Blocker
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  issues: write
+  pull-requests: write
+  contents: read
+
+jobs:
+  run-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Install deps
+        run: npm ci
+
+      - name: Run tests (CI)
+        id: run_tests
+        run: |
+          set +e  # Don't exit on error
+          npm run test 2>&1 | tee test-output.log
+          TEST_EXIT_CODE=$?
+          echo "TEST_EXIT_CODE=$TEST_EXIT_CODE" >> $GITHUB_OUTPUT
+          if [ $TEST_EXIT_CODE -ne 0 ]; then
+            echo "TESTS_FAILED=true" >> $GITHUB_OUTPUT
+          else
+            echo "TESTS_FAILED=false" >> $GITHUB_OUTPUT
+          fi
+          exit 0  # Always succeed this step to continue workflow
+
+      - name: Upload test log
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: pr-${{ github.event.pull_request.number }}-test-log
+          path: test-output.log
+
+      - name: If tests failed - label & comment
+        if: steps.run_tests.outputs.TESTS_FAILED == 'true'
+        uses: peter-evans/create-or-update-comment@v4
+        with:
+          issue-number: ${{ github.event.pull_request.number }}
+          body: |
+            ⚠️ **Testes falharam neste PR**
+            - Os testes automatizados retornaram falha. Artefatos de log foram anexados.
+            - Por favor, revise os erros e corrija antes de tentar merge.
+
+      - name: Add tests-failed label
+        if: steps.run_tests.outputs.TESTS_FAILED == 'true'
+        run: |
+          gh pr edit ${{ github.event.pull_request.number }} --add-label "tests-failed" || true
+        env:
+          GH_TOKEN: ${{ github.token }}
+
+      - name: Fail workflow if tests failed
+        if: steps.run_tests.outputs.TESTS_FAILED == 'true'
+        run: |
+          echo "Tests failed with exit code ${{ steps.run_tests.outputs.TEST_EXIT_CODE }}"
+          exit 1
