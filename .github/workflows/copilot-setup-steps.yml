@@ -1,0 +1,104 @@
+name: Copilot Setup Steps
+
+on:
+  workflow_dispatch:
+  pull_request:
+    types: [opened, synchronize]
+
+jobs:
+  setup-and-validate:
+    name: Setup Environment and Validate
+    runs-on: ubuntu-latest
+    
+    permissions:
+      contents: read
+      pull-requests: write
+      issues: write
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          
+      - name: Install dependencies
+        run: npm ci
+        
+      - name: Build project
+        run: npm run build
+        
+      - name: Run linting (if available)
+        run: |
+          if npm run | grep -q "lint"; then
+            npm run lint
+          else
+            echo "No lint script found, skipping..."
+          fi
+        continue-on-error: true
+        
+      - name: Run tests
+        run: npm test
+        env:
+          NODE_ENV: test
+          
+      - name: Check test coverage
+        run: |
+          if npm run | grep -q "test:cov"; then
+            npm run test:cov
+          else
+            echo "No coverage script found, skipping..."
+          fi
+        continue-on-error: true
+        
+      - name: Validate TypeScript
+        run: npx tsc --noEmit
+        
+      - name: Setup test environment
+        run: |
+          echo "✅ Dependencies installed"
+          echo "✅ Build successful"
+          echo "✅ Tests passed"
+          echo "✅ TypeScript validation passed"
+          echo ""
+          echo "Environment is ready for development!"
+          
+      - name: Upload coverage reports
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: coverage-report
+          path: coverage/
+          retention-days: 7
+          
+      - name: Comment PR with setup status
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            
+            let comment = `## 🤖 Copilot Setup Validation\n\n`;
+            comment += `✅ Environment setup completed successfully!\n\n`;
+            comment += `### Validation Steps\n`;
+            comment += `- ✅ Node.js 20 configured\n`;
+            comment += `- ✅ Dependencies installed\n`;
+            comment += `- ✅ Project built successfully\n`;
+            comment += `- ✅ Tests passed\n`;
+            comment += `- ✅ TypeScript validation passed\n\n`;
+            comment += `### Next Steps\n`;
+            comment += `1. Review the code changes\n`;
+            comment += `2. Check test coverage report\n`;
+            comment += `3. Ensure all CI checks pass\n`;
+            comment += `4. Request review from team members\n\n`;
+            comment += `*This environment is ready for Copilot assistance!* 🚀`;
+            
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: comment
+            });
