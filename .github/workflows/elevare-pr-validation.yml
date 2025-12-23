@@ -1,0 +1,251 @@
+name: Elevare PR Validation
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    branches: [main]
+
+permissions:
+  contents: read
+  pull-requests: write
+  checks: write
+  statuses: write
+
+jobs:
+  elevare-validation:
+    name: 🤖 Elevare Agent - Validação Completa
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: 🔍 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: 📦 Install dependencies
+        run: npm install --legacy-peer-deps
+
+      - name: 🔒 Secret Scanning
+        id: secret-scan
+        run: |
+          echo "🔍 Verificando vazamento de segredos..."
+          # Check for common secret patterns in the diff
+          # This checks for: password=..., api_key=..., token=..., etc. with quoted values
+          if git diff origin/main...HEAD | grep -i -E '(password|secret|api[_-]?key|token|bearer|private[_-]?key|aws[_-]?access|credential)[[:space:]]*[:=][[:space:]]*["\x27][^"\x27]{8,}["\x27]'; then
+            echo "❌ FALHA: Possível vazamento de segredos detectado!"
+            echo "has_secrets=true" >> $GITHUB_OUTPUT
+            exit 1
+          else
+            echo "✅ Nenhum segredo detectado"
+            echo "has_secrets=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: 📘 TypeScript Validation
+        id: typescript
+        run: |
+          echo "🔍 Validando TypeScript..."
+          npm run build 2>&1 | tee typescript-output.txt
+          if [ ${PIPESTATUS[0]} -eq 0 ]; then
+            echo "✅ TypeScript compilado sem erros"
+            echo "ts_status=success" >> $GITHUB_OUTPUT
+          else
+            echo "❌ FALHA: Erros de TypeScript detectados"
+            echo "ts_status=failure" >> $GITHUB_OUTPUT
+            cat typescript-output.txt
+            exit 1
+          fi
+
+      - name: 🧪 Run Tests
+        id: tests
+        run: |
+          echo "🔍 Executando testes..."
+          npm run test -- --passWithNoTests 2>&1 | tee test-output.txt
+          TEST_EXIT_CODE=${PIPESTATUS[0]}
+          
+          # Extract test results
+          if grep -q "Tests:.*failed" test-output.txt; then
+            FAILED=$(grep "Tests:" test-output.txt | sed -n 's/.*\([0-9]\+\) failed.*/\1/p')
+            echo "❌ FALHA: $FAILED teste(s) falharam"
+            echo "test_status=failure" >> $GITHUB_OUTPUT
+            echo "failed_tests=$FAILED" >> $GITHUB_OUTPUT
+            exit 1
+          else
+            echo "✅ Todos os testes passaram"
+            echo "test_status=success" >> $GITHUB_OUTPUT
+            echo "failed_tests=0" >> $GITHUB_OUTPUT
+          fi
+
+      - name: 📊 Test Coverage
+        id: coverage
+        if: success() || failure()
+        run: |
+          echo "🔍 Analisando cobertura de testes..."
+          npm run test:cov -- --passWithNoTests 2>&1 | tee coverage-output.txt || true
+          
+          if grep -q "Coverage" coverage-output.txt; then
+            COVERAGE=$(grep -oP '\d+\.\d+(?=%)' coverage-output.txt | head -1)
+            echo "coverage=$COVERAGE" >> $GITHUB_OUTPUT
+            echo "📊 Cobertura: $COVERAGE%"
+          fi
+
+      - name: 🔍 Check for Lint Config
+        id: lint-check
+        run: |
+          if [ -f ".eslintrc.js" ] || [ -f ".eslintrc.json" ] || [ -f "eslint.config.js" ]; then
+            echo "has_eslint=true" >> $GITHUB_OUTPUT
+            echo "✅ Configuração ESLint encontrada"
+          else
+            echo "has_eslint=false" >> $GITHUB_OUTPUT
+            echo "⚠️ Nenhuma configuração ESLint encontrada"
+          fi
+
+      - name: 🎨 Run ESLint (if available)
+        id: eslint
+        if: steps.lint-check.outputs.has_eslint == 'true'
+        continue-on-error: true
+        run: |
+          echo "🔍 Executando ESLint..."
+          npx eslint . --ext .ts,.js --max-warnings 0 2>&1 | tee eslint-output.txt
+          if [ ${PIPESTATUS[0]} -eq 0 ]; then
+            echo "✅ Nenhum erro de lint encontrado"
+            echo "lint_status=success" >> $GITHUB_OUTPUT
+          else
+            echo "⚠️ Erros de lint encontrados"
+            echo "lint_status=failure" >> $GITHUB_OUTPUT
+          fi
+
+      - name: ⚠️ Check for Critical Warnings
+        id: warnings
+        if: success() || failure()
+        run: |
+          echo "🔍 Verificando warnings críticos..."
+          WARNINGS=0
+          
+          # Check TypeScript warnings
+          if [ -f "typescript-output.txt" ]; then
+            TS_WARNINGS=$(grep -c "warning TS" typescript-output.txt || echo "0")
+            WARNINGS=$((WARNINGS + TS_WARNINGS))
+          fi
+          
+          echo "warnings_count=$WARNINGS" >> $GITHUB_OUTPUT
+          
+          if [ $WARNINGS -gt 0 ]; then
+            echo "⚠️ $WARNINGS warning(s) crítico(s) encontrado(s)"
+          else
+            echo "✅ Nenhum warning crítico"
+          fi
+
+      - name: 📝 Generate Elevare Report
+        if: always()
+        run: |
+          cat > elevare-report.md << 'EOF'
+          ## 🤖 Elevare Agent - Relatório de Validação
+          
+          ### Status Geral
+          
+          | Critério | Status | Detalhes |
+          |----------|--------|----------|
+          | 🔒 Segredos | ${{ steps.secret-scan.outputs.has_secrets == 'false' && '✅ OK' || '❌ FALHA' }} | ${{ steps.secret-scan.outputs.has_secrets == 'false' && 'Nenhum segredo detectado' || 'Vazamento detectado!' }} |
+          | 📘 TypeScript | ${{ steps.typescript.outputs.ts_status == 'success' && '✅ OK' || '❌ FALHA' }} | ${{ steps.typescript.outputs.ts_status == 'success' && 'Compilação limpa' || 'Erros de compilação' }} |
+          | 🧪 Testes | ${{ steps.tests.outputs.test_status == 'success' && '✅ OK' || '❌ FALHA' }} | ${{ steps.tests.outputs.failed_tests || '0' }} teste(s) falharam |
+          | 🎨 Lint | ${{ steps.eslint.outputs.lint_status == 'success' && '✅ OK' || (steps.lint-check.outputs.has_eslint == 'false' && '⚠️ N/A' || '❌ FALHA') }} | ${{ steps.lint-check.outputs.has_eslint == 'false' && 'ESLint não configurado' || 'Verificado' }} |
+          | ⚠️ Warnings | ${{ steps.warnings.outputs.warnings_count == '0' && '✅ OK' || '⚠️ ATENÇÃO' }} | ${{ steps.warnings.outputs.warnings_count || '0' }} warning(s) |
+          
+          ### 📊 Cobertura de Testes
+          ${{ steps.coverage.outputs.coverage && format('**{0}%** de cobertura', steps.coverage.outputs.coverage) || 'Cobertura não disponível' }}
+          
+          ### 🎯 Decisão do Agente
+          
+          EOF
+          
+          # Determine overall status
+          if [ "${{ steps.secret-scan.outputs.has_secrets }}" == "true" ] || \
+             [ "${{ steps.typescript.outputs.ts_status }}" == "failure" ] || \
+             [ "${{ steps.tests.outputs.test_status }}" == "failure" ]; then
+            cat >> elevare-report.md << 'EOF'
+          ❌ **PR REJEITADO**
+          
+          Este PR não atende aos critérios mínimos de qualidade do Agente Elevare.
+          
+          **Ações necessárias:**
+          - Corrija todos os erros listados acima
+          - Execute os testes localmente antes de fazer push
+          - Verifique se não há segredos no código
+          
+          **Revisão rigorosa aplicada** - O Agente Elevare trabalha como revisor senior: frio, direto e criterioso.
+          EOF
+            echo "pr_status=rejected" >> elevare-report.md
+          else
+            cat >> elevare-report.md << 'EOF'
+          ✅ **PR APROVADO**
+          
+          Este PR atende aos critérios de qualidade do Agente Elevare.
+          
+          **Próximos passos:**
+          - Aguarde revisão humana se necessário
+          - Pode ser mergeado após aprovação
+          
+          Bom trabalho! 🎉
+          EOF
+            echo "pr_status=approved" >> elevare-report.md
+          fi
+
+      - name: 💬 Comment on PR
+        if: always()
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const fs = require('fs');
+            const report = fs.readFileSync('elevare-report.md', 'utf8');
+            
+            // Find existing comment
+            const comments = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            });
+            
+            const botComment = comments.data.find(comment => 
+              comment.user.type === 'Bot' && 
+              comment.body.includes('🤖 Elevare Agent')
+            );
+            
+            if (botComment) {
+              // Update existing comment
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: botComment.id,
+                body: report
+              });
+            } else {
+              // Create new comment
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body: report
+              });
+            }
+
+      - name: ❌ Fail if validation failed
+        if: |
+          steps.secret-scan.outputs.has_secrets == 'true' ||
+          steps.typescript.outputs.ts_status == 'failure' ||
+          steps.tests.outputs.test_status == 'failure'
+        run: |
+          echo "❌ PR validation failed - see report above"
+          exit 1
+
+      - name: ✅ Validation Passed
+        if: success()
+        run: |
+          echo "✅ Todas as validações passaram!"
+          echo "✅ Este PR está pronto para revisão humana"

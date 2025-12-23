@@ -2,6 +2,8 @@
 
 Backend NestJS com integração Firebase.
 
+> 🤖 **Protegido pelo Elevare Agent** - Sistema automatizado de revisão de código e garantia de qualidade
+
 ## Como rodar localmente
 1. Instale as dependências:
    ```bash
@@ -28,6 +30,25 @@ Veja o arquivo `.env.example` para todas as variáveis necessárias (Firebase, U
 ## Documentação
 - [NestJS](https://docs.nestjs.com/)
 - [Firebase](https://firebase.google.com/docs)
+- [🤖 Elevare Agent](.github/ELEVARE_AGENT_DOCUMENTATION.md) - Sistema de revisão automatizada
+
+## 🤖 Elevare Agent
+
+Este repositório é protegido pelo **Elevare Agent**, um sistema automatizado que:
+
+- ✅ Valida automaticamente todos os PRs
+- 🔒 Previne merge de código com problemas
+- 🐛 Cria issues automáticas para problemas detectados
+- 📊 Gera relatórios de qualidade
+- 📅 Organiza trabalho em milestones semanais
+
+**Para desenvolvedores**: Consulte o [Guia Rápido](.github/ELEVARE_QUICK_REFERENCE.md) antes de abrir PRs.
+
+**Para mantenedores**: Veja a [Documentação Completa](.github/ELEVARE_AGENT_DOCUMENTATION.md) e o [Guia de Proteção](.github/BRANCH_PROTECTION_GUIDE.md).
+
+### Status do Projeto
+
+Consulte o [Relatório do Elevare Agent](.github/ELEVARE_AGENT_REPORT.md) para métricas atualizadas de qualidade.
 
 ---
 

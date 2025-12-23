@@ -1,0 +1,255 @@
+name: Elevare Auto Updates
+
+on:
+  schedule:
+    # Runs weekly on Fridays at 10:00 UTC
+    - cron: '0 10 * * 5'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+
+jobs:
+  check-updates:
+    name: 🔄 Verificar Atualizações
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: 📥 Checkout repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: 🔍 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: 📦 Check for outdated packages
+        id: outdated
+        run: |
+          npm outdated --json > outdated.json 2>&1 || true
+          
+          if [ -s outdated.json ]; then
+            echo "has_updates=true" >> $GITHUB_OUTPUT
+            echo "✅ Pacotes desatualizados encontrados"
+          else
+            echo "has_updates=false" >> $GITHUB_OUTPUT
+            echo "✅ Todos os pacotes estão atualizados"
+          fi
+
+      - name: 🔒 Check for security vulnerabilities
+        id: audit
+        run: |
+          npm audit --json > audit.json 2>&1 || true
+          
+          # Install jq for JSON parsing
+          sudo apt-get update && sudo apt-get install -y jq
+          
+          # Count vulnerabilities
+          HIGH_VULN=$(jq -r '.metadata.vulnerabilities.high // 0' audit.json)
+          CRITICAL_VULN=$(jq -r '.metadata.vulnerabilities.critical // 0' audit.json)
+          
+          echo "high_vulns=$HIGH_VULN" >> $GITHUB_OUTPUT
+          echo "critical_vulns=$CRITICAL_VULN" >> $GITHUB_OUTPUT
+          
+          if [ "$CRITICAL_VULN" -gt 0 ] || [ "$HIGH_VULN" -gt 0 ]; then
+            echo "has_vulns=true" >> $GITHUB_OUTPUT
+            echo "⚠️ Vulnerabilidades encontradas: $CRITICAL_VULN críticas, $HIGH_VULN altas"
+          else
+            echo "has_vulns=false" >> $GITHUB_OUTPUT
+            echo "✅ Nenhuma vulnerabilidade crítica encontrada"
+          fi
+
+      - name: 🚨 Create Security Issue if needed
+        if: steps.audit.outputs.has_vulns == 'true'
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const critical = ${{ steps.audit.outputs.critical_vulns }};
+            const high = ${{ steps.audit.outputs.high_vulns }};
+            
+            const title = `🚨 Vulnerabilidades de Segurança Detectadas: ${critical} críticas, ${high} altas`;
+            
+            // Check if similar issue already exists
+            const issues = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              labels: 'security,elevare-agent'
+            });
+            
+            const recentSecurityIssue = issues.data.find(i => 
+              i.title.includes('Vulnerabilidades de Segurança Detectadas')
+            );
+            
+            if (recentSecurityIssue) {
+              console.log(`⚠️ Issue de segurança já existe: #${recentSecurityIssue.number}`);
+              return;
+            }
+            
+            const fs = require('fs');
+            const auditData = JSON.parse(fs.readFileSync('audit.json', 'utf8'));
+            
+            let vulnList = '';
+            if (auditData.vulnerabilities) {
+              for (const [pkg, data] of Object.entries(auditData.vulnerabilities)) {
+                if (data.severity === 'critical' || data.severity === 'high') {
+                  vulnList += `\n- **${pkg}**: ${data.severity} - ${data.via[0]?.title || 'Ver npm audit para detalhes'}`;
+                }
+              }
+            }
+            
+            const body = `
+            ## 🚨 Alerta de Segurança Automático
+            
+            **Detectado por:** Elevare Agent 🤖
+            **Data:** ${new Date().toISOString().split('T')[0]}
+            
+            ### 📊 Resumo
+            
+            - **Vulnerabilidades Críticas:** ${critical}
+            - **Vulnerabilidades Altas:** ${high}
+            
+            ### 🔍 Pacotes Afetados
+            ${vulnList || '_Ver npm audit para detalhes completos_'}
+            
+            ### 🔧 Ações Recomendadas
+            
+            1. Execute \`npm audit fix\` localmente
+            2. Teste todas as funcionalidades após atualização
+            3. Se \`npm audit fix\` não resolver, considere \`npm audit fix --force\`
+            4. Verifique se há breaking changes nas atualizações
+            5. Atualize testes se necessário
+            
+            ### 📝 Como Corrigir
+            
+            \`\`\`bash
+            # Tente correção automática primeiro
+            npm audit fix
+            
+            # Se necessário, use força (cuidado com breaking changes)
+            npm audit fix --force
+            
+            # Teste o aplicativo
+            npm test
+            npm run build
+            \`\`\`
+            
+            ---
+            
+            **IMPORTANTE:** Este é um alerta crítico. Priorize a correção destas vulnerabilidades.
+            
+            _Gerado automaticamente pelo Elevare Agent_
+            `;
+            
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: title,
+              body: body,
+              labels: ['security', 'high-priority', 'elevare-agent', 'bug']
+            });
+            
+            console.log('✅ Issue de segurança criada');
+
+      - name: 📝 Create Update Report Issue
+        if: steps.outdated.outputs.has_updates == 'true' && steps.audit.outputs.has_vulns == 'false'
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const today = new Date().toISOString().split('T')[0];
+            const title = `📦 Atualizações de Dependências Disponíveis - ${today}`;
+            
+            // Check if update issue already exists this week
+            const issues = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              labels: 'dependencies,elevare-agent'
+            });
+            
+            const thisWeek = new Date().toISOString().split('T')[0].slice(0, 7); // YYYY-MM
+            const recentUpdateIssue = issues.data.find(i => 
+              i.title.includes('Atualizações de Dependências') &&
+              i.title.includes(thisWeek)
+            );
+            
+            if (recentUpdateIssue) {
+              console.log(`✅ Issue de atualização já existe esta semana: #${recentUpdateIssue.number}`);
+              return;
+            }
+            
+            const body = `
+            ## 📦 Relatório de Atualizações Disponíveis
+            
+            **Gerado por:** Elevare Agent 🤖
+            **Data:** ${today}
+            
+            ### 📊 Status
+            
+            Existem atualizações disponíveis para as dependências do projeto.
+            
+            ### 🔍 Como Verificar
+            
+            Execute o seguinte comando para ver os detalhes:
+            
+            \`\`\`bash
+            npm outdated
+            \`\`\`
+            
+            ### 🔧 Como Atualizar
+            
+            1. **Atualizações menores (seguras):**
+               \`\`\`bash
+               npm update
+               \`\`\`
+            
+            2. **Atualizações maiores (requerem teste):**
+               \`\`\`bash
+               # Para cada pacote, avalie individualmente
+               npm install package@latest
+               \`\`\`
+            
+            3. **Após atualizar:**
+               \`\`\`bash
+               npm test
+               npm run build
+               npm run start:dev  # Teste manual
+               \`\`\`
+            
+            ### ✅ Checklist de Atualização
+            
+            - [ ] Revisar changelog dos pacotes principais
+            - [ ] Atualizar dependências
+            - [ ] Executar todos os testes
+            - [ ] Fazer build do projeto
+            - [ ] Testar funcionalidades principais
+            - [ ] Criar PR com as atualizações
+            
+            ---
+            
+            _Gerado automaticamente pelo Elevare Agent_
+            _Atualizações são verificadas semanalmente_
+            `;
+            
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: title,
+              body: body,
+              labels: ['dependencies', 'elevare-agent', 'enhancement']
+            });
+            
+            console.log('✅ Issue de atualização criada');
+
+      - name: ✅ All Up to Date
+        if: steps.outdated.outputs.has_updates == 'false' && steps.audit.outputs.has_vulns == 'false'
+        run: |
+          echo "✅ Todas as dependências estão atualizadas"
+          echo "✅ Nenhuma vulnerabilidade de segurança detectada"
+          echo "✅ Sistema saudável!"

@@ -1,0 +1,265 @@
+name: Elevare Report Update
+
+on:
+  pull_request:
+    types: [closed]
+  issues:
+    types: [closed, opened]
+  workflow_run:
+    workflows: ["Elevare PR Validation"]
+    types: [completed]
+  schedule:
+    # Update report daily at midnight
+    - cron: '0 0 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: read
+  issues: read
+
+jobs:
+  update-report:
+    name: 📊 Atualizar Relatório Elevare
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: 📥 Checkout repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
+
+      - name: 📊 Gather Statistics
+        id: stats
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            
+            // Calculate date range (last 30 days)
+            const since = new Date();
+            since.setDate(since.getDate() - 30);
+            const sinceISO = since.toISOString();
+            
+            // Get PRs
+            const allPRs = await github.rest.pulls.list({
+              owner,
+              repo,
+              state: 'all',
+              per_page: 100,
+              sort: 'created',
+              direction: 'desc'
+            });
+            
+            const recentPRs = allPRs.data.filter(pr => 
+              new Date(pr.created_at) > since
+            );
+            
+            const mergedPRs = recentPRs.filter(pr => pr.merged_at);
+            const closedPRs = recentPRs.filter(pr => pr.closed_at && !pr.merged_at);
+            
+            // Get issues created by Elevare Agent
+            const elevareIssues = await github.rest.issues.listForRepo({
+              owner,
+              repo,
+              state: 'all',
+              labels: 'elevare-agent',
+              since: sinceISO,
+              per_page: 100
+            });
+            
+            // Count workflow runs for PR validation
+            const workflowRuns = await github.rest.actions.listWorkflowRunsForRepo({
+              owner,
+              repo,
+              per_page: 100,
+              created: `>=${sinceISO}`
+            });
+            
+            const elevareRuns = workflowRuns.data.workflow_runs.filter(run =>
+              run.name.includes('Elevare')
+            );
+            
+            const successfulRuns = elevareRuns.filter(run => run.conclusion === 'success');
+            const failedRuns = elevareRuns.filter(run => run.conclusion === 'failure');
+            
+            const stats = {
+              totalPRs: recentPRs.length,
+              mergedPRs: mergedPRs.length,
+              rejectedPRs: closedPRs.length,
+              issuesCreated: elevareIssues.data.length,
+              validationRuns: elevareRuns.length,
+              successfulValidations: successfulRuns.length,
+              failedValidations: failedRuns.length,
+              lastUpdate: new Date().toISOString()
+            };
+            
+            console.log('📊 Estatísticas coletadas:', JSON.stringify(stats, null, 2));
+            
+            return stats;
+
+      - name: 📝 Update Report File
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const fs = require('fs');
+            const path = require('path');
+            
+            // Safely parse the JSON output
+            const stats = JSON.parse('${{ steps.stats.outputs.result }}');
+            const reportPath = '.github/ELEVARE_AGENT_REPORT.md';
+            
+            // Read current report
+            let report = fs.readFileSync(reportPath, 'utf8');
+            
+            // Calculate approval rate
+            const approvalRate = stats.totalPRs > 0 
+              ? Math.round((stats.mergedPRs / stats.totalPRs) * 100) 
+              : 0;
+            
+            // Update statistics section
+            const statsSection = `
+            ### Último Update
+            - **Data**: ${new Date(stats.lastUpdate).toLocaleDateString('pt-BR')}
+            - **PRs Analisados**: ${stats.totalPRs}
+            - **PRs Aprovados**: ${stats.mergedPRs}
+            - **PRs Rejeitados**: ${stats.rejectedPRs}
+            - **Issues Criadas**: ${stats.issuesCreated}
+            - **Validações Executadas**: ${stats.validationRuns}
+            - **Taxa de Aprovação**: ${approvalRate}%
+            `;
+            
+            // Replace stats section
+            report = report.replace(
+              /### Último Update[\s\S]*?(?=\n## )/,
+              statsSection + '\n## '
+            );
+            
+            // Update last update timestamp
+            report = report.replace(
+              /_Última atualização:.*_/,
+              `_Última atualização: ${new Date(stats.lastUpdate).toLocaleString('pt-BR')}_`
+            );
+            
+            fs.writeFileSync(reportPath, report);
+            console.log('✅ Relatório atualizado com sucesso');
+
+      - name: 📝 Get Recent Activity
+        id: activity
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            
+            // Get last 5 closed PRs
+            const recentPRs = await github.rest.pulls.list({
+              owner,
+              repo,
+              state: 'closed',
+              per_page: 5,
+              sort: 'updated',
+              direction: 'desc'
+            });
+            
+            // Get last 5 Elevare issues
+            const recentIssues = await github.rest.issues.listForRepo({
+              owner,
+              repo,
+              state: 'all',
+              labels: 'elevare-agent',
+              per_page: 5,
+              sort: 'created',
+              direction: 'desc'
+            });
+            
+            return {
+              prs: recentPRs.data.map(pr => ({
+                number: pr.number,
+                title: pr.title,
+                merged: !!pr.merged_at,
+                closed_at: pr.closed_at
+              })),
+              issues: recentIssues.data.map(issue => ({
+                number: issue.number,
+                title: issue.title,
+                state: issue.state,
+                created_at: issue.created_at
+              }))
+            };
+
+      - name: 📝 Update Activity in Report
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const fs = require('fs');
+            const path = require('path');
+            
+            // Safely parse the JSON output
+            const activity = JSON.parse('${{ steps.activity.outputs.result }}');
+            const reportPath = '.github/ELEVARE_AGENT_REPORT.md';
+            
+            let report = fs.readFileSync(reportPath, 'utf8');
+            
+            // Build PR history
+            let prHistory = '### PRs Revisados\n\n';
+            if (activity.prs.length > 0) {
+              for (const pr of activity.prs) {
+                const status = pr.merged ? '✅ Aprovado e Merged' : '❌ Rejeitado/Fechado';
+                const date = new Date(pr.closed_at).toLocaleDateString('pt-BR');
+                prHistory += `- **#${pr.number}** - ${pr.title}\n`;
+                prHistory += `  - Status: ${status}\n`;
+                prHistory += `  - Data: ${date}\n\n`;
+              }
+            } else {
+              prHistory += '_Nenhum PR revisado recentemente_\n';
+            }
+            
+            // Build issues history
+            let issuesHistory = '\n### Issues Criadas\n\n';
+            if (activity.issues.length > 0) {
+              for (const issue of activity.issues) {
+                const status = issue.state === 'open' ? '🔓 Aberta' : '✅ Fechada';
+                const date = new Date(issue.created_at).toLocaleDateString('pt-BR');
+                issuesHistory += `- **#${issue.number}** - ${issue.title}\n`;
+                issuesHistory += `  - Status: ${status}\n`;
+                issuesHistory += `  - Data: ${date}\n\n`;
+              }
+            } else {
+              issuesHistory += '_Nenhuma issue criada recentemente_\n';
+            }
+            
+            // Replace history sections
+            report = report.replace(
+              /### PRs Revisados[\s\S]*?(?=\n### Issues Criadas)/,
+              prHistory
+            );
+            
+            report = report.replace(
+              /### Issues Criadas[\s\S]*?(?=\n### Fixes Automáticos)/,
+              issuesHistory
+            );
+            
+            fs.writeFileSync(reportPath, report);
+            console.log('✅ Histórico de atividades atualizado');
+
+      - name: 💾 Commit and Push Changes
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "Elevare Agent"
+          
+          git add .github/ELEVARE_AGENT_REPORT.md
+          
+          if git diff --staged --quiet; then
+            echo "✅ Nenhuma alteração no relatório"
+          else
+            git commit -m "📊 Atualizar relatório Elevare Agent [skip ci]"
+            git push
+            echo "✅ Relatório atualizado e commitado"
+          fi
