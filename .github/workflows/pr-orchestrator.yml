@@ -1,0 +1,77 @@
+name: PR Orchestrator
+
+on:
+  pull_request:
+    types: [opened, reopened]
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: 'PR number to apply orchestrator automation'
+        required: true
+        type: number
+      auto_merge:
+        description: 'Enable auto-merge when checks pass'
+        required: false
+        type: boolean
+        default: false
+      reviewers:
+        description: 'Comma-separated list of reviewers (e.g., user1,user2)'
+        required: false
+        type: string
+        default: ''
+      labels:
+        description: 'Comma-separated list of labels (e.g., implementation,priority/high)'
+        required: false
+        type: string
+        default: ''
+
+jobs:
+  orchestrator:
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+      contents: read
+      issues: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set PR number from event or input
+        id: set-pr
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "pr_number=${{ inputs.pr_number }}" >> $GITHUB_OUTPUT
+            echo "auto_merge=${{ inputs.auto_merge }}" >> $GITHUB_OUTPUT
+            echo "reviewers=${{ inputs.reviewers }}" >> $GITHUB_OUTPUT
+            echo "labels=${{ inputs.labels }}" >> $GITHUB_OUTPUT
+          else
+            echo "pr_number=${{ github.event.pull_request.number }}" >> $GITHUB_OUTPUT
+            echo "auto_merge=false" >> $GITHUB_OUTPUT
+            echo "reviewers=" >> $GITHUB_OUTPUT
+            echo "labels=automation" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Run orchestrator automation
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          ./scripts/auto-comment-and-assign.sh \
+            "${{ steps.set-pr.outputs.pr_number }}" \
+            "${{ steps.set-pr.outputs.auto_merge }}" \
+            "${{ steps.set-pr.outputs.reviewers }}" \
+            "${{ steps.set-pr.outputs.labels }}"
+
+      - name: Summary
+        run: |
+          echo "## 🚀 Orquestrador Ativado" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "✅ Comentário automático postado no PR #${{ steps.set-pr.outputs.pr_number }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Configurações aplicadas:" >> $GITHUB_STEP_SUMMARY
+          echo "- **Auto-merge:** ${{ steps.set-pr.outputs.auto_merge }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Revisores:** ${{ steps.set-pr.outputs.reviewers || 'Nenhum' }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Labels:** ${{ steps.set-pr.outputs.labels || 'Nenhuma' }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "🔗 [Ver PR #${{ steps.set-pr.outputs.pr_number }}](https://github.com/${{ github.repository }}/pull/${{ steps.set-pr.outputs.pr_number }})" >> $GITHUB_STEP_SUMMARY
+
