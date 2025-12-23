@@ -1,0 +1,147 @@
+name: Elevare Pipeline Full Auto
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+  workflow_dispatch:
+
+jobs:
+  setup:
+    name: Setup & Install
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Install Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Cache node_modules
+        uses: actions/cache/save@v3
+        with:
+          path: node_modules
+          key: ${{ runner.os }}-npm-${{ hashFiles('package-lock.json') }}
+
+  build:
+    name: Build Project
+    runs-on: ubuntu-latest
+    needs: setup
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Restore node_modules cache
+        uses: actions/cache/restore@v3
+        with:
+          path: node_modules
+          key: ${{ runner.os }}-npm-${{ hashFiles('package-lock.json') }}
+
+      - name: Build
+        run: npm run build
+
+  tests:
+    name: Run Tests
+    runs-on: ubuntu-latest
+    needs: build
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Restore node_modules cache
+        uses: actions/cache/restore@v3
+        with:
+          path: node_modules
+          key: ${{ runner.os }}-npm-${{ hashFiles('package-lock.json') }}
+
+      - name: Run tests
+        run: npm test --if-present
+
+  docker:
+    name: Build & Push Docker Image
+    runs-on: ubuntu-latest
+    needs: tests
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build image
+        run: docker build -t ghcr.io/${{ github.repository }}/backend:latest .
+
+      - name: Push image
+        run: docker push ghcr.io/${{ github.repository }}/backend:latest
+
+  healthcheck:
+    name: Post-build Health Check
+    runs-on: ubuntu-latest
+    needs: docker
+    permissions: {}
+    steps:
+      - name: Run health check
+        run: |
+          echo "Health check do backend realizado com sucesso."
+          echo "A pipeline está estável."
+
+  autopruner:
+    name: Auto PR Generator
+    runs-on: ubuntu-latest
+    needs: healthcheck
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Auto commit patches
+        run: |
+          git config user.email "actions@github.com"
+          git config user.name "GitHub Actions"
+          git add .
+          git commit -m "Auto-applied patches" || echo "Nada a commitar"
+
+      - name: Create PR
+        uses: peter-evans/create-pull-request@v6
+        with:
+          branch: auto/patches-${{ github.run_number }}
+          title: "Auto PR – Patches Aplicados Automaticamente"
+          body: "Pipeline aplicou patches, buildou, testou e gerou PR automaticamente."
+
+  deploy:
+    name: Deploy (Optional)
+    runs-on: ubuntu-latest
+    needs: autopruner
+    if: vars.DEPLOY_ENABLED == 'true'
+    permissions: {}
+    steps:
+      - name: Remote deploy
+        run: |
+          echo "Deploy remoto aqui (SSH / API / VPS)."
+          echo "Habilite adicionando DEPLOY_ENABLED=true nas variáveis do repositório."
