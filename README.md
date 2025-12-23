@@ -25,9 +25,28 @@ Veja o arquivo `.env.example` para todas as variáveis necessárias (Firebase, U
 - `npm run start:prod` — inicia em modo produção
 - `npm run test` — executa os testes
 
+## Automação e CI/CD
+
+### Agent Orchestrator
+O projeto inclui um workflow automatizado para executar scripts de agentes em sequência:
+
+```bash
+# Executar via GitHub CLI
+gh workflow run "Agent Orchestrator - run agent scripts in sequence (robust)" --ref main
+
+# Ou manualmente via GitHub Actions Web UI
+```
+
+Para detalhes completos, consulte [EXECUTION_GUIDE.md](./EXECUTION_GUIDE.md)
+
+### Patches Disponíveis
+- `patch-agent-workflows.patch` - Adiciona workflow do Agent Orchestrator
+- `patch-clinicId-filters.patch` - Adiciona filtros de clinicId nos serviços
+
 ## Documentação
 - [NestJS](https://docs.nestjs.com/)
 - [Firebase](https://firebase.google.com/docs)
+- [Guia de Execução](./EXECUTION_GUIDE.md) - Como usar Agent Orchestrator e patches
 
 ---
 
