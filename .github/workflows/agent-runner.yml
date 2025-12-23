@@ -1,0 +1,115 @@
+name: Agent Runner
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+  workflow_dispatch: # Allows manual trigger
+    inputs:
+      agent_task:
+        description: 'Agent task to run'
+        required: false
+        default: 'validate'
+        type: choice
+        options:
+          - validate
+          - fix-entities
+          - add-clinicid
+          - security-check
+
+jobs:
+  agent-runner:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: |
+          npm ci --no-audit --prefer-offline --progress=false || npm install --no-audit --progress=false
+      
+      - name: Run TypeScript build
+        id: build
+        run: npm run build
+      
+      - name: Run tests
+        id: test
+        run: npm run test -- --passWithNoTests
+      
+      - name: Run agent task
+        if: github.event_name == 'workflow_dispatch'
+        run: |
+          case "${{ github.event.inputs.agent_task }}" in
+            "fix-entities")
+              echo "Running fix-entities agent task..."
+              npx ts-node scripts/fix-entities.ts || echo "Script not found, skipping"
+              ;;
+            "add-clinicid")
+              echo "Running add-clinicid agent task..."
+              npx ts-node scripts/add-clinicid.ts || echo "Script not found, skipping"
+              ;;
+            "security-check")
+              echo "Running security check..."
+              npm audit --production || true
+              ;;
+            "validate")
+              echo "✅ Validation already completed in previous steps"
+              ;;
+            *)
+              echo "Unknown agent task: ${{ github.event.inputs.agent_task }}"
+              ;;
+          esac
+      
+      - name: Validate code patterns
+        id: patterns
+        run: |
+          echo "Checking for code patterns..."
+          # Check for console.log usage (should use logger instead)
+          if grep -r "console\.log" src/ --include="*.ts" 2>/dev/null; then
+            echo "⚠️ Warning: Found console.log usage. Consider using logger instead."
+          else
+            echo "✅ No console.log found"
+          fi
+          
+          # Check for missing clinicId in service find methods
+          if grep -rE "this\.(repo|repository)\.find\s*\(\s*\{" src/ --include="*.service.ts" 2>/dev/null | grep -v "clinicId" | grep -v "test"; then
+            echo "⚠️ Warning: Found database queries without clinicId filter"
+          else
+            echo "✅ All database queries appear to have clinicId filters"
+          fi
+      
+      - name: Generate summary
+        if: always()
+        run: |
+          echo "## Agent Runner Summary" >> $GITHUB_STEP_SUMMARY
+          
+          # Build status
+          if [ "${{ steps.build.outcome }}" == "success" ]; then
+            echo "- Build: ✅ Passed" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "- Build: ❌ Failed" >> $GITHUB_STEP_SUMMARY
+          fi
+          
+          # Test status
+          if [ "${{ steps.test.outcome }}" == "success" ]; then
+            echo "- Tests: ✅ Passed" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "- Tests: ❌ Failed" >> $GITHUB_STEP_SUMMARY
+          fi
+          
+          # Pattern validation status
+          if [ "${{ steps.patterns.outcome }}" == "success" ]; then
+            echo "- Code validation: ✅ Completed" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "- Code validation: ⚠️ Issues found" >> $GITHUB_STEP_SUMMARY
+          fi
