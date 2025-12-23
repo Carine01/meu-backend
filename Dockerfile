@@ -21,12 +21,32 @@ COPY . .
 RUN npm run build
 
 # ============================================
-# STAGE 2: Production
+# STAGE 2: Development
 # ============================================
-FROM node:20-alpine
+FROM node:20-alpine AS development
 
-# Instalar dumb-init para gerenciamento de processos
-RUN apk add --no-cache dumb-init
+WORKDIR /app
+
+# Copiar package files e node_modules do builder
+COPY --from=builder /app/package*.json ./
+COPY --from=builder /app/node_modules ./node_modules
+
+# Copiar código fonte completo (incluindo src para hot reload)
+COPY . .
+
+# Variáveis de ambiente
+ENV NODE_ENV=development
+
+# Expor porta
+EXPOSE 3000
+
+# Executar em modo dev
+CMD ["npm", "run", "start:dev"]
+
+# ============================================
+# STAGE 3: Production
+# ============================================
+FROM node:20-alpine AS production
 
 # Criar usuário não-root para segurança
 RUN addgroup -g 1001 -S nodejs && adduser -S nodejs -u 1001
@@ -37,7 +57,7 @@ WORKDIR /app
 COPY --from=builder /app/package*.json ./
 
 # Instalar APENAS dependências de produção
-RUN npm ci --only=production && npm cache clean --force
+RUN npm ci --omit=dev && npm cache clean --force
 
 # Copiar código buildado
 COPY --from=builder /app/dist ./dist
@@ -58,5 +78,5 @@ EXPOSE 8080
 HEALTHCHECK --interval=30s --timeout=3s --start-period=40s --retries=3 \
   CMD node -e "require('http').get('http://localhost:' + (process.env.PORT || 8080) + '/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"
 
-# Executar com dumb-init para gerenciamento correto de sinais
-CMD ["dumb-init", "node", "dist/main.js"]
+# Executar diretamente com node
+CMD ["node", "dist/main.js"]
