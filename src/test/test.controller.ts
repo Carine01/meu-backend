@@ -27,15 +27,21 @@ export class TestController {
     const request$ = this.httpService.post(url, { test: true }).pipe(
       retryWhen(errors =>
         errors.pipe(
-          scan((acc: any, error: AxiosError) => ({ count: acc.count + 1, error }), { count: 0, error: null }),
+          scan((acc: any, error: AxiosError) => ({ count: acc.count + 1, error }), {
+            count: 0,
+            error: null,
+          }),
           mergeMap((acc: any) => {
             const error = acc.error as AxiosError;
-            const isRecoverable = !error.response || (error.response.status >= 500 && error.response.status < 600);
+            const isRecoverable =
+              !error.response || (error.response.status >= 500 && error.response.status < 600);
             if (acc.count > MAX_RETRIES || !isRecoverable) {
               throw error;
             }
             const delayTime = RETRY_DELAY_MS * Math.pow(2, acc.count - 1);
-            this.logger.warn(`TriggerRetry: tentativa ${acc.count}/${MAX_RETRIES} falhou. Retentando em ${delayTime}ms`);
+            this.logger.warn(
+              `TriggerRetry: tentativa ${acc.count}/${MAX_RETRIES} falhou. Retentando em ${delayTime}ms`,
+            );
             return timer(delayTime);
           }),
         ),
@@ -50,8 +56,7 @@ export class TestController {
       return { ok: true, data: resp.data };
     } catch (err: any) {
       this.logger.error('TriggerRetry: falha final após retries');
-      return { ok: false, error: err?.message || err }; 
+      return { ok: false, error: err?.message || err };
     }
   }
 }
-

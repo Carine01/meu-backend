@@ -63,7 +63,7 @@ export interface PerfilProfissional {
 
 /**
  * Service responsável por resolver variáveis nos templates de mensagens
- * 
+ *
  * Interpolação de variáveis no formato {{variavel}}:
  * - {{nome}} → nome do lead
  * - {{clinica}} → nome da clínica (perfil)
@@ -76,20 +76,20 @@ export interface PerfilProfissional {
  */
 @Injectable()
 export class MensagemResolverService {
-      /**
-       * Implementação do método resolverTemplate para compatibilidade com testes
-       */
-      async resolverTemplate(template: string, vars: Record<string, any>): Promise<string> {
-        let result = template;
-        for (const [key, value] of Object.entries(vars)) {
-          result = result.replace(new RegExp(`{{${key}}}`, 'g'), value);
-        }
-        return result;
-      }
-    async send(dto: Partial<MensagemTemplate>): Promise<MensagemTemplate> {
-      // Mock para teste
-      return { ...dto, id: 'mock-id' } as MensagemTemplate;
+  /**
+   * Implementação do método resolverTemplate para compatibilidade com testes
+   */
+  async resolverTemplate(template: string, vars: Record<string, any>): Promise<string> {
+    let result = template;
+    for (const [key, value] of Object.entries(vars)) {
+      result = result.replace(new RegExp(`{{${key}}}`, 'g'), value);
     }
+    return result;
+  }
+  async send(dto: Partial<MensagemTemplate>): Promise<MensagemTemplate> {
+    // Mock para teste
+    return { ...dto, id: 'mock-id' } as MensagemTemplate;
+  }
   private readonly logger = new Logger(MensagemResolverService.name);
 
   /**
@@ -122,11 +122,11 @@ export class MensagemResolverService {
 
   /**
    * Resolve todas as variáveis de um template de mensagem
-   * 
+   *
    * @param template - Template com variáveis {{var}}
    * @param variaveis - Objeto com valores customizados para sobrescrever defaults
    * @returns String com variáveis interpoladas
-   * 
+   *
    * @example
    * ```typescript
    * resolverMensagem('Oi {{nome}}, bem-vinda à {{clinica}}!', { nome: 'Maria' })
@@ -153,13 +153,18 @@ export class MensagemResolverService {
     mensagem = mensagem.replace(/\{\{profissional\}\}/g, this.perfilProfissional.profissional_nome);
     mensagem = mensagem.replace(/\{\{maps\}\}/g, this.perfilProfissional.maps_link);
     mensagem = mensagem.replace(/\{\{review\}\}/g, this.perfilProfissional.review_link);
-    mensagem = mensagem.replace(/\{\{whatsapp\}\}/g, this.formatarTelefone(this.perfilProfissional.whatsapp_business));
+    mensagem = mensagem.replace(
+      /\{\{whatsapp\}\}/g,
+      this.formatarTelefone(this.perfilProfissional.whatsapp_business),
+    );
 
     // 4. Remover variáveis não resolvidas (segurança)
     // Se sobrar {{algo}} não resolvido, remove ou deixa placeholder
     const variaveisNaoResolvidas = mensagem.match(/\{\{[^}]+\}\}/g);
     if (variaveisNaoResolvidas) {
-      this.logger.warn(`Variáveis não resolvidas no template: ${variaveisNaoResolvidas.join(', ')}`);
+      this.logger.warn(
+        `Variáveis não resolvidas no template: ${variaveisNaoResolvidas.join(', ')}`,
+      );
       // Substitui por placeholder vazio ou mantém para debug
       // mensagem = mensagem.replace(/\{\{[^}]+\}\}/g, '');
     }
@@ -169,7 +174,7 @@ export class MensagemResolverService {
 
   /**
    * Resolve mensagem buscando template por key da biblioteca
-   * 
+   *
    * @param mensagemKey - Chave da mensagem (ex: BOASVINDAS_01)
    * @param variaveis - Variáveis customizadas
    * @returns Objeto com template e mensagem resolvida
@@ -307,30 +312,33 @@ export class MensagemResolverService {
     Object.assign(this.perfilProfissional, novosDados);
     this.logger.log('Perfil profissional atualizado');
   }
-    /**
-     * Retorna perfil profissional filtrado por clinicId
-     * Lança erro se clinicId for vazio ou inválido
-     */
-    async getPerfilPorClinica(clinicId: string): Promise<PerfilProfissional> {
-      if (!clinicId || clinicId.trim() === '') {
-        throw new Error('clinicId é obrigatório');
-      }
-      // TODO: Buscar do Firestore por clinicId
-      // Por enquanto retorna o perfil padrão
-      return { ...this.perfilProfissional };
+  /**
+   * Retorna perfil profissional filtrado por clinicId
+   * Lança erro se clinicId for vazio ou inválido
+   */
+  async getPerfilPorClinica(clinicId: string): Promise<PerfilProfissional> {
+    if (!clinicId || clinicId.trim() === '') {
+      throw new Error('clinicId é obrigatório');
     }
+    // TODO: Buscar do Firestore por clinicId
+    // Por enquanto retorna o perfil padrão
+    return { ...this.perfilProfissional };
+  }
 
-    /**
-     * Resolve mensagem por clínica, validando clinicId
-     * Lança erro se clinicId for vazio ou inválido
-     */
-    async resolverMensagemPorClinica(template: string, clinicId: string, variaveis: Record<string, string | number> = {}): Promise<string> {
-      if (!clinicId || clinicId.trim() === '') {
-        throw new Error('clinicId é obrigatório');
-      }
-      // TODO: Buscar perfil da clínica e interpolar variáveis
-      // Por enquanto usa perfil padrão
-      return this.resolverMensagem(template, variaveis);
+  /**
+   * Resolve mensagem por clínica, validando clinicId
+   * Lança erro se clinicId for vazio ou inválido
+   */
+  async resolverMensagemPorClinica(
+    template: string,
+    clinicId: string,
+    variaveis: Record<string, string | number> = {},
+  ): Promise<string> {
+    if (!clinicId || clinicId.trim() === '') {
+      throw new Error('clinicId é obrigatório');
     }
+    // TODO: Buscar perfil da clínica e interpolar variáveis
+    // Por enquanto usa perfil padrão
+    return this.resolverMensagem(template, variaveis);
+  }
 }
-

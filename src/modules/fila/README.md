@@ -7,6 +7,7 @@ Sistema de processamento assíncrono de mensagens com retry e priorização.
 ## 📋 Funcionalidades
 
 ### ✅ Gestão de Fila
+
 - Adicionar mensagens à fila
 - Processar mensagens assíncronas
 - Retry automático (3 tentativas)
@@ -15,6 +16,7 @@ Sistema de processamento assíncrono de mensagens com retry e priorização.
 - Estatísticas de processamento
 
 ### 📊 Monitoramento
+
 - Status de cada mensagem
 - Taxa de sucesso/falha
 - Tempo médio de processamento
@@ -25,6 +27,7 @@ Sistema de processamento assíncrono de mensagens com retry e priorização.
 ## 🎯 Endpoints Principais
 
 ### POST `/fila/adicionar`
+
 Adicionar mensagem à fila
 
 ```typescript
@@ -39,6 +42,7 @@ Authorization: Bearer <token>
 ```
 
 ### GET `/fila/status`
+
 Status da fila
 
 ```typescript
@@ -56,6 +60,7 @@ Response:
 ```
 
 ### POST `/fila/processar`
+
 Processar fila manualmente (admin)
 
 ```typescript
@@ -113,14 +118,15 @@ fila/
 
 ### Níveis de Prioridade
 
-| Prioridade | Tempo Máximo | Uso |
-|------------|--------------|-----|
-| **urgente** | Imediato | Alertas críticos |
-| **alta** | 5 min | Confirmações |
-| **media** | 1h | Lembretes |
-| **baixa** | 24h | Campanhas |
+| Prioridade  | Tempo Máximo | Uso              |
+| ----------- | ------------ | ---------------- |
+| **urgente** | Imediato     | Alertas críticos |
+| **alta**    | 5 min        | Confirmações     |
+| **media**   | 1h           | Lembretes        |
+| **baixa**   | 24h          | Campanhas        |
 
 ### Ordem de Processamento
+
 1. Urgente → Alta → Média → Baixa
 2. Dentro da mesma prioridade: FIFO (First In First Out)
 
@@ -149,6 +155,7 @@ graph TD
 ## 🔁 Sistema de Retry
 
 ### Configuração
+
 - **Tentativas Máximas:** 3
 - **Backoff:** Exponencial
   - 1ª tentativa: imediata
@@ -156,6 +163,7 @@ graph TD
   - 3ª tentativa: após 10 minutos
 
 ### Lógica de Retry
+
 ```typescript
 const backoffMinutes = Math.pow(2, tentativas) * 2; // 2, 4, 8 minutos
 const proximaTentativa = new Date(Date.now() + backoffMinutes * 60000);
@@ -166,6 +174,7 @@ const proximaTentativa = new Date(Date.now() + backoffMinutes * 60000);
 ## 📊 Logs Estruturados
 
 ### Sucesso
+
 ```json
 {
   "message": "✅ Mensagem processada com sucesso",
@@ -179,6 +188,7 @@ const proximaTentativa = new Date(Date.now() + backoffMinutes * 60000);
 ```
 
 ### Retry
+
 ```json
 {
   "message": "⚠️ Tentativa falhou, agendando retry",
@@ -192,6 +202,7 @@ const proximaTentativa = new Date(Date.now() + backoffMinutes * 60000);
 ```
 
 ### Falha Definitiva
+
 ```json
 {
   "message": "❌ Mensagem falhou após 3 tentativas",
@@ -212,7 +223,7 @@ const proximaTentativa = new Date(Date.now() + backoffMinutes * 60000);
 @Cron('*/5 * * * *') // A cada 5 minutos
 async processarFila() {
   const mensagensPendentes = await this.buscarPendentes();
-  
+
   for (const msg of mensagensPendentes) {
     await this.processar(msg.id);
   }
@@ -220,6 +231,7 @@ async processarFila() {
 ```
 
 ### Agendamento Customizado
+
 ```typescript
 POST /fila/adicionar
 {
@@ -244,6 +256,7 @@ POST /fila/adicionar
 ## 🛠️ Configuração
 
 ### Variáveis de Ambiente
+
 ```env
 # Processamento
 FILA_MAX_TENTATIVAS=3
@@ -300,18 +313,19 @@ Response:
 
 ### Condições de Alerta
 
-| Condição | Ação |
-|----------|------|
-| Taxa de falha > 10% | Email para admin |
-| Mensagem travada > 1h | Reprocessar |
-| Fila > 1000 mensagens | Escalar workers |
-| Tentativas esgotadas | Notificar suporte |
+| Condição              | Ação              |
+| --------------------- | ----------------- |
+| Taxa de falha > 10%   | Email para admin  |
+| Mensagem travada > 1h | Reprocessar       |
+| Fila > 1000 mensagens | Escalar workers   |
+| Tentativas esgotadas  | Notificar suporte |
 
 ---
 
 ## 🔧 Como Usar
 
 ### 1. Adicionar Mensagem Simples
+
 ```bash
 curl -X POST http://localhost:3000/api/fila/adicionar \
   -H "Authorization: Bearer <token>" \
@@ -323,6 +337,7 @@ curl -X POST http://localhost:3000/api/fila/adicionar \
 ```
 
 ### 2. Adicionar com Prioridade Alta
+
 ```bash
 curl -X POST http://localhost:3000/api/fila/adicionar \
   -H "Authorization: Bearer <token>" \
@@ -335,6 +350,7 @@ curl -X POST http://localhost:3000/api/fila/adicionar \
 ```
 
 ### 3. Agendar Mensagem
+
 ```bash
 curl -X POST http://localhost:3000/api/fila/adicionar \
   -H "Authorization: Bearer <token>" \
@@ -357,7 +373,7 @@ curl -X POST http://localhost:3000/api/fila/adicionar \
 async limparMensagensAntigas() {
   // Remover enviadas com sucesso > 30 dias
   await this.removerEnviadas(30);
-  
+
   // Remover falhas > 90 dias
   await this.removerFalhas(90);
 }
@@ -379,14 +395,17 @@ async limparMensagensAntigas() {
 ## 🐛 Troubleshooting
 
 ### Problema: "Mensagem travada em 'processando'"
+
 **Causa:** Worker crashou durante processamento  
 **Solução:** Reprocessar manualmente via `/fila/reprocessar/:id`
 
 ### Problema: "Taxa de falha alta"
+
 **Causa:** Problema na API do WhatsApp  
 **Solução:** Verificar credenciais, status da API Meta
 
 ### Problema: "Fila crescendo infinitamente"
+
 **Causa:** Processamento mais lento que entrada  
 **Solução:** Aumentar workers, otimizar envios
 

@@ -4,24 +4,25 @@ import pino from 'pino';
 
 const baseLogger = pino({
   level: process.env.LOG_LEVEL || 'info',
-  transport: process.env.NODE_ENV !== 'production' 
-    ? {
-        target: 'pino-pretty',
-        options: {
-          colorize: true,
-          translateTime: 'SYS:standard',
-          ignore: 'pid,hostname'
+  transport:
+    process.env.NODE_ENV !== 'production'
+      ? {
+          target: 'pino-pretty',
+          options: {
+            colorize: true,
+            translateTime: 'SYS:standard',
+            ignore: 'pid,hostname',
+          },
         }
-      }
-    : undefined,
+      : undefined,
   timestamp: pino.stdTimeFunctions.isoTime,
   formatters: {
-    level: (label) => ({ level: label }),
+    level: label => ({ level: label }),
   },
   serializers: {
     err: pino.stdSerializers.err,
     error: pino.stdSerializers.err,
-  }
+  },
 });
 
 @Injectable()
@@ -33,10 +34,10 @@ export class CustomLoggerService implements NestLoggerService {
   constructor(serviceName: string, correlationId?: string) {
     this.serviceName = serviceName;
     this.correlationId = correlationId;
-    
+
     const bindings: Record<string, any> = { service: serviceName };
     if (correlationId) bindings.correlationId = correlationId;
-    
+
     this.logger = baseLogger.child(bindings);
   }
 
@@ -73,7 +74,7 @@ export class CustomLoggerService implements NestLoggerService {
   error(message: string, trace?: string, context?: Record<string, any>) {
     const errorContext = {
       ...context,
-      ...(trace && { stack: trace })
+      ...(trace && { stack: trace }),
     };
     this.logger.error(errorContext, message);
   }
@@ -114,7 +115,10 @@ export class CustomLoggerService implements NestLoggerService {
   /**
    * Helper para redact dados sensíveis
    */
-  static redact<T extends Record<string, any>>(obj: T, fields: string[] = ['password', 'token', 'secret', 'authorization']): T {
+  static redact<T extends Record<string, any>>(
+    obj: T,
+    fields: string[] = ['password', 'token', 'secret', 'authorization'],
+  ): T {
     const copy = { ...obj } as Record<string, any>;
     fields.forEach(field => {
       if (copy[field]) {

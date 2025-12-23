@@ -3,7 +3,7 @@ import { MensagemResolverService } from './mensagem-resolver.service';
 
 /**
  * Módulo de Mensagens WhatsApp
- * 
+ *
  * Exporta:
  * - MensagemResolverService (resolução de variáveis em templates)
  * - BIBLIOTECA_MENSAGENS (119 mensagens humanizadas)
@@ -13,4 +13,3 @@ import { MensagemResolverService } from './mensagem-resolver.service';
   exports: [MensagemResolverService],
 })
 export class MensagensModule {}
-

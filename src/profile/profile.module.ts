@@ -12,4 +12,3 @@ import { FirebaseAuthService } from '../firebase-auth.service';
   exports: [ProfileService], // Exporta para ser usado em outros módulos
 })
 export class ProfileModule {}
-

@@ -35,11 +35,11 @@ export class WhatsAppOfficialProvider implements WhatsAppProvider {
             Authorization: `Bearer ${this.accessToken}`,
             'Content-Type': 'application/json',
           },
-        }
+        },
       );
 
       this.logger.log(`✅ Mensagem enviada via API oficial: ${response.data.messages[0].id}`);
-      
+
       return response.data.messages[0].id;
     } catch (error: any) {
       this.logger.error(`Erro na API oficial: ${error.response?.data || error.message}`);
@@ -64,7 +64,7 @@ export class WhatsAppOfficialProvider implements WhatsAppProvider {
           Authorization: `Bearer ${this.accessToken}`,
           'Content-Type': 'application/json',
         },
-      }
+      },
     );
 
     return response.data.messages[0].id;
@@ -98,7 +98,7 @@ export class WhatsAppOfficialProvider implements WhatsAppProvider {
           Authorization: `Bearer ${this.accessToken}`,
           'Content-Type': 'application/json',
         },
-      }
+      },
     );
 
     return response.data.messages[0].id;
@@ -106,17 +106,14 @@ export class WhatsAppOfficialProvider implements WhatsAppProvider {
 
   async getMessageStatus(messageId: string): Promise<MessageStatus> {
     try {
-      const response = await axios.get(
-        `${this.apiUrl}/${messageId}`,
-        {
-          headers: {
-            Authorization: `Bearer ${this.accessToken}`,
-          },
-        }
-      );
+      const response = await axios.get(`${this.apiUrl}/${messageId}`, {
+        headers: {
+          Authorization: `Bearer ${this.accessToken}`,
+        },
+      });
 
       const status = response.data.status;
-      
+
       switch (status) {
         case 'sent':
           return MessageStatus.SENT;
@@ -146,4 +143,3 @@ export class WhatsAppOfficialProvider implements WhatsAppProvider {
     return phoneNumber.replace(/\D/g, '');
   }
 }
-

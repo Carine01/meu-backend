@@ -15,4 +15,3 @@ export const validationSchema = Joi.object({
   DEFAULT_CLINIC: Joi.string().optional(),
   DEFAULT_ORIGEM: Joi.string().optional(),
 });
-

@@ -15,7 +15,9 @@ export class WhatsAppService {
     private readonly provider: WhatsAppProvider,
     private readonly configService: ConfigService,
   ) {
-    this.logger.log(`🔌 WhatsApp provider: ${this.configService.get('WHATSAPP_PROVIDER', 'baileys')}`);
+    this.logger.log(
+      `🔌 WhatsApp provider: ${this.configService.get('WHATSAPP_PROVIDER', 'baileys')}`,
+    );
   }
 
   /**
@@ -24,7 +26,7 @@ export class WhatsAppService {
   async sendTextMessage(to: string, message: string): Promise<SendMessageResult> {
     try {
       const messageId = await this.provider.sendMessage(to, message);
-      
+
       return {
         messageId,
         status: MessageStatus.SENT,
@@ -39,9 +41,13 @@ export class WhatsAppService {
   /**
    * Envia mídia (imagem, PDF, etc)
    */
-  async sendMediaMessage(to: string, mediaUrl: string, caption?: string): Promise<SendMessageResult> {
+  async sendMediaMessage(
+    to: string,
+    mediaUrl: string,
+    caption?: string,
+  ): Promise<SendMessageResult> {
     const messageId = await this.provider.sendMedia(to, mediaUrl, caption);
-    
+
     return {
       messageId,
       status: MessageStatus.SENT,
@@ -52,9 +58,13 @@ export class WhatsAppService {
   /**
    * Envia template aprovado (WhatsApp Business API)
    */
-  async sendTemplateMessage(to: string, templateName: string, params: any[]): Promise<SendMessageResult> {
+  async sendTemplateMessage(
+    to: string,
+    templateName: string,
+    params: any[],
+  ): Promise<SendMessageResult> {
     const messageId = await this.provider.sendTemplate(to, templateName, params);
-    
+
     return {
       messageId,
       status: MessageStatus.SENT,
@@ -89,7 +99,7 @@ export class WhatsAppService {
       } catch (error: any) {
         lastError = error;
         this.logger.warn(`Tentativa ${attempt} falhou: ${error.message}`);
-        
+
         if (attempt < maxRetries) {
           await this.sleep(2000 * attempt); // Backoff exponencial
         }
@@ -103,4 +113,3 @@ export class WhatsAppService {
     return new Promise(resolve => setTimeout(resolve, ms));
   }
 }
-

@@ -7,6 +7,7 @@ Sistema de automação de mensagens baseado em regras e agendamento semanal.
 ## 📋 Funcionalidades
 
 ### ✅ Campanhas Automáticas
+
 - Agenda semanal automática (segunda a domingo)
 - Regras por dia da semana
 - Filtros por status de lead
@@ -15,6 +16,7 @@ Sistema de automação de mensagens baseado em regras e agendamento semanal.
 - Dry-run (preview sem enviar)
 
 ### 📊 Relatórios
+
 - Total de leads processados
 - Taxa de envio
 - Regras aplicadas
@@ -25,6 +27,7 @@ Sistema de automação de mensagens baseado em regras e agendamento semanal.
 ## 🎯 Endpoints Principais
 
 ### POST `/campanhas/agenda-semanal/executar`
+
 Executar agenda semanal (manual ou CronJob)
 
 ```typescript
@@ -45,6 +48,7 @@ Response:
 ```
 
 ### GET `/campanhas/regras-semanais`
+
 Visualizar regras configuradas
 
 ```typescript
@@ -106,36 +110,47 @@ campanhas/
 ## 📅 Agenda Semanal Padrão
 
 ### Segunda-feira
+
 **Retorno de Leads Inativos (30 dias)**
+
 - Filtro: `status = 'inativo' AND diasSemContato >= 30`
 - Template: Mensagem de retorno personalizada
 - Horário: 10h
 
 ### Terça-feira
+
 **Leads Novos Sem Agendamento (7 dias)**
+
 - Filtro: `status = 'novo' AND diasSemAgendamento >= 7`
 - Template: Incentivo para agendar primeira sessão
 - Horário: 14h
 
 ### Quarta-feira
+
 **Leads com Sessão Única (60 dias)**
+
 - Filtro: `totalSessoes = 1 AND diasUltimaSessao >= 60`
 - Template: Oferta especial de retorno
 - Horário: 11h
 
 ### Quinta-feira
+
 **Indicações Não Convertidas (14 dias)**
+
 - Filtro: `origem = 'indicacao' AND status != 'convertido' AND diasCadastro >= 14`
 - Template: Lembrete do benefício de indicação
 - Horário: 15h
 
 ### Sexta-feira
+
 **Aniversariantes da Semana**
+
 - Filtro: `aniversario IN [hoje+1, hoje+7]`
 - Template: Mensagem de parabéns + desconto
 - Horário: 9h
 
 ### Sábado e Domingo
+
 **Sem envios automáticos** (configurável)
 
 ---
@@ -169,7 +184,7 @@ graph TD
 @Cron('0 10 * * 1-5') // Segunda a sexta às 10h
 async executarAutomaticamente() {
   const diaAtual = this.getDiaSemana(); // 'segunda', 'terca'...
-  
+
   await this.executarAgenda({
     dia: diaAtual,
     dryRun: false
@@ -178,7 +193,9 @@ async executarAutomaticamente() {
 ```
 
 ### Horários Customizados
+
 Cada regra pode ter seu próprio horário:
+
 ```typescript
 {
   "diaSemana": "segunda",
@@ -192,6 +209,7 @@ Cada regra pode ter seu próprio horário:
 ## 🎯 Filtros Disponíveis
 
 ### Por Status
+
 ```typescript
 {
   "filtros": {
@@ -201,6 +219,7 @@ Cada regra pode ter seu próprio horário:
 ```
 
 ### Por Tempo
+
 ```typescript
 {
   "filtros": {
@@ -212,6 +231,7 @@ Cada regra pode ter seu próprio horário:
 ```
 
 ### Por Origem
+
 ```typescript
 {
   "filtros": {
@@ -221,6 +241,7 @@ Cada regra pode ter seu próprio horário:
 ```
 
 ### Por Tags
+
 ```typescript
 {
   "filtros": {
@@ -230,6 +251,7 @@ Cada regra pode ter seu próprio horário:
 ```
 
 ### Combinações
+
 ```typescript
 {
   "filtros": {
@@ -263,13 +285,16 @@ Cada regra pode ter seu próprio horário:
 ## 🚨 Avisos Importantes
 
 ### ⚠️ Envio em Massa
+
 Executar campanhas pode enviar **centenas de mensagens**. Sempre:
+
 1. Testar com `dryRun: true` primeiro
 2. Verificar filtros estão corretos
 3. Confirmar templates estão aprovados
 4. Respeitar limites da API WhatsApp
 
 ### ⚠️ Horários de Envio
+
 - **Evitar:** 22h - 8h (horário de descanso)
 - **Ideal:** 9h - 18h (horário comercial)
 - **Exceções:** Lembretes urgentes
@@ -312,6 +337,7 @@ curl -X POST http://localhost:3000/api/campanhas/regras-semanais \
 ## 🧪 Testes
 
 ### Dry-Run (Simulação)
+
 ```bash
 curl -X POST http://localhost:3000/api/campanhas/agenda-semanal/executar \
   -H "Authorization: Bearer <token>" \
@@ -369,14 +395,17 @@ Retorna quantos leads seriam afetados **sem enviar**.
 ## 🐛 Troubleshooting
 
 ### Problema: "Nenhuma regra encontrada para hoje"
+
 **Causa:** Dia da semana sem regras configuradas  
 **Solução:** Criar regra para o dia atual via POST `/campanhas/regras-semanais`
 
 ### Problema: "Muitos leads processados (1000+)"
+
 **Causa:** Filtros muito abrangentes  
 **Solução:** Refinar filtros, usar `dryRun: true` para testar
 
 ### Problema: "Template não aprovado"
+
 **Causa:** Template ainda em aprovação no Meta  
 **Solução:** Aguardar aprovação ou usar template já aprovado
 

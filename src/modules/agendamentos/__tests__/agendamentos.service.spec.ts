@@ -43,11 +43,15 @@ describe('AgendamentosService - clinicId isolation', () => {
   });
 
   it('should throw error for empty clinicId in buscarPorIdEClinica', async () => {
-    await expect(service.buscarPorIdEClinica('id123', '')).rejects.toThrow('clinicId é obrigatório');
+    await expect(service.buscarPorIdEClinica('id123', '')).rejects.toThrow(
+      'clinicId é obrigatório',
+    );
   });
 
   it('should throw error for empty clinicId in confirmarAgendamentoPorClinica', async () => {
-    await expect(service.confirmarAgendamentoPorClinica('id123', '')).rejects.toThrow('clinicId é obrigatório');
+    await expect(service.confirmarAgendamentoPorClinica('id123', '')).rejects.toThrow(
+      'clinicId é obrigatório',
+    );
   });
 
   // Note: Full integration tests would require real database

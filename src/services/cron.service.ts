@@ -21,7 +21,7 @@ export function registerCronTask(t: CronTask) {
 }
 
 export function startCron() {
-  tasks.forEach((t) => {
+  tasks.forEach(t => {
     cron.schedule(
       t.schedule,
       async () => {
@@ -41,18 +41,24 @@ export function startCron() {
 
         try {
           await pRetry(runner, {
-            onFailedAttempt: (error) => {
-              logger.warn({ attempts: error.attemptNumber, retriesLeft: error.retriesLeft }, 'retrying cron task');
+            onFailedAttempt: error => {
+              logger.warn(
+                { attempts: error.attemptNumber, retriesLeft: error.retriesLeft },
+                'retrying cron task',
+              );
             },
             retries: t.retry?.retries ?? 2,
             factor: t.retry?.factor ?? 2,
           });
         } catch (finalErr) {
-          logger.error({ err: (finalErr as Error).message || finalErr }, 'cron failed after retries');
+          logger.error(
+            { err: (finalErr as Error).message || finalErr },
+            'cron failed after retries',
+          );
           // opcional: integração com Sentry/Alert
         }
       },
-      { timezone: process.env.TZ || 'America/Sao_Paulo' }
+      { timezone: process.env.TZ || 'America/Sao_Paulo' },
     );
     baseLogger.debug({ task: t.name }, 'cron scheduled');
   });

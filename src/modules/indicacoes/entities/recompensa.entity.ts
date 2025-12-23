@@ -26,4 +26,3 @@ export class Recompensa {
   @UpdateDateColumn()
   updatedAt!: Date;
 }
-

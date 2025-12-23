@@ -7,6 +7,7 @@ Sistema de auditoria e timeline de eventos para rastreamento de ações.
 ## 📋 Funcionalidades
 
 ### ✅ Registro de Eventos
+
 - Auditoria completa de todas as ações
 - Timeline cronológica por lead
 - Busca por tipo de evento
@@ -14,6 +15,7 @@ Sistema de auditoria e timeline de eventos para rastreamento de ações.
 - Estatísticas de eventos
 
 ### 🔍 Tipos de Eventos
+
 - `lead_created` - Lead cadastrado
 - `agendamento_criado` - Agendamento criado
 - `agendamento_confirmado` - Confirmação de agendamento
@@ -28,40 +30,41 @@ Sistema de auditoria e timeline de eventos para rastreamento de ações.
 ## 🎯 Endpoints Principais
 
 ### GET `/eventos/timeline/:leadId`
+
 Timeline de eventos de um lead
 
 ```typescript
-GET /eventos/timeline/lead123
-Authorization: Bearer <token>
+GET / eventos / timeline / lead123;
+Authorization: Bearer<token>;
 
-Response:
-[
+Response: [
   {
-    "id": "evt001",
-    "tipo": "lead_created",
-    "leadId": "lead123",
-    "descricao": "Lead cadastrado via formulário",
-    "metadata": {
-      "fonte": "google",
-      "campanha": "ppc-elevare-2025"
+    id: 'evt001',
+    tipo: 'lead_created',
+    leadId: 'lead123',
+    descricao: 'Lead cadastrado via formulário',
+    metadata: {
+      fonte: 'google',
+      campanha: 'ppc-elevare-2025',
     },
-    "createdAt": "2025-11-01T10:00:00Z"
+    createdAt: '2025-11-01T10:00:00Z',
   },
   {
-    "id": "evt002",
-    "tipo": "agendamento_criado",
-    "leadId": "lead123",
-    "descricao": "Agendamento para 25/11/2025 às 14:00",
-    "metadata": {
-      "agendamentoId": "ag456",
-      "data": "2025-11-25T14:00:00Z"
+    id: 'evt002',
+    tipo: 'agendamento_criado',
+    leadId: 'lead123',
+    descricao: 'Agendamento para 25/11/2025 às 14:00',
+    metadata: {
+      agendamentoId: 'ag456',
+      data: '2025-11-25T14:00:00Z',
     },
-    "createdAt": "2025-11-02T15:30:00Z"
-  }
-]
+    createdAt: '2025-11-02T15:30:00Z',
+  },
+];
 ```
 
 ### POST `/eventos`
+
 Registrar novo evento
 
 ```typescript
@@ -80,6 +83,7 @@ Authorization: Bearer <token>
 ```
 
 ### GET `/eventos/buscar`
+
 Buscar eventos com filtros
 
 ```typescript
@@ -94,6 +98,7 @@ Response:
 ```
 
 ### GET `/eventos/estatisticas`
+
 Estatísticas de eventos
 
 ```typescript
@@ -156,38 +161,38 @@ eventos/
 
 ### Eventos de Lead
 
-| Tipo | Quando Ocorre |
-|------|---------------|
-| `lead_created` | Novo lead cadastrado |
-| `lead_updated` | Dados do lead atualizados |
+| Tipo              | Quando Ocorre               |
+| ----------------- | --------------------------- |
+| `lead_created`    | Novo lead cadastrado        |
+| `lead_updated`    | Dados do lead atualizados   |
 | `status_alterado` | Status mudou (novo → ativo) |
-| `tag_adicionada` | Tag adicionada ao lead |
+| `tag_adicionada`  | Tag adicionada ao lead      |
 
 ### Eventos de Agendamento
 
-| Tipo | Quando Ocorre |
-|------|---------------|
-| `agendamento_criado` | Novo agendamento |
-| `agendamento_confirmado` | Confirmação recebida |
-| `agendamento_cancelado` | Cancelamento |
-| `sessao_compareceu` | Comparecimento registrado |
-| `sessao_no_show` | Falta registrada |
+| Tipo                     | Quando Ocorre             |
+| ------------------------ | ------------------------- |
+| `agendamento_criado`     | Novo agendamento          |
+| `agendamento_confirmado` | Confirmação recebida      |
+| `agendamento_cancelado`  | Cancelamento              |
+| `sessao_compareceu`      | Comparecimento registrado |
+| `sessao_no_show`         | Falta registrada          |
 
 ### Eventos de Comunicação
 
-| Tipo | Quando Ocorre |
-|------|---------------|
-| `mensagem_enviada` | WhatsApp enviado |
-| `mensagem_entregue` | WhatsApp entregue |
-| `mensagem_lida` | WhatsApp lida |
+| Tipo                  | Quando Ocorre     |
+| --------------------- | ----------------- |
+| `mensagem_enviada`    | WhatsApp enviado  |
+| `mensagem_entregue`   | WhatsApp entregue |
+| `mensagem_lida`       | WhatsApp lida     |
 | `mensagem_respondida` | Cliente respondeu |
 
 ### Eventos de Indicação
 
-| Tipo | Quando Ocorre |
-|------|---------------|
-| `indicacao_registrada` | Nova indicação |
-| `indicacao_convertida` | Indicação converteu |
+| Tipo                   | Quando Ocorre           |
+| ---------------------- | ----------------------- |
+| `indicacao_registrada` | Nova indicação          |
+| `indicacao_convertida` | Indicação converteu     |
 | `recompensa_resgatada` | Sessão grátis resgatada |
 
 ---
@@ -226,25 +231,33 @@ graph TD
 ## 🔍 Casos de Uso
 
 ### 1. **Timeline do Lead**
+
 Ver histórico completo de um lead:
+
 ```typescript
-GET /eventos/timeline/lead123
+GET / eventos / timeline / lead123;
 ```
 
 ### 2. **Auditoria de Ações**
+
 Ver quem fez o quê e quando:
+
 ```typescript
 GET /eventos/buscar?tipo=status_alterado&userId=user456
 ```
 
 ### 3. **Análise de Comportamento**
+
 Identificar padrões (leads que convertem):
+
 ```typescript
 GET /eventos/buscar?tipo=agendamento_criado&leadId=lead123
 ```
 
 ### 4. **Monitoramento de Sistema**
+
 Detectar erros ou problemas:
+
 ```typescript
 GET /eventos/buscar?tipo=mensagem_falhou&dataInicio=hoje
 ```
@@ -259,7 +272,7 @@ Todos os módulos registram eventos automaticamente:
 // Exemplo: Agendamento Service
 async criar(data: CriarAgendamentoDto) {
   const agendamento = await this.repository.save(data);
-  
+
   // Registrar evento
   await this.eventsService.registrar({
     tipo: 'agendamento_criado',
@@ -267,7 +280,7 @@ async criar(data: CriarAgendamentoDto) {
     descricao: `Agendamento para ${data.data}`,
     metadata: { agendamentoId: agendamento.id }
   });
-  
+
   return agendamento;
 }
 ```
@@ -277,6 +290,7 @@ async criar(data: CriarAgendamentoDto) {
 ## 🛠️ Configuração
 
 ### Variáveis de Ambiente
+
 ```env
 # Retenção de eventos
 EVENTOS_DIAS_RETENCAO=365      # Manter por 1 ano
@@ -300,6 +314,7 @@ npm run test:e2e -- events.e2e-spec.ts
 ## 🔧 Como Usar
 
 ### 1. Registrar Evento
+
 ```bash
 curl -X POST http://localhost:3000/api/eventos \
   -H "Authorization: Bearer <token>" \
@@ -316,18 +331,21 @@ curl -X POST http://localhost:3000/api/eventos \
 ```
 
 ### 2. Ver Timeline
+
 ```bash
 curl http://localhost:3000/api/eventos/timeline/lead123 \
   -H "Authorization: Bearer <token>"
 ```
 
 ### 3. Buscar Eventos
+
 ```bash
 curl "http://localhost:3000/api/eventos/buscar?tipo=mensagem_enviada&dataInicio=2025-11-01" \
   -H "Authorization: Bearer <token>"
 ```
 
 ### 4. Ver Estatísticas
+
 ```bash
 curl http://localhost:3000/api/eventos/estatisticas?periodo=7d \
   -H "Authorization: Bearer <token>"
@@ -376,14 +394,17 @@ Response:
 ## 🐛 Troubleshooting
 
 ### Problema: "Muitos eventos (banco crescendo)"
+
 **Causa:** Retenção infinita  
 **Solução:** Configurar `EVENTOS_DIAS_RETENCAO` e rodar limpeza periódica
 
 ### Problema: "Eventos não aparecem na timeline"
+
 **Causa:** leadId incorreto ou faltando  
 **Solução:** Verificar se leadId está sendo passado corretamente
 
 ### Problema: "Performance lenta ao buscar eventos"
+
 **Causa:** Falta de índices no banco  
 **Solução:** Criar índices em `tipo`, `leadId`, `createdAt`
 

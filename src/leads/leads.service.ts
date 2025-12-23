@@ -1,6 +1,15 @@
 import { Injectable, Logger, HttpException, HttpStatus, Inject } from '@nestjs/common';
 import { HttpService } from '@nestjs/axios';
-import { firstValueFrom, catchError, retryWhen, scan, mergeMap, tap, throwError, timer } from 'rxjs';
+import {
+  firstValueFrom,
+  catchError,
+  retryWhen,
+  scan,
+  mergeMap,
+  tap,
+  throwError,
+  timer,
+} from 'rxjs';
 import { AxiosError } from 'axios';
 import { IARA_CONFIG_TOKEN, IaraConfig } from '../leads/iara-config.interface'; // Caminho ajustado
 
@@ -32,7 +41,7 @@ export class LeadsService {
     @Inject(IARA_CONFIG_TOKEN) private readonly iaraConfig: IaraConfig,
   ) {
     if (!this.iaraConfig.edgeUrl || !this.iaraConfig.secret) {
-        this.logger.error('IaraConfig não foi fornecido corretamente. Verifique o LeadsModule.');
+      this.logger.error('IaraConfig não foi fornecido corretamente. Verifique o LeadsModule.');
     }
   }
 
@@ -40,21 +49,27 @@ export class LeadsService {
     return retryWhen<any>(errors =>
       errors.pipe(
         // acumula contagem e o último erro
-        scan((acc, error: AxiosError) => ({ count: acc.count + 1, error }), { count: 0, error: null as AxiosError | null }),
+        scan((acc, error: AxiosError) => ({ count: acc.count + 1, error }), {
+          count: 0,
+          error: null as AxiosError | null,
+        }),
         // para cada erro acumulado decide se reintenta (timer) ou falha de vez
         mergeMap(acc => {
           const error = acc.error as AxiosError;
-          const isRecoverable = !error.response || (error.response.status >= 500 && error.response.status < 600);
+          const isRecoverable =
+            !error.response || (error.response.status >= 500 && error.response.status < 600);
 
           if (acc.count > maxRetries || !isRecoverable) {
             return throwError(() => error);
           }
 
           const delayTime = delayMs * Math.pow(2, acc.count - 1);
-          this.logger.warn(`Tentativa ${acc.count}/${maxRetries} falhou. Tentando novamente em ${delayTime}ms...`);
+          this.logger.warn(
+            `Tentativa ${acc.count}/${maxRetries} falhou. Tentando novamente em ${delayTime}ms...`,
+          );
           return timer(delayTime);
         }),
-      )
+      ),
     );
   }
 
@@ -69,7 +84,7 @@ export class LeadsService {
     };
 
     // Remove propriedades vazias/nulas
-    Object.keys(payload).forEach((k) => {
+    Object.keys(payload).forEach(k => {
       const key = k as keyof typeof payload;
       if (payload[key] == null || payload[key] === '') {
         delete payload[key];
@@ -77,38 +92,56 @@ export class LeadsService {
     });
 
     try {
-      const request$ = this.httpService.post<IaraResponse>(edgeUrl, payload, {
-        headers: {
-          'x-iara-secret': secret,
-          'Content-Type': 'application/json',
-          'User-Agent': 'NestJS-IARA/4.0-DIP-Retry',
-        },
-      }).pipe(
-        this.exponentialBackoffRetry(MAX_RETRIES, RETRY_DELAY_MS),
-        
-        catchError((error: AxiosError<any>) => {
-          if (error.response) {
-            this.logger.error(`Falha final na requisição HTTP para IARA: Status ${error.response.status} - ${JSON.stringify(error.response.data)}`);
-            const errorMessage = error.response.data?.message || 'Erro de comunicação com serviço externo';
-            throw new HttpException(errorMessage, error.response.status);
-          } else {
-            this.logger.error(`Falha final de rede/timeout ao conectar com IARA: ${error.message}`);
-            throw new HttpException('Falha de rede persistente ao conectar com serviço externo', HttpStatus.SERVICE_UNAVAILABLE);
-          }
-        }),
-        tap(response => {
-            if (!response.data.ok) {
-                this.logger.error(`Erro Supabase (Edge) na resposta final: ${response.data.error || response.data.message}`);
-                throw new HttpException(response.data.error || response.data.message || 'Erro desconhecido na comunicação com Supabase/IARA', HttpStatus.BAD_GATEWAY);
-            }
+      const request$ = this.httpService
+        .post<IaraResponse>(edgeUrl, payload, {
+          headers: {
+            'x-iara-secret': secret,
+            'Content-Type': 'application/json',
+            'User-Agent': 'NestJS-IARA/4.0-DIP-Retry',
+          },
         })
-      );
+        .pipe(
+          this.exponentialBackoffRetry(MAX_RETRIES, RETRY_DELAY_MS),
+
+          catchError((error: AxiosError<any>) => {
+            if (error.response) {
+              this.logger.error(
+                `Falha final na requisição HTTP para IARA: Status ${error.response.status} - ${JSON.stringify(error.response.data)}`,
+              );
+              const errorMessage =
+                error.response.data?.message || 'Erro de comunicação com serviço externo';
+              throw new HttpException(errorMessage, error.response.status);
+            } else {
+              this.logger.error(
+                `Falha final de rede/timeout ao conectar com IARA: ${error.message}`,
+              );
+              throw new HttpException(
+                'Falha de rede persistente ao conectar com serviço externo',
+                HttpStatus.SERVICE_UNAVAILABLE,
+              );
+            }
+          }),
+          tap(response => {
+            if (!response.data.ok) {
+              this.logger.error(
+                `Erro Supabase (Edge) na resposta final: ${response.data.error || response.data.message}`,
+              );
+              throw new HttpException(
+                response.data.error ||
+                  response.data.message ||
+                  'Erro desconhecido na comunicação com Supabase/IARA',
+                HttpStatus.BAD_GATEWAY,
+              );
+            }
+          }),
+        );
 
       const response = await firstValueFrom(request$);
-      
-      this.logger.log(`Lead enviado com sucesso para Supabase/IARA: ${JSON.stringify(response.data)}`);
-      return { ok: true, id: response.data.id };
 
+      this.logger.log(
+        `Lead enviado com sucesso para Supabase/IARA: ${JSON.stringify(response.data)}`,
+      );
+      return { ok: true, id: response.data.id };
     } catch (error: any) {
       throw error;
     }
@@ -165,4 +198,3 @@ export class LeadsService {
     return { id: 1, ...leadDto };
   }
 }
-

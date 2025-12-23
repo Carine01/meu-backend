@@ -7,6 +7,7 @@ Sistema de autenticação baseado em Firebase + JWT para controle de acesso.
 ## 📋 Funcionalidades
 
 ### ✅ Autenticação
+
 - Login com email/senha (Firebase)
 - Registro de novos usuários (apenas admins)
 - Verificação de token JWT
@@ -19,6 +20,7 @@ Sistema de autenticação baseado em Firebase + JWT para controle de acesso.
 ## 🎯 Endpoints Principais
 
 ### POST `/auth/login`
+
 Autenticar usuário
 
 ```typescript
@@ -40,6 +42,7 @@ Response:
 ```
 
 ### POST `/auth/register`
+
 Registrar novo usuário (requer role admin)
 
 ```typescript
@@ -54,6 +57,7 @@ Authorization: Bearer <admin_token>
 ```
 
 ### GET `/auth/me`
+
 Obter dados do usuário autenticado
 
 ```typescript
@@ -114,11 +118,11 @@ auth/
 
 ### Roles Disponíveis
 
-| Role | Permissões |
-|------|------------|
-| **admin** | Acesso total, criar usuários, configurações |
-| **manager** | Gestão de agendamentos, relatórios |
-| **user** | Acesso básico, criar leads, agendar |
+| Role        | Permissões                                  |
+| ----------- | ------------------------------------------- |
+| **admin**   | Acesso total, criar usuários, configurações |
+| **manager** | Gestão de agendamentos, relatórios          |
+| **user**    | Acesso básico, criar leads, agendar         |
 
 ### Usando Roles em Controllers
 
@@ -156,16 +160,19 @@ graph TD
 ## 🛡️ Segurança
 
 ### JWT
+
 - **Algoritmo:** HS256
 - **Expiração:** 7 dias (configurável)
 - **Secret:** Variável de ambiente `JWT_SECRET`
 
 ### Firebase
+
 - **Autenticação:** Firebase Authentication
 - **Admin SDK:** Validação server-side
 - **MFA:** Suportado (configurar no Firebase Console)
 
 ### Boas Práticas Implementadas
+
 - ✅ Senha nunca retornada na API
 - ✅ Tokens com expiração
 - ✅ Isolamento por clinicId (multi-tenancy)
@@ -236,6 +243,7 @@ FIREBASE_CLIENT_EMAIL=firebase-adminsdk@elevare-iara.iam.gserviceaccount.com
 ## 🔧 Como Usar
 
 ### 1. Login
+
 ```bash
 curl -X POST http://localhost:3000/api/auth/login \
   -H "Content-Type: application/json" \
@@ -243,12 +251,14 @@ curl -X POST http://localhost:3000/api/auth/login \
 ```
 
 ### 2. Usar Token
+
 ```bash
 curl http://localhost:3000/api/agendamentos \
   -H "Authorization: Bearer eyJhbGc..."
 ```
 
 ### 3. Verificar Token
+
 ```bash
 curl http://localhost:3000/api/auth/me \
   -H "Authorization: Bearer eyJhbGc..."
@@ -265,6 +275,7 @@ curl -X POST http://localhost:3000/api/auth/seed-admin
 ```
 
 Credenciais padrão:
+
 - **Email:** admin@elevare.com
 - **Senha:** Elevare@2025
 - **Roles:** ["admin"]
@@ -287,16 +298,19 @@ Credenciais padrão:
 ## 🐛 Troubleshooting
 
 ### Problema: "Token expirado"
+
 **Causa:** Token JWT passou de 7 dias  
 **Solução:** Fazer login novamente
 
 ### Problema: "Forbidden - role insuficiente"
+
 **Causa:** Usuário não tem a role necessária  
 **Solução:** Admin deve atualizar roles do usuário
 
 ### Problema: "Firebase error"
+
 **Causa:** Credenciais Firebase inválidas  
-**Solução:** Verificar variáveis de ambiente FIREBASE_*
+**Solução:** Verificar variáveis de ambiente FIREBASE\_\*
 
 ---
 

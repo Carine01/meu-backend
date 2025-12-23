@@ -13,10 +13,7 @@ export class EventsController {
    * Retorna timeline completa de um lead
    */
   @Get('timeline/:leadId')
-  async getLeadTimeline(
-    @Param('leadId') leadId: string,
-    @Query('limit') limit?: string,
-  ) {
+  async getLeadTimeline(@Param('leadId') leadId: string, @Query('limit') limit?: string) {
     const events = await this.eventsService.getLeadTimeline(
       leadId,
       limit ? parseInt(limit, 10) : 50,
@@ -63,10 +60,7 @@ export class EventsController {
    * Estatísticas de eventos por tipo
    */
   @Get('stats')
-  async getStats(
-    @Query('startDate') startDate?: string,
-    @Query('endDate') endDate?: string,
-  ) {
+  async getStats(@Query('startDate') startDate?: string, @Query('endDate') endDate?: string) {
     const start = startDate ? new Date(startDate) : new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
     const end = endDate ? new Date(endDate) : new Date();
 
@@ -84,9 +78,7 @@ export class EventsController {
    */
   @Get('recent')
   async getRecent(@Query('limit') limit?: string) {
-    const events = await this.eventsService.getRecentEvents(
-      limit ? parseInt(limit, 10) : 100,
-    );
+    const events = await this.eventsService.getRecentEvents(limit ? parseInt(limit, 10) : 100);
 
     return {
       total: events.length,
@@ -124,4 +116,3 @@ export class EventsController {
     };
   }
 }
-

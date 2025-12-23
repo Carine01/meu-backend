@@ -6,14 +6,14 @@ export enum EventType {
   LEAD_UPDATED = 'lead_updated',
   STAGE_CHANGED = 'stage_changed',
   SCORE_UPDATED = 'score_updated',
-  
+
   // Mensagens
   MESSAGE_SENT = 'message_sent',
   MESSAGE_DELIVERED = 'message_delivered',
   MESSAGE_READ = 'message_read',
   MESSAGE_REPLIED = 'message_replied',
   MESSAGE_FAILED = 'message_failed',
-  
+
   // Agendamentos
   APPOINTMENT_CREATED = 'appointment_created',
   APPOINTMENT_CONFIRMED = 'appointment_confirmed',
@@ -21,24 +21,24 @@ export enum EventType {
   APPOINTMENT_CANCELLED = 'appointment_cancelled',
   APPOINTMENT_COMPLETED = 'appointment_completed',
   APPOINTMENT_NOSHOW = 'appointment_noshow',
-  
+
   // Fila
   QUEUE_ADDED = 'queue_added',
   QUEUE_PROCESSED = 'queue_processed',
   QUEUE_RETRY = 'queue_retry',
   QUEUE_FAILED = 'queue_failed',
-  
+
   // Campanhas
   CAMPAIGN_SENT = 'campaign_sent',
   CAMPAIGN_OPENED = 'campaign_opened',
   CAMPAIGN_CLICKED = 'campaign_clicked',
-  
+
   // Indicações
   REFERRAL_CREATED = 'referral_created',
   REFERRAL_CONVERTED = 'referral_converted',
   REWARD_EARNED = 'reward_earned',
   REWARD_REDEEMED = 'reward_redeemed',
-  
+
   // Sistema
   WEBHOOK_RECEIVED = 'webhook_received',
   ERROR_OCCURRED = 'error_occurred',
@@ -108,4 +108,3 @@ export class Event {
   @Column({ default: false })
   processed!: boolean; // Para eventos que precisam de processamento assíncrono
 }
-

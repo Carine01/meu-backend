@@ -42,7 +42,7 @@ async function bootstrap() {
   // Graceful shutdown
   const logger = app.get(PinoLogger);
   app.enableShutdownHooks();
-  
+
   process.on('SIGTERM', async () => {
     logger.log('SIGTERM recebido, encerrando aplicação...');
     await app.close();
@@ -50,13 +50,12 @@ async function bootstrap() {
 
   const port = process.env.PORT || 3000;
   await app.listen(port, '0.0.0.0');
-  
+
   logger.log(`🚀 Application is running on: http://0.0.0.0:${port}`);
   logger.log(`🔒 Security: Helmet, CORS, ValidationPipe ativados`);
 }
 
-bootstrap().catch((error) => {
+bootstrap().catch(error => {
   console.error('❌ Erro fatal na inicialização:', error);
   process.exit(1);
 });
-

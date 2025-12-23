@@ -7,7 +7,9 @@ export class FirestoreService {
   private db = admin.firestore();
 
   async create(collection: string, data: any) {
-    const ref = await this.db.collection(collection).add({ ...data, createdAt: admin.firestore.FieldValue.serverTimestamp() });
+    const ref = await this.db
+      .collection(collection)
+      .add({ ...data, createdAt: admin.firestore.FieldValue.serverTimestamp() });
     return { id: ref.id };
   }
 
@@ -23,7 +25,10 @@ export class FirestoreService {
   }
 
   async update(collection: string, id: string, data: any) {
-    await this.db.collection(collection).doc(id).set({ ...data, updatedAt: admin.firestore.FieldValue.serverTimestamp() }, { merge: true });
+    await this.db
+      .collection(collection)
+      .doc(id)
+      .set({ ...data, updatedAt: admin.firestore.FieldValue.serverTimestamp() }, { merge: true });
     return { id };
   }
 
@@ -32,4 +37,3 @@ export class FirestoreService {
     return { id };
   }
 }
-

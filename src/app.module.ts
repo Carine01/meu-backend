@@ -28,7 +28,7 @@ import { AuthModule } from './modules/auth/auth.module';
       validationSchema,
       envFilePath: '.env',
     }),
-    
+
     // TypeORM - Banco de dados PostgreSQL
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
@@ -46,40 +46,40 @@ import { AuthModule } from './modules/auth/auth.module';
         ssl: config.get('NODE_ENV') === 'production' ? { rejectUnauthorized: false } : false,
       }),
     }),
-    
+
     // Schedule - Para CronJobs
     ScheduleModule.forRoot(),
-    
+
     // Rate Limiting - Proteção contra DDoS e abuse
-    ThrottlerModule.forRoot([{
-      ttl: 60000, // 60 segundos
-      limit: 100,  // 100 requests por IP (ajustável)
-    }]),
-    
+    ThrottlerModule.forRoot([
+      {
+        ttl: 60000, // 60 segundos
+        limit: 100, // 100 requests por IP (ajustável)
+      },
+    ]),
+
     LoggerModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
       useFactory: async (config: ConfigService) => ({
         pinoHttp: {
           transport:
-            config.get('NODE_ENV') !== 'production'
-              ? { target: 'pino-pretty' }
-              : undefined,
-          
+            config.get('NODE_ENV') !== 'production' ? { target: 'pino-pretty' } : undefined,
+
           level: config.get('LOG_LEVEL') || 'info',
-          
+
           base: {
             service: 'stalkspot-backend',
             version: '1.0.0',
           },
-          
+
           autoLogging: {
-            ignore: (req) => req.url === '/health',
+            ignore: req => req.url === '/health',
           },
         },
       }),
     }),
-    
+
     // Módulos do aplicativo
     AuthModule,
     LeadsModule,
@@ -93,8 +93,8 @@ import { AuthModule } from './modules/auth/auth.module';
   ],
   controllers: [HealthController, TestController, AuthTestController, FirestoreController],
   providers: [
-    FirebaseAuthService, 
-    FirebaseAuthGuard, 
+    FirebaseAuthService,
+    FirebaseAuthGuard,
     FirestoreService,
     // Rate Limiting global
     {
@@ -104,4 +104,3 @@ import { AuthModule } from './modules/auth/auth.module';
   ],
 })
 export class AppModule {}
-

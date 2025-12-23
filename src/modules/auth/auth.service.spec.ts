@@ -32,7 +32,7 @@ describe('AuthService', () => {
         roles: ['user'],
       }),
       save: jest.fn(),
-      create: jest.fn((dto) => ({ ...dto, uid: 'new-user-456' })),
+      create: jest.fn(dto => ({ ...dto, uid: 'new-user-456' })),
     };
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -87,9 +87,9 @@ describe('AuthService', () => {
   it('deve lançar erro para token inválido', async () => {
     mockFirebaseAuth.verifyIdToken.mockRejectedValue(new Error('Invalid token'));
 
-    await expect(service.login({ idToken: 'invalid' } as any))
-      .rejects
-      .toThrow(UnauthorizedException);
+    await expect(service.login({ idToken: 'invalid' } as any)).rejects.toThrow(
+      UnauthorizedException,
+    );
   });
 
   it('deve registrar novo usuário', async () => {
@@ -113,7 +113,7 @@ describe('AuthService', () => {
     expect(mockFirebaseAuth.createUser).toHaveBeenCalledWith(
       expect.objectContaining({
         email: novoUsuario.email,
-      })
+      }),
     );
   });
 

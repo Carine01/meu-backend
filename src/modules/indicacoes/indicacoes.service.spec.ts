@@ -106,14 +106,14 @@ describe('IndicacoesService', () => {
       indicacaoRepo.create.mockReturnValue(mockIndicacao);
       indicacaoRepo.save.mockResolvedValue(mockIndicacao);
       recompensaRepo.findOne.mockResolvedValue(mockRecompensaExistente);
-      
+
       const recompensaAtualizada = {
         ...mockRecompensaExistente,
         pontosAcumulados: 3, // Agora tem 3 pontos
         sessoesGratisDisponiveis: 1, // Ganhou 1 sessão
         historicoIndicacoes: ['ind1', 'ind2', 'ind456'],
       };
-      
+
       recompensaRepo.save.mockResolvedValue(recompensaAtualizada);
 
       const result = await service.registrarIndicacao('lead456', {

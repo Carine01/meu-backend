@@ -20,7 +20,11 @@ export class Indicacao {
   @Column({ nullable: true })
   emailIndicado?: string;
 
-  @Column({ type: 'enum', enum: ['pendente', 'contatado', 'agendado', 'compareceu', 'cancelado'], default: 'pendente' })
+  @Column({
+    type: 'enum',
+    enum: ['pendente', 'contatado', 'agendado', 'compareceu', 'cancelado'],
+    default: 'pendente',
+  })
   status!: 'pendente' | 'contatado' | 'agendado' | 'compareceu' | 'cancelado';
 
   @Column({ default: 1 })
@@ -41,4 +45,3 @@ export class Indicacao {
     this.pontosGanhos = 1;
   }
 }
-

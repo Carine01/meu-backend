@@ -7,6 +7,7 @@ Sistema de templates de mensagens com variáveis dinâmicas e integração Fireb
 ## 📋 Funcionalidades
 
 ### ✅ Templates
+
 - Criar templates reutilizáveis
 - Variáveis dinâmicas: `{{nome}}`, `{{data}}`, etc.
 - Versionamento de templates
@@ -14,6 +15,7 @@ Sistema de templates de mensagens com variáveis dinâmicas e integração Fireb
 - Armazenamento no Firestore
 
 ### 🔄 Processamento
+
 - Substituição automática de variáveis
 - Validação de variáveis obrigatórias
 - Preview de mensagem antes do envio
@@ -24,25 +26,26 @@ Sistema de templates de mensagens com variáveis dinâmicas e integração Fireb
 ## 🎯 Endpoints Principais
 
 ### GET `/mensagens/templates/:categoria`
+
 Listar templates de uma categoria
 
 ```typescript
-GET /mensagens/templates/confirmacao
-Authorization: Bearer <token>
+GET / mensagens / templates / confirmacao;
+Authorization: Bearer<token>;
 
-Response:
-[
+Response: [
   {
-    "id": "tpl_001",
-    "nome": "Confirmação Simples",
-    "categoria": "confirmacao",
-    "texto": "Olá {{nome}}! Seu agendamento para {{data}} às {{hora}} está confirmado.",
-    "variaveis": ["nome", "data", "hora"]
-  }
-]
+    id: 'tpl_001',
+    nome: 'Confirmação Simples',
+    categoria: 'confirmacao',
+    texto: 'Olá {{nome}}! Seu agendamento para {{data}} às {{hora}} está confirmado.',
+    variaveis: ['nome', 'data', 'hora'],
+  },
+];
 ```
 
 ### POST `/mensagens/processar`
+
 Processar template com variáveis
 
 ```typescript
@@ -63,6 +66,7 @@ Response:
 ```
 
 ### POST `/mensagens/templates`
+
 Criar novo template (admin)
 
 ```typescript
@@ -117,13 +121,13 @@ mensagens/
 
 ### Variáveis Padrão
 
-| Variável | Descrição | Exemplo |
-|----------|-----------|---------|
-| `{{nome}}` | Nome do paciente | Maria Silva |
-| `{{data}}` | Data formatada | 25/11/2025 |
-| `{{hora}}` | Hora formatada | 14:00 |
-| `{{clinica}}` | Nome da clínica | Clínica Elevare |
-| `{{telefone}}` | Telefone da clínica | (11) 99999-9999 |
+| Variável       | Descrição           | Exemplo            |
+| -------------- | ------------------- | ------------------ |
+| `{{nome}}`     | Nome do paciente    | Maria Silva        |
+| `{{data}}`     | Data formatada      | 25/11/2025         |
+| `{{hora}}`     | Hora formatada      | 14:00              |
+| `{{clinica}}`  | Nome da clínica     | Clínica Elevare    |
+| `{{telefone}}` | Telefone da clínica | (11) 99999-9999    |
 | `{{endereco}}` | Endereço da clínica | Av. Paulista, 1000 |
 
 ### Variáveis Customizadas
@@ -142,26 +146,31 @@ Você pode criar suas próprias variáveis:
 ## 🎨 Categorias de Templates
 
 ### 1. **Confirmação**
+
 - Confirmação de agendamento
 - Confirmação de cadastro
 - Confirmação de pagamento
 
 ### 2. **Lembrete**
+
 - Lembrete 24h antes
 - Lembrete 1 semana antes
 - Lembrete de retorno
 
 ### 3. **Cobrança**
+
 - Cobrança de sessão
 - Lembrete de boleto
 - Confirmação de pagamento
 
 ### 4. **Indicação**
+
 - Convite para indicar
 - Recompensa de indicação
 - Status de indicação
 
 ### 5. **Personalizada**
+
 - Mensagens customizadas
 - Campanhas especiais
 - Mensagens sazonais
@@ -185,6 +194,7 @@ graph TD
 ## 🧪 Exemplos de Templates
 
 ### Confirmação de Agendamento
+
 ```
 Olá {{nome}}! ✅
 
@@ -197,6 +207,7 @@ Qualquer dúvida, entre em contato: {{telefone}}
 ```
 
 ### Lembrete 24h
+
 ```
 {{nome}}, tudo bem? 😊
 
@@ -208,6 +219,7 @@ Até lá!
 ```
 
 ### Cobrança de Sessão
+
 ```
 Olá {{nome}}!
 
@@ -259,6 +271,7 @@ mensagens-templates/
 ```
 
 ### Variáveis de Ambiente
+
 ```env
 # Firebase
 FIREBASE_PROJECT_ID=elevare-iara
@@ -271,6 +284,7 @@ FIREBASE_CLIENT_EMAIL=firebase-adminsdk@elevare-iara.iam.gserviceaccount.com
 ## 🔧 Como Usar
 
 ### 1. Criar Template
+
 ```bash
 curl -X POST http://localhost:3000/api/mensagens/templates \
   -H "Authorization: Bearer <token>" \
@@ -284,6 +298,7 @@ curl -X POST http://localhost:3000/api/mensagens/templates \
 ```
 
 ### 2. Processar Template
+
 ```bash
 curl -X POST http://localhost:3000/api/mensagens/processar \
   -H "Authorization: Bearer <token>" \
@@ -295,6 +310,7 @@ curl -X POST http://localhost:3000/api/mensagens/processar \
 ```
 
 ### 3. Listar Templates
+
 ```bash
 curl http://localhost:3000/api/mensagens/templates/confirmacao \
   -H "Authorization: Bearer <token>"
@@ -328,10 +344,12 @@ npm run test -- mensagens.service.spec.ts
 ## 🐛 Troubleshooting
 
 ### Problema: "Variável obrigatória faltando"
+
 **Causa:** Template exige variável não fornecida  
 **Solução:** Verificar `variaveis` no template e fornecer todas
 
 ### Problema: "Template não encontrado"
+
 **Causa:** ID ou categoria inválidos  
 **Solução:** Listar templates disponíveis antes de processar
 

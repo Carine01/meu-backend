@@ -50,4 +50,3 @@ describe('LeadsService', () => {
     expect(result).toEqual({ ok: true, id: 1 });
   });
 });
-

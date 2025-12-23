@@ -1,10 +1,5 @@
 // src/shared/logger/correlation.interceptor.ts
-import {
-  Injectable,
-  NestInterceptor,
-  ExecutionContext,
-  CallHandler,
-} from '@nestjs/common';
+import { Injectable, NestInterceptor, ExecutionContext, CallHandler } from '@nestjs/common';
 import { Observable } from 'rxjs';
 import { tap } from 'rxjs/operators';
 import { v4 as uuidv4 } from 'uuid';
@@ -20,9 +15,8 @@ export class CorrelationInterceptor implements NestInterceptor {
     const response = context.switchToHttp().getResponse();
 
     // Gerar ou usar correlationId existente
-    const correlationId = request.headers['x-request-id'] || 
-                         request.headers['x-correlation-id'] || 
-                         uuidv4();
+    const correlationId =
+      request.headers['x-request-id'] || request.headers['x-correlation-id'] || uuidv4();
 
     // Adicionar ao request para usar nos services
     request.correlationId = correlationId;
@@ -44,10 +38,10 @@ export class CorrelationInterceptor implements NestInterceptor {
             method: request.method,
             url: request.url,
             statusCode: response.statusCode,
-            durationMs: duration
+            durationMs: duration,
           });
         }
-      })
+      }),
     );
   }
 }

@@ -20,7 +20,9 @@ describe('AgendaSemanalService - clinicId isolation', () => {
   });
 
   it('should throw error for empty clinicId', async () => {
-    await expect(service.executarAgendaDoDiaPorClinica('')).rejects.toThrow('clinicId é obrigatório');
+    await expect(service.executarAgendaDoDiaPorClinica('')).rejects.toThrow(
+      'clinicId é obrigatório',
+    );
   });
 
   // Note: Full integration test would require Firestore emulator

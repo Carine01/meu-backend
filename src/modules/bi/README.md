@@ -7,6 +7,7 @@ Sistema de análise de dados e relatórios gerenciais.
 ## 📋 Funcionalidades
 
 ### ✅ Relatórios
+
 - Dashboard executivo
 - Relatórios de conversão
 - Análise de campanhas
@@ -15,6 +16,7 @@ Sistema de análise de dados e relatórios gerenciais.
 - ROI por origem de lead
 
 ### 📊 Métricas
+
 - Taxa de conversão
 - Custo de aquisição (CAC)
 - Lifetime Value (LTV)
@@ -27,6 +29,7 @@ Sistema de análise de dados e relatórios gerenciais.
 ## 🎯 Endpoints Principais
 
 ### GET `/bi/dashboard`
+
 Dashboard executivo com KPIs principais
 
 ```typescript
@@ -64,6 +67,7 @@ Response:
 ```
 
 ### GET `/bi/funil`
+
 Funil de vendas detalhado
 
 ```typescript
@@ -113,6 +117,7 @@ Response:
 ```
 
 ### GET `/bi/conversao-por-origem`
+
 Análise por origem de lead
 
 ```typescript
@@ -152,6 +157,7 @@ Response:
 ```
 
 ### GET `/bi/tendencias`
+
 Análise de tendências (série temporal)
 
 ```typescript
@@ -194,33 +200,39 @@ bi/
 ## 📊 Métricas Calculadas
 
 ### Taxa de Conversão
+
 ```typescript
-taxaConversao = (clientesConvertidos / totalLeads) * 100
+taxaConversao = (clientesConvertidos / totalLeads) * 100;
 ```
 
 ### Custo de Aquisição (CAC)
+
 ```typescript
-CAC = investimentoTotal / clientesConvertidos
+CAC = investimentoTotal / clientesConvertidos;
 ```
 
 ### Lifetime Value (LTV)
+
 ```typescript
-LTV = ticketMedio * frequenciaMedia * tempoRetencao
+LTV = ticketMedio * frequenciaMedia * tempoRetencao;
 ```
 
 ### ROI (Return on Investment)
+
 ```typescript
-ROI = ((receitaTotal - investimento) / investimento) * 100
+ROI = ((receitaTotal - investimento) / investimento) * 100;
 ```
 
 ### Taxa de Comparecimento
+
 ```typescript
-taxaComparecimento = (comparecimentos / agendamentosConfirmados) * 100
+taxaComparecimento = (comparecimentos / agendamentosConfirmados) * 100;
 ```
 
 ### No-Show Rate
+
 ```typescript
-noShowRate = (faltas / agendamentosConfirmados) * 100
+noShowRate = (faltas / agendamentosConfirmados) * 100;
 ```
 
 ---
@@ -229,15 +241,15 @@ noShowRate = (faltas / agendamentosConfirmados) * 100
 
 ### KPIs Principais
 
-| KPI | Descrição | Meta |
-|-----|-----------|------|
-| **Taxa de Conversão** | Leads → Clientes | > 20% |
-| **CAC** | Custo por cliente | < R$ 150 |
-| **LTV** | Valor total do cliente | > R$ 1.500 |
-| **LTV/CAC** | Retorno sobre aquisição | > 10x |
-| **Taxa de Comparecimento** | Sessões realizadas | > 85% |
-| **No-Show Rate** | Faltas | < 15% |
-| **Tempo Médio de Conversão** | Lead → Cliente | < 7 dias |
+| KPI                          | Descrição               | Meta       |
+| ---------------------------- | ----------------------- | ---------- |
+| **Taxa de Conversão**        | Leads → Clientes        | > 20%      |
+| **CAC**                      | Custo por cliente       | < R$ 150   |
+| **LTV**                      | Valor total do cliente  | > R$ 1.500 |
+| **LTV/CAC**                  | Retorno sobre aquisição | > 10x      |
+| **Taxa de Comparecimento**   | Sessões realizadas      | > 85%      |
+| **No-Show Rate**             | Faltas                  | < 15%      |
+| **Tempo Médio de Conversão** | Lead → Cliente          | < 7 dias   |
 
 ---
 
@@ -273,6 +285,7 @@ graph TD
 ## 🔗 Integração com Outros Módulos
 
 BI consome dados de:
+
 - **Leads:** Total, status, origem
 - **Agendamentos:** Confirmações, comparecimentos, no-shows
 - **Indicações:** Conversões, recompensas
@@ -284,6 +297,7 @@ BI consome dados de:
 ## 🛠️ Configuração
 
 ### Variáveis de Ambiente
+
 ```env
 # Cache de Relatórios
 BI_CACHE_TTL=3600               # 1 hora
@@ -311,24 +325,28 @@ npm run test:e2e -- bi.e2e-spec.ts
 ## 🔧 Como Usar
 
 ### 1. Dashboard Executivo
+
 ```bash
 curl http://localhost:3000/api/bi/dashboard?periodo=30d \
   -H "Authorization: Bearer <token>"
 ```
 
 ### 2. Funil de Vendas
+
 ```bash
 curl http://localhost:3000/api/bi/funil?periodo=90d \
   -H "Authorization: Bearer <token>"
 ```
 
 ### 3. ROI por Origem
+
 ```bash
 curl http://localhost:3000/api/bi/conversao-por-origem?periodo=6m \
   -H "Authorization: Bearer <token>"
 ```
 
 ### 4. Tendências
+
 ```bash
 curl "http://localhost:3000/api/bi/tendencias?metrica=conversao&periodo=12m" \
   -H "Authorization: Bearer <token>"
@@ -339,9 +357,10 @@ curl "http://localhost:3000/api/bi/tendencias?metrica=conversao&periodo=12m" \
 ## 📊 Exemplos de Análises
 
 ### Análise de Campanhas
+
 ```sql
 -- Query exemplo (simplificada)
-SELECT 
+SELECT
   origem,
   COUNT(*) as total_leads,
   SUM(CASE WHEN status = 'convertido' THEN 1 ELSE 0 END) as convertidos,
@@ -354,8 +373,9 @@ ORDER BY taxa_conversao DESC;
 ```
 
 ### Análise de Retenção
+
 ```sql
-SELECT 
+SELECT
   DATE_TRUNC('month', createdAt) as mes,
   COUNT(DISTINCT leadId) as clientes_ativos,
   COUNT(*) as total_sessoes,
@@ -372,6 +392,7 @@ ORDER BY mes;
 ## 📈 Export de Dados
 
 ### CSV Export
+
 ```typescript
 GET /bi/export?tipo=dashboard&formato=csv
 Authorization: Bearer <token>
@@ -380,6 +401,7 @@ Response: (arquivo CSV)
 ```
 
 ### Excel Export
+
 ```typescript
 GET /bi/export?tipo=funil&formato=xlsx
 Authorization: Bearer <token>
@@ -392,6 +414,7 @@ Response: (arquivo Excel)
 ## 🚀 Performance
 
 ### Otimizações Implementadas
+
 - ✅ Cache de queries (Redis)
 - ✅ Agregações pré-calculadas
 - ✅ Índices estratégicos no banco
@@ -401,12 +424,12 @@ Response: (arquivo Excel)
 
 ### Tempo de Resposta Esperado
 
-| Endpoint | Tempo |
-|----------|-------|
-| Dashboard | < 500ms |
-| Funil | < 300ms |
-| Conversão por Origem | < 1s |
-| Tendências | < 2s |
+| Endpoint             | Tempo   |
+| -------------------- | ------- |
+| Dashboard            | < 500ms |
+| Funil                | < 300ms |
+| Conversão por Origem | < 1s    |
+| Tendências           | < 2s    |
 
 ---
 
@@ -426,14 +449,17 @@ Response: (arquivo Excel)
 ## 🐛 Troubleshooting
 
 ### Problema: "Query muito lenta"
+
 **Causa:** Período muito amplo ou falta de índices  
 **Solução:** Limitar período ou criar índices no banco
 
 ### Problema: "Dados inconsistentes"
+
 **Causa:** Cache desatualizado  
 **Solução:** Limpar cache Redis ou aguardar refresh (5 min)
 
 ### Problema: "Timeout na API"
+
 **Causa:** Muitas queries simultâneas  
 **Solução:** Ativar `BI_PARALLEL_QUERIES=true`
 

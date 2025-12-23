@@ -77,12 +77,7 @@ describe('BloqueiosService', () => {
       ],
     });
 
-    const resultado = await service.isHorarioBloqueado(
-      'clinic-01',
-      '2025-12-25',
-      '14:00',
-      60
-    );
+    const resultado = await service.isHorarioBloqueado('clinic-01', '2025-12-25', '14:00', 60);
 
     expect(resultado).toHaveProperty('bloqueado', true);
     expect(resultado).toHaveProperty('motivo', 'Feriado');
@@ -94,12 +89,7 @@ describe('BloqueiosService', () => {
       docs: [],
     });
 
-    const resultado = await service.isHorarioBloqueado(
-      'clinic-01',
-      '2025-12-26',
-      '10:00',
-      60
-    );
+    const resultado = await service.isHorarioBloqueado('clinic-01', '2025-12-26', '10:00', 60);
 
     expect(resultado).toHaveProperty('bloqueado', false);
     expect(resultado.motivo).toBeUndefined();

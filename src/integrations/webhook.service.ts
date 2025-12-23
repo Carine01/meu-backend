@@ -29,19 +29,12 @@ export class WebhookService {
    * @param customToken Token customizado (opcional, sobrescreve WEBHOOK_TOKEN do env)
    * @returns Response data do webhook
    */
-  async sendWebhook(
-    payload: any,
-    customUrl?: string,
-    customToken?: string,
-  ): Promise<any> {
+  async sendWebhook(payload: any, customUrl?: string, customToken?: string): Promise<any> {
     const url = customUrl || this.webhookUrl;
     const token = customToken || this.webhookToken;
 
     if (!url) {
-      throw new HttpException(
-        'WEBHOOK_URL não configurado',
-        HttpStatus.INTERNAL_SERVER_ERROR,
-      );
+      throw new HttpException('WEBHOOK_URL não configurado', HttpStatus.INTERNAL_SERVER_ERROR);
     }
 
     this.logger.log(`Enviando webhook para ${url.substring(0, 50)}...`);
@@ -91,7 +84,7 @@ export class WebhookService {
   async sendToMake(payload: any): Promise<any> {
     const makeUrl = this.configService.get<string>('MAKE_WEBHOOK_URL');
     const makeToken = this.configService.get<string>('MAKE_TOKEN');
-    
+
     if (!makeUrl) {
       this.logger.warn('MAKE_WEBHOOK_URL não configurado, pulando envio para Make.com');
       return { ok: false, message: 'Make.com não configurado' };
@@ -106,7 +99,7 @@ export class WebhookService {
    */
   async sendToZapier(payload: any): Promise<any> {
     const zapierUrl = this.configService.get<string>('ZAPIER_WEBHOOK_URL');
-    
+
     if (!zapierUrl) {
       this.logger.warn('ZAPIER_WEBHOOK_URL não configurado, pulando envio para Zapier');
       return { ok: false, message: 'Zapier não configurado' };
@@ -116,4 +109,3 @@ export class WebhookService {
     return this.sendWebhook(payload, zapierUrl);
   }
 }
-

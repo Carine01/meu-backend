@@ -43,4 +43,3 @@ export interface SendMessageResult {
   status: MessageStatus;
   timestamp: Date;
 }
-

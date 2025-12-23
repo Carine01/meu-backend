@@ -13,10 +13,7 @@ describe('EventosService', () => {
 
   beforeEach(async () => {
     const module = await Test.createTestingModule({
-      providers: [
-        EventosService,
-        { provide: getRepositoryToken(Evento), useValue: mock() },
-      ],
+      providers: [EventosService, { provide: getRepositoryToken(Evento), useValue: mock() }],
     }).compile();
     service = module.get(EventosService);
     repo = module.get<MockRepo>(getRepositoryToken(Evento));
