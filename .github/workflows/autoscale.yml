@@ -1,0 +1,24 @@
+name: Auto Scaling Elevare
+
+on:
+  schedule:
+    - cron: "*/20 * * * *"
+
+jobs:
+  autoscale:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Aumentar capacidade se CPU passar de 80%
+        run: |
+          CPU=$(ssh -o StrictHostKeyChecking=no ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_IP }} "top -bn1 | grep Cpu | awk '{print $2}'")
+          CPU=${CPU%.*}
+
+          if [[ $CPU -gt 80 ]]; then
+            ssh ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_IP }} "
+              cd /var/www/elevare &&
+              docker compose up -d --scale backend=3
+            "
+          fi
