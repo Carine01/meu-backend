@@ -1,0 +1,21 @@
+name: Log Analyzer Elevare
+
+on:
+  schedule:
+    - cron: "*/10 * * * *"
+
+jobs:
+  logs:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Baixar logs
+        run: ssh ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_IP }} "docker logs backend --tail 500" > logs.txt
+
+      - name: Detectar anomalias
+        run: |
+          if grep -q "UnhandledPromiseRejection" logs.txt || grep -q "500" logs.txt; then
+            curl -X POST ${{ secrets.ALERT_WEBHOOK }} \
+              -H "Content-Type: application/json" \
+              -d '{"alert":"Anomalia detectada nos logs."}'
+          fi
