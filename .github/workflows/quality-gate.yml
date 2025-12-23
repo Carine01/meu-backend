@@ -1,0 +1,163 @@
+name: Quality Gate
+
+on:
+  pull_request:
+    branches:
+      - main
+      - develop
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: 'Branch/ref to check'
+        required: false
+
+jobs:
+  quality-checks:
+    name: Code Quality Checks
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      pull-requests: write
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.ref || github.ref }}
+          fetch-depth: 0
+
+      - name: Check for console.log
+        id: console-check
+        run: |
+          echo "🔍 Checking for console.log statements..."
+          # Exclude both line comments (//) and block comments (/* */)
+          CONSOLE_LOGS=$(git diff origin/main...HEAD -- '*.ts' '*.js' | grep -E '^\+.*console\.(log|debug|info|warn|error)' | grep -v '//' | grep -v '/\*' | grep -v '\*/' || true)
+          
+          if [ -n "$CONSOLE_LOGS" ]; then
+            echo "found=true" >> $GITHUB_OUTPUT
+            echo "⚠️  Found console.log statements in changes:"
+            echo "$CONSOLE_LOGS"
+          else
+            echo "found=false" >> $GITHUB_OUTPUT
+            echo "✅ No console.log statements found"
+          fi
+
+      - name: Check for Large Files
+        id: file-size-check
+        run: |
+          echo "🔍 Checking for large files..."
+          LARGE_FILES=$(git diff origin/main...HEAD --numstat | awk '$1 > 500 || $2 > 500 {print $3}' || true)
+          
+          if [ -n "$LARGE_FILES" ]; then
+            echo "found=true" >> $GITHUB_OUTPUT
+            echo "⚠️  Found large file changes:"
+            echo "$LARGE_FILES"
+          else
+            echo "found=false" >> $GITHUB_OUTPUT
+            echo "✅ No large files found"
+          fi
+
+      - name: Check for Secrets
+        id: secret-check
+        run: |
+          echo "🔍 Scanning for potential secrets..."
+          SECRETS=$(git diff origin/main...HEAD | grep -E '^\+.*(password|secret|api[_-]?key|token|auth|credentials).*=.*["\x27]' | grep -v 'example' | grep -v 'test' || true)
+          
+          if [ -n "$SECRETS" ]; then
+            echo "found=true" >> $GITHUB_OUTPUT
+            echo "⚠️  Potential secrets found in changes:"
+            echo "$SECRETS"
+          else
+            echo "found=false" >> $GITHUB_OUTPUT
+            echo "✅ No secrets detected"
+          fi
+
+      - name: Check PR Size
+        id: pr-size-check
+        if: github.event_name == 'pull_request'
+        run: |
+          echo "🔍 Checking PR size..."
+          ADDITIONS=$(git diff origin/main...HEAD --shortstat | grep -oE '[0-9]+ insertion' | grep -oE '[0-9]+' || echo "0")
+          DELETIONS=$(git diff origin/main...HEAD --shortstat | grep -oE '[0-9]+ deletion' | grep -oE '[0-9]+' || echo "0")
+          TOTAL=$((ADDITIONS + DELETIONS))
+          
+          echo "Changes: +$ADDITIONS -$DELETIONS (total: $TOTAL)"
+          
+          if [ "$TOTAL" -gt 1000 ]; then
+            echo "large=true" >> $GITHUB_OUTPUT
+            echo "⚠️  Large PR detected ($TOTAL lines changed)"
+          else
+            echo "large=false" >> $GITHUB_OUTPUT
+            echo "✅ PR size is reasonable ($TOTAL lines changed)"
+          fi
+
+      - name: Comment on PR
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const consoleFound = '${{ steps.console-check.outputs.found }}' === 'true';
+            const secretsFound = '${{ steps.secret-check.outputs.found }}' === 'true';
+            const largeFilesFound = '${{ steps.file-size-check.outputs.found }}' === 'true';
+            const largePR = '${{ steps.pr-size-check.outputs.large }}' === 'true';
+            
+            let comment = '## 🚦 Quality Gate Report\n\n';
+            
+            if (!consoleFound && !secretsFound && !largeFilesFound && !largePR) {
+              comment += '✅ All quality checks passed!\n\n';
+              comment += '- ✅ No console.log statements\n';
+              comment += '- ✅ No secrets detected\n';
+              comment += '- ✅ No large files\n';
+              comment += '- ✅ PR size is reasonable\n';
+            } else {
+              comment += '⚠️  Quality issues detected:\n\n';
+              
+              if (consoleFound) {
+                comment += '- ⚠️  Console.log statements found - please remove for production\n';
+              } else {
+                comment += '- ✅ No console.log statements\n';
+              }
+              
+              if (secretsFound) {
+                comment += '- ⚠️  Potential secrets detected - please review\n';
+              } else {
+                comment += '- ✅ No secrets detected\n';
+              }
+              
+              if (largeFilesFound) {
+                comment += '- ⚠️  Large files detected - consider breaking into smaller changes\n';
+              } else {
+                comment += '- ✅ No large files\n';
+              }
+              
+              if (largePR) {
+                comment += '- ⚠️  Large PR - consider breaking into smaller PRs for easier review\n';
+              } else {
+                comment += '- ✅ PR size is reasonable\n';
+              }
+            }
+            
+            comment += '\n*Generated by Quality Gate*';
+            
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: comment
+            });
+
+      - name: Fail if Critical Issues
+        if: steps.secret-check.outputs.found == 'true'
+        run: |
+          echo "❌ Critical quality issues found!"
+          echo "Secrets detected in code - this is a security risk"
+          exit 1
+
+      - name: Report Status
+        if: always()
+        run: |
+          echo "🚦 Quality Gate completed"
+          echo "Console logs: ${{ steps.console-check.outputs.found }}"
+          echo "Secrets: ${{ steps.secret-check.outputs.found }}"
+          echo "Large files: ${{ steps.file-size-check.outputs.found }}"

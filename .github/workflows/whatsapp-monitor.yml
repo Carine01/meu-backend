@@ -1,0 +1,129 @@
+name: WhatsApp Monitor
+
+on:
+  schedule:
+    # Run every hour
+    - cron: '0 * * * *'
+  workflow_dispatch:
+
+jobs:
+  health-check:
+    name: WhatsApp Health Check
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      issues: write
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Check WhatsApp Health Endpoint
+        id: health-check
+        continue-on-error: true
+        run: |
+          if [ -n "${{ secrets.WHATSAPP_HEALTH_URL }}" ]; then
+            echo "🔍 Checking WhatsApp health..."
+            RESPONSE=$(curl --max-time 30 -s -o /dev/null -w "%{http_code}" "${{ secrets.WHATSAPP_HEALTH_URL }}" || echo "000")
+            
+            if [ "$RESPONSE" = "200" ]; then
+              echo "status=healthy" >> $GITHUB_OUTPUT
+              echo "✅ WhatsApp service is healthy (HTTP $RESPONSE)"
+            else
+              echo "status=unhealthy" >> $GITHUB_OUTPUT
+              echo "❌ WhatsApp service is unhealthy (HTTP $RESPONSE)"
+            fi
+          else
+            echo "status=not_configured" >> $GITHUB_OUTPUT
+            echo "⚠️  WHATSAPP_HEALTH_URL secret not configured"
+          fi
+
+      - name: Create Incident Issue
+        if: steps.health-check.outputs.status == 'unhealthy'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const title = '🚨 WhatsApp Service Health Check Failed';
+            const body = `## Incident Report
+            
+            **Service:** WhatsApp Integration
+            **Status:** Unhealthy
+            **Time:** ${new Date().toISOString()}
+            **Workflow Run:** [View Details](https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId})
+            
+            ### Actions Required
+            - [ ] Check WhatsApp connection status
+            - [ ] Verify WHATSAPP_PROVIDER_TOKEN is valid
+            - [ ] Check service logs for errors
+            - [ ] Attempt reconnection if needed
+            - [ ] Verify database connectivity
+            
+            ### Priority
+            **HIGH** - Service is currently unavailable
+            
+            ---
+            *This issue was created automatically by WhatsApp Monitor*`;
+            
+            // Check if there's already an open issue
+            const issues = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              labels: 'incident,whatsapp'
+            });
+            
+            if (issues.data.length === 0) {
+              await github.rest.issues.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title: title,
+                body: body,
+                labels: ['incident', 'priority/high', 'whatsapp', 'automated']
+              });
+              console.log('✅ Incident issue created');
+            } else {
+              console.log('⚠️  Incident issue already exists');
+              // Add a comment to existing issue
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issues.data[0].number,
+                body: `⚠️  Health check failed again at ${new Date().toISOString()}\n\n[View workflow run](https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId})`
+              });
+            }
+
+      - name: Send Notification
+        if: steps.health-check.outputs.status == 'unhealthy' && secrets.SLACK_WEBHOOK != ''
+        continue-on-error: true
+        run: |
+          curl -X POST "${{ secrets.SLACK_WEBHOOK }}" \
+            -H 'Content-Type: application/json' \
+            -d '{
+              "text": "🚨 WhatsApp Service Health Check Failed",
+              "blocks": [
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "*WhatsApp Service is Unhealthy*\nPlease check the service immediately."
+                  }
+                }
+              ]
+            }'
+
+      - name: Report Status
+        if: always()
+        run: |
+          STATUS="${{ steps.health-check.outputs.status }}"
+          case "$STATUS" in
+            healthy)
+              echo "✅ WhatsApp service is healthy"
+              ;;
+            unhealthy)
+              echo "❌ WhatsApp service is unhealthy - incident created"
+              ;;
+            not_configured)
+              echo "⚠️  Health check not configured"
+              ;;
+          esac
