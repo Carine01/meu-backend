@@ -77,12 +77,8 @@ export class ProfileController {
    * Query params: limit (default 20), startAfter (para paginação)
    */
   @Get()
-  async listarPerfis(
-    @Query('limit') limit?: string,
-    @Query('startAfter') startAfter?: string,
-  ) {
+  async listarPerfis(@Query('limit') limit?: string, @Query('startAfter') startAfter?: string) {
     const limitNumber = limit ? parseInt(limit, 10) : 20;
     return this.profileService.listarPerfis(limitNumber, startAfter);
   }
 }
-

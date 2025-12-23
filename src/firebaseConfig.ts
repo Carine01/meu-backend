@@ -1,5 +1,8 @@
 // src/firebaseConfig.ts
+// This file is not currently used - firebase-admin is used instead via firebaseAdmin.ts
+// Keeping for reference but commented out to avoid compilation errors
 
+/*
 // Importe a função necessária para inicializar o Firebase
 // Certifique-se de que "firebase/app" está correto com base na sua instalação
 import { initializeApp } from "firebase/app";
@@ -20,4 +23,7 @@ const app = initializeApp(firebaseConfig);
 // É uma boa prática exportar a instância 'app' para que outros módulos
 // do seu aplicativo possam usá-la facilmente.
 export { app };
+*/
+
+export {};
 

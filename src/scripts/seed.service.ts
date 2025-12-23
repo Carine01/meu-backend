@@ -89,4 +89,3 @@ export class SeedService {
     this.logger.log(`✅ Bloqueios criados: ${30 + 8} registros`);
   }
 }
-

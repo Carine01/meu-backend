@@ -50,7 +50,7 @@ export class TestController {
       return { ok: true, data: resp.data };
     } catch (err: any) {
       this.logger.error('TriggerRetry: falha final após retries');
-      return { ok: false, error: err?.message || err }; 
+      return { ok: false, error: err?.message || err };
     }
   }
 }

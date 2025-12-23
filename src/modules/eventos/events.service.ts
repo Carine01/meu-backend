@@ -62,7 +62,7 @@ export class EventsService {
       });
 
       const saved = await this.eventsRepository.save(event);
-      
+
       this.logger.debug(
         `Event logged: ${dto.eventType} for lead ${dto.leadId || 'N/A'}`
       );

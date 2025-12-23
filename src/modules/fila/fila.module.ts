@@ -6,12 +6,12 @@ import { MensagensModule } from '../mensagens/mensagens.module';
 
 /**
  * Módulo de Fila de Envio WhatsApp
- * 
+ *
  * Funcionalidades:
  * - Adicionar mensagens na fila com agendamento
  * - Processar fila com retry automático
  * - Integração com webhook Make.com/Zapier
- * 
+ *
  * Depende de:
  * - MensagensModule (resolução de templates)
  * - HttpModule (envio via webhook)

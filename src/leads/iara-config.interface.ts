@@ -8,4 +8,3 @@ export interface IaraConfig {
 }
 
 export const IARA_CONFIG_TOKEN: InjectionToken = 'IARA_CONFIG_TOKEN';
-

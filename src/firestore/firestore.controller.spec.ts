@@ -42,4 +42,3 @@ describe('FirestoreController', () => {
     expect(spy).toHaveBeenCalledWith('leads', { name: 'Teste' });
   });
 });
-

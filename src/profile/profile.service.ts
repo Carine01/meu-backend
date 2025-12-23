@@ -60,7 +60,7 @@ export class ProfileService {
 
     try {
       this.logger.log(`Buscando perfil para clinicId: ${clinicId}`);
-      
+
       const docRef = this.db.collection(this.collection).doc(clinicId);
       const doc = await docRef.get();
 
@@ -75,10 +75,7 @@ export class ProfileService {
     } catch (error: any) {
       const err = error as Error;
       this.logger.error(`Erro ao buscar perfil ${clinicId}: ${err.message}`);
-      throw new HttpException(
-        'Erro ao buscar perfil',
-        HttpStatus.INTERNAL_SERVER_ERROR,
-      );
+      throw new HttpException('Erro ao buscar perfil', HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
 
@@ -92,10 +89,7 @@ export class ProfileService {
   ): Promise<{ status: string; message: string; timestamp: string }> {
     // Validação de dados
     if (!data || typeof data !== 'object') {
-      throw new HttpException(
-        'Dados inválidos: deve ser um objeto',
-        HttpStatus.BAD_REQUEST,
-      );
+      throw new HttpException('Dados inválidos: deve ser um objeto', HttpStatus.BAD_REQUEST);
     }
 
     if (!data.clinicId || data.clinicId.trim() === '') {
@@ -138,10 +132,7 @@ export class ProfileService {
     } catch (error: any) {
       const err = error as Error;
       this.logger.error(`Erro ao salvar perfil: ${err.message}`);
-      throw new HttpException(
-        'Erro ao salvar perfil',
-        HttpStatus.INTERNAL_SERVER_ERROR,
-      );
+      throw new HttpException('Erro ao salvar perfil', HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
 
@@ -150,9 +141,7 @@ export class ProfileService {
    * @param clinicId ID da clínica
    * @returns Resposta de sucesso
    */
-  async limparPerfilData(
-    clinicId: string,
-  ): Promise<{ status: string; message: string }> {
+  async limparPerfilData(clinicId: string): Promise<{ status: string; message: string }> {
     if (!clinicId || clinicId.trim() === '') {
       throw new HttpException('clinicId é obrigatório', HttpStatus.BAD_REQUEST);
     }
@@ -175,13 +164,10 @@ export class ProfileService {
       return { status: 'success', message: 'Perfil limpo com sucesso!' };
     } catch (error: any) {
       if (error instanceof HttpException) throw error;
-      
+
       const err = error as Error;
       this.logger.error(`Erro ao limpar perfil: ${err.message}`);
-      throw new HttpException(
-        'Erro ao limpar perfil',
-        HttpStatus.INTERNAL_SERVER_ERROR,
-      );
+      throw new HttpException('Erro ao limpar perfil', HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
 
@@ -190,9 +176,7 @@ export class ProfileService {
    * @param clinicId ID da clínica
    * @returns Resposta de sucesso
    */
-  async deletarPerfilData(
-    clinicId: string,
-  ): Promise<{ status: string; message: string }> {
+  async deletarPerfilData(clinicId: string): Promise<{ status: string; message: string }> {
     if (!clinicId || clinicId.trim() === '') {
       throw new HttpException('clinicId é obrigatório', HttpStatus.BAD_REQUEST);
     }
@@ -206,10 +190,7 @@ export class ProfileService {
     } catch (error: any) {
       const err = error as Error;
       this.logger.error(`Erro ao deletar perfil: ${err.message}`);
-      throw new HttpException(
-        'Erro ao deletar perfil',
-        HttpStatus.INTERNAL_SERVER_ERROR,
-      );
+      throw new HttpException('Erro ao deletar perfil', HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
 
@@ -243,28 +224,19 @@ export class ProfileService {
    * @param startAfter ID do último perfil (para paginação)
    * @returns Array de perfis
    */
-  async listarPerfis(
-    limit: number = 20,
-    startAfter?: string,
-  ): Promise<PerfilData[]> {
+  async listarPerfis(limit: number = 20, startAfter?: string): Promise<PerfilData[]> {
     try {
-      let query = this.db
-        .collection(this.collection)
-        .where('ativo', '!=', false)
-        .limit(limit);
+      let query = this.db.collection(this.collection).where('ativo', '!=', false).limit(limit);
 
       if (startAfter) {
-        const startDoc = await this.db
-          .collection(this.collection)
-          .doc(startAfter)
-          .get();
+        const startDoc = await this.db.collection(this.collection).doc(startAfter).get();
         query = query.startAfter(startDoc);
       }
 
       const snapshot = await query.get();
       const perfis: PerfilData[] = [];
 
-      snapshot.forEach((doc) => {
+      snapshot.forEach(doc => {
         perfis.push(doc.data() as PerfilData);
       });
 
@@ -273,11 +245,7 @@ export class ProfileService {
     } catch (error: any) {
       const err = error as Error;
       this.logger.error(`Erro ao listar perfis: ${err.message}`);
-      throw new HttpException(
-        'Erro ao listar perfis',
-        HttpStatus.INTERNAL_SERVER_ERROR,
-      );
+      throw new HttpException('Erro ao listar perfis', HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
 }
-

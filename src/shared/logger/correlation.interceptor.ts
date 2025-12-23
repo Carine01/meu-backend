@@ -20,8 +20,8 @@ export class CorrelationInterceptor implements NestInterceptor {
     const response = context.switchToHttp().getResponse();
 
     // Gerar ou usar correlationId existente
-    const correlationId = request.headers['x-request-id'] || 
-                         request.headers['x-correlation-id'] || 
+    const correlationId = request.headers['x-request-id'] ||
+                         request.headers['x-correlation-id'] ||
                          uuidv4();
 
     // Adicionar ao request para usar nos services

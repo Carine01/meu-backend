@@ -17,12 +17,12 @@ export class AgendamentosController {
     // Verificar bloqueios antes de criar
     if (dados.startISO && dados.duracaoMinutos) {
       const data = new Date(dados.startISO);
-      const hora = data.toLocaleTimeString('pt-BR', { 
-        hour: '2-digit', 
+      const hora = data.toLocaleTimeString('pt-BR', {
+        hour: '2-digit',
         minute: '2-digit',
-        hour12: false 
+        hour12: false
       });
-      
+
       const verificacao = await this.bloqueiosService.isHorarioBloqueado(
         dados.clinicId || 'default',
         dados.startISO,
@@ -146,5 +146,4 @@ export class AgendamentosController {
     return this.bloqueiosService.listarBloqueios(clinicId);
   }
 }
-
 

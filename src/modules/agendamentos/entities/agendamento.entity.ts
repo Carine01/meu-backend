@@ -23,10 +23,10 @@ export class Agendamento {
   @Column({ default: 60 })
   duracaoMinutos!: number;
 
-  @Column({ 
-    type: 'enum', 
-    enum: ['agendado', 'confirmado', 'compareceu', 'no-show', 'cancelado'], 
-    default: 'agendado' 
+  @Column({
+    type: 'enum',
+    enum: ['agendado', 'confirmado', 'compareceu', 'no-show', 'cancelado'],
+    default: 'agendado'
   })
   status!: 'agendado' | 'confirmado' | 'compareceu' | 'no-show' | 'cancelado';
 
