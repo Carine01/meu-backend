@@ -1,0 +1,6 @@
+node_modules
+dist
+coverage
+.env
+*.log
+.elevare_validation_report
