@@ -233,10 +233,11 @@ export class FilaService {
       // Wait for all sends to complete
       const results = await Promise.allSettled(promises);
       
-      // Count successful sends
-      enviados = results.filter(
-        (r) => r.status === 'fulfilled' && r.value === true
-      ).length;
+      // PERFORMANCE: Use reduce instead of filter + length for counting
+      enviados = results.reduce((count, r) => 
+        count + (r.status === 'fulfilled' && r.value === true ? 1 : 0), 
+        0
+      );
 
       this.logger.log(`Processamento concluído: ${enviados}/${snapshot.size} enviados`);
       return enviados;

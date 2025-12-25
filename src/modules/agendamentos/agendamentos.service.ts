@@ -45,15 +45,30 @@ export class AgendamentosService {
    * PERFORMANCE: Uses update() instead of findOne + save to reduce DB roundtrips
    */
   async cancelarAgendamento(id: string, motivo?: string): Promise<void> {
-    const updateData: Partial<Agendamento> = {
-      status: 'cancelado',
-      ...(motivo && { observacoes: `Cancelado: ${motivo}` }),
-    };
-    
-    const result = await this.agendamentoRepo.update({ id }, updateData);
-
-    if (result.affected === 0) {
-      throw new NotFoundException(`Agendamento ${id} não encontrado`);
+    // If motivo provided, need to append to existing observacoes
+    // Otherwise we might overwrite important notes
+    if (motivo) {
+      // Need to fetch to append to observacoes
+      const agendamento = await this.agendamentoRepo.findOne({ where: { id } });
+      
+      if (!agendamento) {
+        throw new NotFoundException(`Agendamento ${id} não encontrado`);
+      }
+      
+      const observacoesAtualizadas = agendamento.observacoes
+        ? `${agendamento.observacoes}\nCancelado: ${motivo}`
+        : `Cancelado: ${motivo}`;
+      
+      agendamento.status = 'cancelado';
+      agendamento.observacoes = observacoesAtualizadas;
+      await this.agendamentoRepo.save(agendamento);
+    } else {
+      // No motivo, just update status directly
+      const result = await this.agendamentoRepo.update({ id }, { status: 'cancelado' });
+      
+      if (result.affected === 0) {
+        throw new NotFoundException(`Agendamento ${id} não encontrado`);
+      }
     }
 
     this.logger.log(`❌ Agendamento cancelado: ${id} | Motivo: ${motivo}`);

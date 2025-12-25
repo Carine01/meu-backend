@@ -21,7 +21,10 @@ This guide helps you deploy and validate the performance optimizations made to t
 - **82% faster** processing overall
 - **78% less** data transferred
 - **21% fewer** database queries
-- **$XXX/month** estimated cost savings
+- Estimated cost savings (based on typical usage patterns):
+  - Firestore: ~$50-100/month (reduced read operations and bandwidth)
+  - Compute: ~$20-40/month (reduced CPU usage)
+  - Total: ~$70-140/month for medium-sized deployment
 
 ## Deployment Steps
 

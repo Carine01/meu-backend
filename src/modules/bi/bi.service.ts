@@ -372,17 +372,17 @@ elevare_leads_por_stage{stage="frio"} ${metrics.percentualFrio}
    * PERFORMANCE NOTE: This fetches all leads but only needs the 'etiquetas' field.
    * In production, consider:
    * 1. Maintaining a separate etiquetas_count collection updated via Cloud Functions
-   * 2. Using Firestore field selection (.select()) if supported
-   * 3. Caching results with TTL
+   * 2. Caching results with TTL
+   * 3. Using aggregation pipeline if migrating to MongoDB
+   * 
+   * NOTE: Firestore admin SDK does not support field selection like SQL's SELECT
+   * We must fetch entire documents, but we optimize processing
    */
   async getTopEtiquetas(limit: number = 10): Promise<Array<{ etiqueta: string; count: number }>> {
     try {
-      // PERFORMANCE FIX: Use select() to fetch only needed fields
-      // Note: Firestore admin SDK doesn't support field selection directly
-      // but we can optimize the processing
+      // Fetch all leads - field selection not supported in Firestore admin SDK
       const leadsSnapshot = await this.firestore
         .collection('leads')
-        .select('etiquetas')  // Only fetch etiquetas field
         .get();
 
       const etiquetasMap: Record<string, number> = {};

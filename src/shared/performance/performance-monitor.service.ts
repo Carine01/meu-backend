@@ -120,7 +120,13 @@ export class PerformanceMonitor {
     maxTime: number;
     lastExecution: number;
   }> {
-    const result: Record<string, any> = {};
+    const result: Record<string, {
+      count: number;
+      avgTime: number;
+      minTime: number;
+      maxTime: number;
+      lastExecution: number;
+    }> = {};
 
     this.metrics.forEach((metric, name) => {
       result[name] = {
