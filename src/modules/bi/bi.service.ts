@@ -8,6 +8,7 @@ if (process.env.NODE_ENV === 'test' && !admin.apps.length) {
   });
 }
 import { Lead, Agendamento, FilaEnvio } from '../mensagens/entities/mensagem.entity';
+import { validateClinicId } from '../../shared/utils/validation.util';
 
 /**
  * Métricas do Dashboard
@@ -93,9 +94,7 @@ export class BiService {
      * Lança erro se clinicId for vazio ou inválido
      */
     async getReportForClinic(clinicId: string): Promise<DashboardMetrics> {
-      if (!clinicId || clinicId.trim() === '') {
-        throw new Error('clinicId é obrigatório');
-      }
+      validateClinicId(clinicId);
       // TODO: Filtrar métricas por clinicId
       // Por enquanto retorna métricas padrão
       return await this.getDashboardMetrics();
