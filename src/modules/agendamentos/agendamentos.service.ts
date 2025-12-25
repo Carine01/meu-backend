@@ -28,67 +28,61 @@ export class AgendamentosService {
 
   /**
    * Confirmar agendamento
+   * PERFORMANCE: Uses update() instead of findOne + save to reduce DB roundtrips
    */
   async confirmarAgendamento(id: string): Promise<void> {
-    const agendamento = await this.agendamentoRepo.findOne({ where: { id } });
+    const result = await this.agendamentoRepo.update({ id }, { status: 'confirmado' });
 
-    if (!agendamento) {
+    if (result.affected === 0) {
       throw new NotFoundException(`Agendamento ${id} não encontrado`);
     }
-
-    agendamento.status = 'confirmado';
-    await this.agendamentoRepo.save(agendamento);
 
     this.logger.log(`✅ Agendamento confirmado: ${id}`);
   }
 
   /**
    * Cancelar agendamento
+   * PERFORMANCE: Uses update() instead of findOne + save to reduce DB roundtrips
    */
   async cancelarAgendamento(id: string, motivo?: string): Promise<void> {
-    const agendamento = await this.agendamentoRepo.findOne({ where: { id } });
+    const updateData: Partial<Agendamento> = {
+      status: 'cancelado',
+      ...(motivo && { observacoes: `Cancelado: ${motivo}` }),
+    };
+    
+    const result = await this.agendamentoRepo.update({ id }, updateData);
 
-    if (!agendamento) {
+    if (result.affected === 0) {
       throw new NotFoundException(`Agendamento ${id} não encontrado`);
     }
-
-    agendamento.status = 'cancelado';
-    if (motivo) {
-      agendamento.observacoes = `Cancelado: ${motivo}`;
-    }
-    await this.agendamentoRepo.save(agendamento);
 
     this.logger.log(`❌ Agendamento cancelado: ${id} | Motivo: ${motivo}`);
   }
 
   /**
    * Marcar comparecimento
+   * PERFORMANCE: Uses update() instead of findOne + save to reduce DB roundtrips
    */
   async marcarComparecimento(id: string): Promise<void> {
-    const agendamento = await this.agendamentoRepo.findOne({ where: { id } });
+    const result = await this.agendamentoRepo.update({ id }, { status: 'compareceu' });
 
-    if (!agendamento) {
+    if (result.affected === 0) {
       throw new NotFoundException(`Agendamento ${id} não encontrado`);
     }
-
-    agendamento.status = 'compareceu';
-    await this.agendamentoRepo.save(agendamento);
 
     this.logger.log(`✅ Comparecimento registrado: ${id}`);
   }
 
   /**
    * Marcar no-show (falta)
+   * PERFORMANCE: Uses update() instead of findOne + save to reduce DB roundtrips
    */
   async marcarNoShow(id: string): Promise<void> {
-    const agendamento = await this.agendamentoRepo.findOne({ where: { id } });
+    const result = await this.agendamentoRepo.update({ id }, { status: 'no-show' });
 
-    if (!agendamento) {
+    if (result.affected === 0) {
       throw new NotFoundException(`Agendamento ${id} não encontrado`);
     }
-
-    agendamento.status = 'no-show';
-    await this.agendamentoRepo.save(agendamento);
 
     this.logger.log(`⚠️ No-show registrado: ${id}`);
   }

@@ -387,23 +387,48 @@ export class FilaService {
   /**
    * Estatísticas da fila de envio
    * 
+   * PERFORMANCE NOTE: This fetches all documents to count by status.
+   * For production with large datasets, consider:
+   * 1. Maintaining counters in a separate document
+   * 2. Using Firestore aggregation queries
+   * 3. Caching results with TTL
+   * 
    * @returns Contadores por status
    */
   async getEstatisticas(): Promise<Record<FilaEnvio['status'], number>> {
     try {
-      const snapshot = await this.firestore.collection(this.COLLECTION_NAME).get();
+      // PERFORMANCE FIX: Use parallel queries for each status
+      // This is more efficient than fetching all documents when dataset is large
+      const [pendingSnapshot, sentSnapshot, failedSnapshot, cancelledSnapshot] = 
+        await Promise.all([
+          this.firestore
+            .collection(this.COLLECTION_NAME)
+            .where('status', '==', 'pending')
+            .count()
+            .get(),
+          this.firestore
+            .collection(this.COLLECTION_NAME)
+            .where('status', '==', 'sent')
+            .count()
+            .get(),
+          this.firestore
+            .collection(this.COLLECTION_NAME)
+            .where('status', '==', 'failed')
+            .count()
+            .get(),
+          this.firestore
+            .collection(this.COLLECTION_NAME)
+            .where('status', '==', 'cancelled')
+            .count()
+            .get(),
+        ]);
 
       const stats: Record<FilaEnvio['status'], number> = {
-        pending: 0,
-        sent: 0,
-        failed: 0,
-        cancelled: 0,
+        pending: pendingSnapshot.data().count,
+        sent: sentSnapshot.data().count,
+        failed: failedSnapshot.data().count,
+        cancelled: cancelledSnapshot.data().count,
       };
-
-      snapshot.docs.forEach(doc => {
-        const item = doc.data() as FilaEnvio;
-        stats[item.status] = (stats[item.status] || 0) + 1;
-      });
 
       return stats;
     } catch (error: any) {
