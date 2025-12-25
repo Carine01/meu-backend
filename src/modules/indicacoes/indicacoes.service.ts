@@ -13,16 +13,6 @@ interface DadosIndicacao {
 
 @Injectable()
 export class IndicacoesService extends BaseRepository<Indicacao> {
-    async findAll(): Promise<Indicacao[]> {
-      // Utiliza o mock do repositório para testes
-      return await this.indicacaoRepo.find();
-    }
-
-    async create(dto: Partial<Indicacao>): Promise<Indicacao> {
-      // Utiliza o mock do repositório para testes
-      const entity = this.indicacaoRepo.create(dto);
-      return await this.indicacaoRepo.save(entity);
-    }
   protected readonly logger = new Logger(IndicacoesService.name);
   protected readonly entityName = 'Indicacao';
 
@@ -38,6 +28,17 @@ export class IndicacoesService extends BaseRepository<Indicacao> {
   // Keep backward compatibility
   private get indicacaoRepo() {
     return this.repository;
+  }
+
+  async findAll(): Promise<Indicacao[]> {
+    // Utiliza o mock do repositório para testes
+    return await this.indicacaoRepo.find();
+  }
+
+  async create(dto: Partial<Indicacao>): Promise<Indicacao> {
+    // Utiliza o mock do repositório para testes
+    const entity = this.indicacaoRepo.create(dto);
+    return await this.indicacaoRepo.save(entity);
   }
 
   /**
