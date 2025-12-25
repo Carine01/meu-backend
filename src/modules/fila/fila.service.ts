@@ -25,6 +25,7 @@ export class FilaService {
   private readonly COLLECTION_NAME = 'fila_envio';
   private readonly MAX_RETRIES = 3;
   private readonly RETRY_DELAY_MS = 2000; // 2 segundos entre tentativas
+  private readonly MAX_CONCURRENT_SENDS = 5; // Limit concurrent webhook calls
 
   constructor(
     private readonly httpService: HttpService,
@@ -178,66 +179,76 @@ export class FilaService {
       this.logger.log(`Processando ${snapshot.size} mensagens da fila`);
 
       // PERFORMANCE FIX: Process items in parallel with controlled concurrency
-      // This is safe because each item is independent
-      const promises = snapshot.docs.map(async (doc) => {
-        const item = doc.data() as FilaEnvio;
+      // Using chunks to avoid overwhelming external APIs/database
+      // Process MAX_CONCURRENT_SENDS items at a time
+      const docs = snapshot.docs;
+      let enviados = 0;
 
-        try {
-          // Tentar enviar via WhatsApp
-          await this.enviarWhatsApp(item);
+      for (let i = 0; i < docs.length; i += this.MAX_CONCURRENT_SENDS) {
+        const chunk = docs.slice(i, i + this.MAX_CONCURRENT_SENDS);
+        
+        const promises = chunk.map(async (doc) => {
+          const item = doc.data() as FilaEnvio;
 
-          // Sucesso: atualizar status
-          await doc.ref.update({
-            status: 'sent',
-            attempts: admin.firestore.FieldValue.increment(1),
-            updatedAt: new Date(),
-          });
+          try {
+            // Tentar enviar via WhatsApp
+            await this.enviarWhatsApp(item);
 
-          this.logger.log(`✅ Enviado: ${item.msgId} para ${item.destinoNome}`);
-          return true; // Success
-        } catch (error: any) {
-          const err = error as Error;
-          const novaTentativa = item.attempts + 1;
-
-          // Retry ou falha definitiva?
-          if (novaTentativa >= this.MAX_RETRIES) {
-            // Falha definitiva
+            // Sucesso: atualizar status
             await doc.ref.update({
-              status: 'failed',
-              attempts: novaTentativa,
-              lastError: err.message,
+              status: 'sent',
+              attempts: admin.firestore.FieldValue.increment(1),
               updatedAt: new Date(),
             });
 
-            this.logger.error(
-              `❌ FALHA DEFINITIVA (${novaTentativa}/${this.MAX_RETRIES}): ${item.msgId} para ${item.destinoNome} - ${err.message}`,
-            );
-          } else {
-            // Retry: mantém pending, incrementa attempts
-            await doc.ref.update({
-              attempts: novaTentativa,
-              lastError: err.message,
-              updatedAt: new Date(),
-              // Reagenda para daqui alguns segundos (backoff)
-              scheduledFor: new Date(Date.now() + this.RETRY_DELAY_MS * novaTentativa),
-            });
+            this.logger.log(`✅ Enviado: ${item.msgId} para ${item.destinoNome}`);
+            return true; // Success
+          } catch (error: any) {
+            const err = error as Error;
+            const novaTentativa = item.attempts + 1;
 
-            this.logger.warn(
-              `⚠️ Retry ${novaTentativa}/${this.MAX_RETRIES}: ${item.msgId} para ${item.destinoNome} - ${err.message}`,
-            );
+            // Retry ou falha definitiva?
+            if (novaTentativa >= this.MAX_RETRIES) {
+              // Falha definitiva
+              await doc.ref.update({
+                status: 'failed',
+                attempts: novaTentativa,
+                lastError: err.message,
+                updatedAt: new Date(),
+              });
+
+              this.logger.error(
+                `❌ FALHA DEFINITIVA (${novaTentativa}/${this.MAX_RETRIES}): ${item.msgId} para ${item.destinoNome} - ${err.message}`,
+              );
+            } else {
+              // Retry: mantém pending, incrementa attempts
+              await doc.ref.update({
+                attempts: novaTentativa,
+                lastError: err.message,
+                updatedAt: new Date(),
+                // Reagenda para daqui alguns segundos (backoff)
+                scheduledFor: new Date(Date.now() + this.RETRY_DELAY_MS * novaTentativa),
+              });
+
+              this.logger.warn(
+                `⚠️ Retry ${novaTentativa}/${this.MAX_RETRIES}: ${item.msgId} para ${item.destinoNome} - ${err.message}`,
+              );
+            }
+            return false; // Failed
           }
-          return false; // Failed
-        }
-      });
+        });
 
-      // Wait for all sends to complete
-      const results = await Promise.allSettled(promises);
-      
-      // PERFORMANCE: Use reduce instead of filter + length for counting
-      enviados = results.reduce((count, r) => 
-        count + (r.status === 'fulfilled' && r.value === true ? 1 : 0), 
-        0
-      );
+        // Wait for current chunk to complete
+        const results = await Promise.allSettled(promises);
+        
+        // PERFORMANCE: Use reduce instead of filter + length for counting
+        const chunkSuccess = results.reduce((count, r) => 
+          count + (r.status === 'fulfilled' && r.value === true ? 1 : 0), 
+          0
+        );
+        
+        enviados += chunkSuccess;
+      }
 
       this.logger.log(`Processamento concluído: ${enviados}/${snapshot.size} enviados`);
       return enviados;

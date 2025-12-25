@@ -42,7 +42,13 @@ export class AgendamentosService {
 
   /**
    * Cancelar agendamento
+   * 
    * PERFORMANCE: Uses update() instead of findOne + save to reduce DB roundtrips
+   * 
+   * BEHAVIORAL CHANGE: Now appends to existing observacoes instead of overwriting.
+   * This preserves important notes while adding cancel reason.
+   * Previous behavior: agendamento.observacoes = `Cancelado: ${motivo}`
+   * New behavior: agendamento.observacoes = `${existing}\nCancelado: ${motivo}`
    */
   async cancelarAgendamento(id: string, motivo?: string): Promise<void> {
     // If motivo provided, need to append to existing observacoes
@@ -55,6 +61,7 @@ export class AgendamentosService {
         throw new NotFoundException(`Agendamento ${id} não encontrado`);
       }
       
+      // IMPROVEMENT: Append instead of overwrite to preserve existing notes
       const observacoesAtualizadas = agendamento.observacoes
         ? `${agendamento.observacoes}\nCancelado: ${motivo}`
         : `Cancelado: ${motivo}`;

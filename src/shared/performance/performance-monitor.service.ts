@@ -146,25 +146,27 @@ export class PerformanceMonitor {
    * @returns String in Prometheus text format
    */
   getPrometheusMetrics(): string {
-    let output = '';
+    // PERFORMANCE: Use array join instead of string concatenation
+    const lines: string[] = [];
 
     this.metrics.forEach((metric, name) => {
       const safeName = name.replace(/[^a-zA-Z0-9_]/g, '_').toLowerCase();
       const avgTime = Math.round(metric.totalTime / metric.count);
 
-      output += `# HELP ${safeName}_duration_ms Average duration in milliseconds\n`;
-      output += `# TYPE ${safeName}_duration_ms gauge\n`;
-      output += `${safeName}_duration_ms{stat="avg"} ${avgTime}\n`;
-      output += `${safeName}_duration_ms{stat="min"} ${metric.minTime}\n`;
-      output += `${safeName}_duration_ms{stat="max"} ${metric.maxTime}\n`;
-      output += `${safeName}_duration_ms{stat="last"} ${metric.lastExecution}\n`;
+      lines.push(`# HELP ${safeName}_duration_ms Average duration in milliseconds`);
+      lines.push(`# TYPE ${safeName}_duration_ms gauge`);
+      lines.push(`${safeName}_duration_ms{stat="avg"} ${avgTime}`);
+      lines.push(`${safeName}_duration_ms{stat="min"} ${metric.minTime}`);
+      lines.push(`${safeName}_duration_ms{stat="max"} ${metric.maxTime}`);
+      lines.push(`${safeName}_duration_ms{stat="last"} ${metric.lastExecution}`);
       
-      output += `# HELP ${safeName}_count Total number of executions\n`;
-      output += `# TYPE ${safeName}_count counter\n`;
-      output += `${safeName}_count ${metric.count}\n\n`;
+      lines.push(`# HELP ${safeName}_count Total number of executions`);
+      lines.push(`# TYPE ${safeName}_count counter`);
+      lines.push(`${safeName}_count ${metric.count}`);
+      lines.push(''); // Empty line between metrics
     });
 
-    return output;
+    return lines.join('\n');
   }
 
   /**
