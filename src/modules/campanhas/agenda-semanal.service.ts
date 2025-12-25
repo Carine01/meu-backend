@@ -10,6 +10,7 @@ if (process.env.NODE_ENV === 'test' && !admin.apps.length) {
 }
 import { FilaService } from '../fila/fila.service';
 import { Lead } from '../mensagens/entities/mensagem.entity';
+import { validateClinicId } from '../../shared/utils/validation.util';
 
 /**
  * Regra de disparo semanal
@@ -58,9 +59,7 @@ export class AgendaSemanalService {
      * Lança erro se clinicId for vazio ou inválido
      */
     async executarAgendaDoDiaPorClinica(clinicId: string): Promise<void> {
-      if (!clinicId || clinicId.trim() === '') {
-        throw new Error('clinicId é obrigatório');
-      }
+      validateClinicId(clinicId);
       // TODO: Filtrar regras/leads por clinicId
       // Por enquanto executa agenda normal
       await this.executarAgendaDoDia();

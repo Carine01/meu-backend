@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Indicacao } from './entities/indicacao.entity';
 import { Recompensa } from './entities/recompensa.entity';
+import { BaseRepository } from '../../shared/base/base.repository';
 
 interface DadosIndicacao {
   nome: string;
@@ -11,7 +12,7 @@ interface DadosIndicacao {
 }
 
 @Injectable()
-export class IndicacoesService {
+export class IndicacoesService extends BaseRepository<Indicacao> {
     async findAll(): Promise<Indicacao[]> {
       // Utiliza o mock do repositório para testes
       return await this.indicacaoRepo.find();
@@ -22,14 +23,22 @@ export class IndicacoesService {
       const entity = this.indicacaoRepo.create(dto);
       return await this.indicacaoRepo.save(entity);
     }
-  private readonly logger = new Logger(IndicacoesService.name);
+  protected readonly logger = new Logger(IndicacoesService.name);
+  protected readonly entityName = 'Indicacao';
 
   constructor(
     @InjectRepository(Indicacao)
-    private readonly indicacaoRepo: Repository<Indicacao>,
+    protected readonly repository: Repository<Indicacao>,
     @InjectRepository(Recompensa)
     private readonly recompensaRepo: Repository<Recompensa>,
-  ) {}
+  ) {
+    super();
+  }
+
+  // Keep backward compatibility
+  private get indicacaoRepo() {
+    return this.repository;
+  }
 
   /**
    * Registrar nova indicação
@@ -95,18 +104,12 @@ export class IndicacoesService {
    * Bônus: +0 pontos (apenas tracking)
    */
   async indicadoAgendou(indicacaoId: string, agendamentoId: string): Promise<void> {
-    const indicacao = await this.indicacaoRepo.findOne({
-      where: { id: indicacaoId },
-    });
-
-    if (!indicacao) {
-      throw new NotFoundException(`Indicação ${indicacaoId} não encontrada`);
-    }
+    const indicacao = await this.findByIdOrFail(indicacaoId);
 
     indicacao.status = 'agendado';
     indicacao.agendamentoId = agendamentoId;
 
-    await this.indicacaoRepo.save(indicacao);
+    await this.repository.save(indicacao);
 
     this.logger.log(`📅 Indicado agendou: ${indicacao.nomeIndicado}`);
   }
@@ -116,18 +119,12 @@ export class IndicacoesService {
    * Bônus: +2 pontos extras
    */
   async indicadoCompareceu(indicacaoId: string): Promise<void> {
-    const indicacao = await this.indicacaoRepo.findOne({
-      where: { id: indicacaoId },
-    });
-
-    if (!indicacao) {
-      throw new NotFoundException(`Indicação ${indicacaoId} não encontrada`);
-    }
+    const indicacao = await this.findByIdOrFail(indicacaoId);
 
     indicacao.status = 'compareceu';
     indicacao.pontosGanhos = 3; // 1 inicial + 2 bônus
 
-    await this.indicacaoRepo.save(indicacao);
+    await this.repository.save(indicacao);
 
     // Bônus extra por comparecimento
     const recompensa = await this.recompensaRepo.findOne({
