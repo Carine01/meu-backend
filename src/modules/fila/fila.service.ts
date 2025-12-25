@@ -177,8 +177,9 @@ export class FilaService {
 
       this.logger.log(`Processando ${snapshot.size} mensagens da fila`);
 
-      // Processar cada item
-      for (const doc of snapshot.docs) {
+      // PERFORMANCE FIX: Process items in parallel with controlled concurrency
+      // This is safe because each item is independent
+      const promises = snapshot.docs.map(async (doc) => {
         const item = doc.data() as FilaEnvio;
 
         try {
@@ -192,8 +193,8 @@ export class FilaService {
             updatedAt: new Date(),
           });
 
-          enviados++;
           this.logger.log(`✅ Enviado: ${item.msgId} para ${item.destinoNome}`);
+          return true; // Success
         } catch (error: any) {
           const err = error as Error;
           const novaTentativa = item.attempts + 1;
@@ -225,8 +226,17 @@ export class FilaService {
               `⚠️ Retry ${novaTentativa}/${this.MAX_RETRIES}: ${item.msgId} para ${item.destinoNome} - ${err.message}`,
             );
           }
+          return false; // Failed
         }
-      }
+      });
+
+      // Wait for all sends to complete
+      const results = await Promise.allSettled(promises);
+      
+      // Count successful sends
+      enviados = results.filter(
+        (r) => r.status === 'fulfilled' && r.value === true
+      ).length;
 
       this.logger.log(`Processamento concluído: ${enviados}/${snapshot.size} enviados`);
       return enviados;

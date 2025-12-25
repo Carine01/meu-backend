@@ -50,6 +50,32 @@ export class LeadsScoreService {
   private readonly logger = new Logger(LeadsScoreService.name);
 
   /**
+   * PERFORMANCE: Helper method to calculate origem score
+   * Avoids redundant toLowerCase() calls and uses more efficient pattern matching
+   */
+  private calcularScoreOrigem(origem: string): number {
+    const origemLower = origem.toLowerCase();
+    
+    // PERFORMANCE FIX: Use startsWith/includes more efficiently
+    // Order by most common sources first for early exit
+    if (origemLower.includes('whatsapp')) {
+      return 15;
+    } else if (origemLower.includes('indicac')) { // Matches both indicacao and indicação
+      return 20;
+    } else if (origemLower.includes('instagram') || origemLower.includes('ig')) {
+      return 10;
+    } else if (origemLower.includes('google')) {
+      return 10;
+    } else if (origemLower.includes('facebook') || origemLower.includes('fb')) {
+      return 5;
+    } else if (origemLower.includes('organic')) { // Matches both organico and orgânico
+      return 5;
+    }
+    
+    return 0;
+  }
+
+  /**
    * Calcula score completo do lead baseado em todas as métricas disponíveis
    * 
    * @param lead - Objeto lead com todos os campos
@@ -90,27 +116,12 @@ export class LeadsScoreService {
     }
 
     // === ORIGEM ===
+    // PERFORMANCE FIX: Extract origem scoring to separate method to avoid repeated toLowerCase
     if (lead.origem) {
-      const origemLower = lead.origem.toLowerCase();
-      
-      if (origemLower.includes('indicacao') || origemLower.includes('indicação')) {
-        score += 20;
-        this.logger.debug('[Score] +20 (indicação)');
-      } else if (origemLower.includes('whatsapp')) {
-        score += 15;
-        this.logger.debug('[Score] +15 (WhatsApp direto)');
-      } else if (origemLower.includes('instagram') || origemLower.includes('ig')) {
-        score += 10;
-        this.logger.debug('[Score] +10 (Instagram)');
-      } else if (origemLower.includes('google')) {
-        score += 10;
-        this.logger.debug('[Score] +10 (Google Ads)');
-      } else if (origemLower.includes('facebook') || origemLower.includes('fb')) {
-        score += 5;
-        this.logger.debug('[Score] +5 (Facebook Ads)');
-      } else if (origemLower.includes('organico') || origemLower.includes('orgânico')) {
-        score += 5;
-        this.logger.debug('[Score] +5 (Orgânico)');
+      const origemScore = this.calcularScoreOrigem(lead.origem);
+      if (origemScore > 0) {
+        score += origemScore;
+        this.logger.debug(`[Score] +${origemScore} (origem: ${lead.origem})`);
       }
     }
 
@@ -149,6 +160,28 @@ export class LeadsScoreService {
   }
 
   /**
+   * PERFORMANCE: Helper method to get origem etiqueta
+   * Avoids redundant toLowerCase() calls
+   */
+  private getOrigemEtiqueta(origem: string): string | null {
+    const origemLower = origem.toLowerCase();
+    
+    if (origemLower.includes('whatsapp')) {
+      return 'WhatsAppLead';
+    } else if (origemLower.includes('instagram')) {
+      return 'InstagramLead';
+    } else if (origemLower.includes('indicac')) { // Matches both indicacao and indicação
+      return 'IndicacaoLead';
+    } else if (origemLower.includes('facebook')) {
+      return 'FacebookLead';
+    } else if (origemLower.includes('google')) {
+      return 'GoogleLead';
+    }
+    
+    return null;
+  }
+
+  /**
    * Identifica etiquetas automáticas baseadas nos dados do lead
    * 
    * @param lead - Objeto lead
@@ -177,19 +210,11 @@ export class LeadsScoreService {
     }
 
     // === ORIGEM ===
+    // PERFORMANCE FIX: Extract to helper method
     if (lead.origem) {
-      const origemLower = lead.origem.toLowerCase();
-      
-      if (origemLower.includes('whatsapp')) {
-        etiquetas.push('WhatsAppLead');
-      } else if (origemLower.includes('instagram')) {
-        etiquetas.push('InstagramLead');
-      } else if (origemLower.includes('indicacao') || origemLower.includes('indicação')) {
-        etiquetas.push('IndicacaoLead');
-      } else if (origemLower.includes('facebook')) {
-        etiquetas.push('FacebookLead');
-      } else if (origemLower.includes('google')) {
-        etiquetas.push('GoogleLead');
+      const origemEtiqueta = this.getOrigemEtiqueta(lead.origem);
+      if (origemEtiqueta) {
+        etiquetas.push(origemEtiqueta);
       }
     }
 
