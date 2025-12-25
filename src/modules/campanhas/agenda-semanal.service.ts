@@ -141,23 +141,44 @@ export class AgendaSemanalService {
   /**
    * Busca leads que possuem TODAS as etiquetas especificadas
    * 
+   * PERFORMANCE NOTE: Firestore doesn't support array-contains-all natively.
+   * This implementation uses array-contains for the first tag and filters in-memory.
+   * For better performance with large datasets, consider:
+   * 1. Denormalizing data (separate etiquetas_count collection)
+   * 2. Using Firestore where('etiquetas', 'array-contains', tag) for single tag
+   * 3. Client-side caching of frequently queried tag combinations
+   * 
    * @param etiquetas - Array de etiquetas necessárias
    * @returns Array de leads que correspondem
    */
   private async buscarLeadsPorEtiquetas(etiquetas: string[]): Promise<Lead[]> {
     try {
-      // Firestore não suporta array-contains-all nativamente
-      // Solução: buscar todos e filtrar em memória (ou usar array-contains para 1 etiqueta)
-      
-      const snapshot = await this.firestore.collection('leads').get();
+      // PERFORMANCE FIX: Use array-contains to filter at database level for first tag
+      // This reduces the dataset we need to process in-memory
+      if (etiquetas.length === 0) {
+        return [];
+      }
 
+      // Use Firestore's array-contains to filter by first tag
+      const snapshot = await this.firestore
+        .collection('leads')
+        .where('etiquetas', 'array-contains', etiquetas[0])
+        .get();
+
+      // If only one tag requested, return all results
+      if (etiquetas.length === 1) {
+        return snapshot.docs.map(doc => doc.data() as Lead);
+      }
+
+      // For multiple tags, filter in memory (already reduced dataset)
       const leadsCorrespondentes: Lead[] = [];
 
       snapshot.docs.forEach(doc => {
         const lead = doc.data() as Lead;
 
         // Verifica se lead tem TODAS as etiquetas necessárias
-        const temTodasEtiquetas = etiquetas.every(etiqueta =>
+        // Skip first tag since we already filtered by it
+        const temTodasEtiquetas = etiquetas.slice(1).every(etiqueta =>
           lead.etiquetas && lead.etiquetas.includes(etiqueta),
         );
 

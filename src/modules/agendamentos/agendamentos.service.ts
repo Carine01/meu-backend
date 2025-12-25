@@ -28,67 +28,83 @@ export class AgendamentosService {
 
   /**
    * Confirmar agendamento
+   * PERFORMANCE: Uses update() instead of findOne + save to reduce DB roundtrips
    */
   async confirmarAgendamento(id: string): Promise<void> {
-    const agendamento = await this.agendamentoRepo.findOne({ where: { id } });
+    const result = await this.agendamentoRepo.update({ id }, { status: 'confirmado' });
 
-    if (!agendamento) {
+    if (result.affected === 0) {
       throw new NotFoundException(`Agendamento ${id} não encontrado`);
     }
-
-    agendamento.status = 'confirmado';
-    await this.agendamentoRepo.save(agendamento);
 
     this.logger.log(`✅ Agendamento confirmado: ${id}`);
   }
 
   /**
    * Cancelar agendamento
+   * 
+   * PERFORMANCE: Uses update() instead of findOne + save to reduce DB roundtrips
+   * 
+   * BEHAVIORAL CHANGE: Now appends to existing observacoes instead of overwriting.
+   * This preserves important notes while adding cancel reason.
+   * Previous behavior: agendamento.observacoes = `Cancelado: ${motivo}`
+   * New behavior: agendamento.observacoes = `${existing}\nCancelado: ${motivo}`
    */
   async cancelarAgendamento(id: string, motivo?: string): Promise<void> {
-    const agendamento = await this.agendamentoRepo.findOne({ where: { id } });
-
-    if (!agendamento) {
-      throw new NotFoundException(`Agendamento ${id} não encontrado`);
-    }
-
-    agendamento.status = 'cancelado';
+    // If motivo provided, need to append to existing observacoes
+    // Otherwise we might overwrite important notes
     if (motivo) {
-      agendamento.observacoes = `Cancelado: ${motivo}`;
+      // Need to fetch to append to observacoes
+      const agendamento = await this.agendamentoRepo.findOne({ where: { id } });
+      
+      if (!agendamento) {
+        throw new NotFoundException(`Agendamento ${id} não encontrado`);
+      }
+      
+      // IMPROVEMENT: Append instead of overwrite to preserve existing notes
+      const observacoesAtualizadas = agendamento.observacoes
+        ? `${agendamento.observacoes}\nCancelado: ${motivo}`
+        : `Cancelado: ${motivo}`;
+      
+      agendamento.status = 'cancelado';
+      agendamento.observacoes = observacoesAtualizadas;
+      await this.agendamentoRepo.save(agendamento);
+    } else {
+      // No motivo, just update status directly
+      const result = await this.agendamentoRepo.update({ id }, { status: 'cancelado' });
+      
+      if (result.affected === 0) {
+        throw new NotFoundException(`Agendamento ${id} não encontrado`);
+      }
     }
-    await this.agendamentoRepo.save(agendamento);
 
     this.logger.log(`❌ Agendamento cancelado: ${id} | Motivo: ${motivo}`);
   }
 
   /**
    * Marcar comparecimento
+   * PERFORMANCE: Uses update() instead of findOne + save to reduce DB roundtrips
    */
   async marcarComparecimento(id: string): Promise<void> {
-    const agendamento = await this.agendamentoRepo.findOne({ where: { id } });
+    const result = await this.agendamentoRepo.update({ id }, { status: 'compareceu' });
 
-    if (!agendamento) {
+    if (result.affected === 0) {
       throw new NotFoundException(`Agendamento ${id} não encontrado`);
     }
-
-    agendamento.status = 'compareceu';
-    await this.agendamentoRepo.save(agendamento);
 
     this.logger.log(`✅ Comparecimento registrado: ${id}`);
   }
 
   /**
    * Marcar no-show (falta)
+   * PERFORMANCE: Uses update() instead of findOne + save to reduce DB roundtrips
    */
   async marcarNoShow(id: string): Promise<void> {
-    const agendamento = await this.agendamentoRepo.findOne({ where: { id } });
+    const result = await this.agendamentoRepo.update({ id }, { status: 'no-show' });
 
-    if (!agendamento) {
+    if (result.affected === 0) {
       throw new NotFoundException(`Agendamento ${id} não encontrado`);
     }
-
-    agendamento.status = 'no-show';
-    await this.agendamentoRepo.save(agendamento);
 
     this.logger.log(`⚠️ No-show registrado: ${id}`);
   }

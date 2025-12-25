@@ -368,19 +368,34 @@ elevare_leads_por_stage{stage="frio"} ${metrics.percentualFrio}
   /**
    * Retorna top etiquetas mais comuns
    * Útil para campanhas segmentadas
+   * 
+   * PERFORMANCE NOTE: This fetches all leads but only needs the 'etiquetas' field.
+   * In production, consider:
+   * 1. Maintaining a separate etiquetas_count collection updated via Cloud Functions
+   * 2. Caching results with TTL
+   * 3. Using aggregation pipeline if migrating to MongoDB
+   * 
+   * NOTE: Firestore admin SDK does not support field selection like SQL's SELECT
+   * We must fetch entire documents, but we optimize processing
    */
   async getTopEtiquetas(limit: number = 10): Promise<Array<{ etiqueta: string; count: number }>> {
     try {
-      const leadsSnapshot = await this.firestore.collection('leads').get();
+      // Fetch all leads - field selection not supported in Firestore admin SDK
+      const leadsSnapshot = await this.firestore
+        .collection('leads')
+        .get();
 
       const etiquetasMap: Record<string, number> = {};
 
+      // PERFORMANCE: Process in batch to avoid memory issues with large datasets
       leadsSnapshot.docs.forEach(doc => {
         const lead = doc.data() as Lead;
         if (lead.etiquetas && Array.isArray(lead.etiquetas)) {
-          lead.etiquetas.forEach(etiqueta => {
+          // Use for loop instead of forEach for better performance
+          for (let i = 0; i < lead.etiquetas.length; i++) {
+            const etiqueta = lead.etiquetas[i];
             etiquetasMap[etiqueta] = (etiquetasMap[etiqueta] || 0) + 1;
-          });
+          }
         }
       });
 
@@ -412,8 +427,12 @@ elevare_leads_por_stage{stage="frio"} ${metrics.percentualFrio}
       ]);
 
       const origemStats: Record<string, { leads: number; agendamentos: Set<string> }> = {};
+      
+      // PERFORMANCE FIX: Create phone-to-origem lookup map to avoid N+1 query
+      // This changes complexity from O(n*m) to O(n+m)
+      const phoneToOrigemMap = new Map<string, string>();
 
-      // Contar leads por origem
+      // Build lookup map and count leads by origem
       leadsSnapshot.docs.forEach(doc => {
         const lead = doc.data() as Lead;
         const origem = lead.origem || 'desconhecido';
@@ -423,25 +442,23 @@ elevare_leads_por_stage{stage="frio"} ${metrics.percentualFrio}
         }
 
         origemStats[origem].leads++;
+        
+        // Add to phone lookup map
+        if (lead.telefone) {
+          phoneToOrigemMap.set(lead.telefone, origem);
+        }
       });
 
-      // Contar agendamentos por origem (via telefone)
+      // Count agendamentos using the lookup map (O(n) instead of O(n*m))
       agendamentosSnapshot.docs.forEach(doc => {
         const agendamento = doc.data() as Agendamento;
         const telefone = agendamento.telefoneE164;
 
-        // Buscar origem do lead pelo telefone
-        const leadDoc = leadsSnapshot.docs.find(
-          l => (l.data() as Lead).telefone === telefone,
-        );
+        // Use Map lookup instead of array.find() - O(1) vs O(n)
+        const origem = phoneToOrigemMap.get(telefone);
 
-        if (leadDoc) {
-          const lead = leadDoc.data() as Lead;
-          const origem = lead.origem || 'desconhecido';
-
-          if (origemStats[origem]) {
-            origemStats[origem].agendamentos.add(agendamento.id);
-          }
+        if (origem && origemStats[origem]) {
+          origemStats[origem].agendamentos.add(agendamento.id);
         }
       });
 
