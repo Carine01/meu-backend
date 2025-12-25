@@ -131,10 +131,12 @@ export class AgendamentosService extends BaseRepository<Agendamento> {
 
   /**
    * Busca agendamento por id e clinicId
+   * @returns Agendamento or null if not found
    */
   async buscarPorIdEClinica(id: string, clinicId: string): Promise<Agendamento | null> {
     validateClinicId(clinicId);
-    return this.repository.findOne({ where: { id, clinicId } });
+    const result = await this.repository.findOne({ where: { id, clinicId } });
+    return result || null;
   }
 
   /**

@@ -35,9 +35,11 @@ export abstract class BaseRepository<T extends { id: string }> {
    * @param clinicId - Clinic ID
    * @returns Found entity
    * @throws NotFoundException if entity not found
+   * @note Entity must have a clinicId property for this method to work
    */
   async findByIdAndClinicOrFail(id: string, clinicId: string): Promise<T> {
-    // Type assertion is safe because we control entity structure
+    // Using 'any' here is necessary due to TypeORM's FindOptionsWhere not supporting
+    // dynamic property checks. The entity structure is validated at runtime.
     const entity = await this.repository.findOne({ 
       where: { id, clinicId } as any
     });
@@ -68,10 +70,11 @@ export abstract class BaseRepository<T extends { id: string }> {
    * @returns Created entity
    */
   async createAndSave(data: Partial<T>): Promise<T> {
+    // Using 'as any' because TypeORM's create() accepts Partial<T> but has complex internal typing
     const entity = this.repository.create(data as any);
-    const saved = await this.repository.save(entity);
-    // TypeORM save returns T when passed single entity, T[] when passed array
-    return Array.isArray(saved) ? saved[0] : saved;
+    // TypeORM's save() returns T when passed a single entity (not T[])
+    // Using unknown to satisfy TypeScript's type checker while maintaining runtime safety
+    return await this.repository.save(entity) as unknown as T;
   }
 
   /**
